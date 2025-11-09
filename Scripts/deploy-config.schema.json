@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EcommerceStarter Deployment Configuration",
+  "description": "Configuration file for unattended deployment of EcommerceStarter",
+  "type": "object",
+  "properties": {
+    "companyName": {
+      "type": "string",
+      "description": "Your company or store name",
+      "default": "My Store",
+      "examples": ["My Awesome Store", "John's Shop"]
+    },
+    "siteTagline": {
+      "type": "string",
+      "description": "Site tagline or slogan",
+      "default": "Powered by EcommerceStarter"
+    },
+    "adminEmail": {
+      "type": "string",
+      "format": "email",
+      "description": "Administrator email address",
+      "examples": ["admin@mystore.com"]
+    },
+    "adminPassword": {
+      "type": "string",
+      "description": "Administrator password (minimum 6 characters)",
+      "minLength": 6
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "server": {
+          "type": "string",
+          "description": "SQL Server instance name",
+          "default": "localhost\\SQLEXPRESS",
+          "examples": ["localhost\\SQLEXPRESS", "(local)", "myserver\\MSSQLSERVER"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Database name",
+          "default": "MyStore"
+        }
+      },
+      "required": ["server", "name"]
+    },
+    "website": {
+      "type": "object",
+      "properties": {
+        "siteName": {
+          "type": "string",
+          "description": "IIS site name",
+          "examples": ["MyStore", "EcommerceStore"]
+        },
+        "domain": {
+          "type": "string",
+          "description": "Website domain name",
+          "default": "localhost",
+          "examples": ["www.mystore.com", "store.example.com"]
+        },
+        "port": {
+          "type": "integer",
+          "description": "HTTPS port number",
+          "default": 443,
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "stripe": {
+      "type": "object",
+      "description": "Stripe payment configuration (optional)",
+      "properties": {
+        "publishableKey": {
+          "type": "string",
+          "description": "Stripe publishable key (pk_test_... or pk_live_...)",
+          "pattern": "^pk_(test|live)_[A-Za-z0-9]+$"
+        },
+        "secretKey": {
+          "type": "string",
+          "description": "Stripe secret key (sk_test_... or sk_live_...)",
+          "pattern": "^sk_(test|live)_[A-Za-z0-9]+$"
+        }
+      }
+    },
+    "email": {
+      "type": "object",
+      "description": "Email configuration (optional)",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["None", "Resend", "SMTP"],
+          "description": "Email service provider",
+          "default": "None"
+        },
+        "resend": {
+          "type": "object",
+          "description": "Resend configuration (if provider is Resend)",
+          "properties": {
+            "apiKey": {
+              "type": "string",
+              "description": "Resend API key",
+              "pattern": "^re_[A-Za-z0-9_]+$"
+            }
+          }
+        },
+        "smtp": {
+          "type": "object",
+          "description": "SMTP configuration (if provider is SMTP)",
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "SMTP server hostname",
+              "examples": ["smtp.gmail.com", "smtp-mail.outlook.com"]
+            },
+            "port": {
+              "type": "integer",
+              "description": "SMTP port number",
+              "default": 587,
+              "examples": [587, 465, 25]
+            },
+            "username": {
+              "type": "string",
+              "description": "SMTP username"
+            },
+            "password": {
+              "type": "string",
+              "description": "SMTP password"
+            },
+            "fromEmail": {
+              "type": "string",
+              "format": "email",
+              "description": "From email address"
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": ["companyName", "adminEmail", "adminPassword", "database"]
+}

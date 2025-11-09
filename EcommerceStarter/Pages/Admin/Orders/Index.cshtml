@@ -1,0 +1,115 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Manage Orders";
+}
+
+<div class="container-fluid mt-4">
+    <h1 class="mb-4">Manage Orders</h1>
+
+    @if (Model.Orders.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Total Amount</th>
+                        <th>Order Status</th>
+                        <th>Payment Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.Orders)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@order.OrderNumber</strong>
+                                <br><small class="text-muted">#@order.Id</small>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(order.CustomerEmail))
+                                {
+                                    <span>@order.CustomerEmail</span>
+                                    @if (order.IsGuestOrder)
+                                    {
+                                        <br><small class="badge bg-secondary">Guest</small>
+                                    }
+                                }
+                                else if (order.User?.Email != null)
+                                {
+                                    <span>@order.User.Email</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No email</span>
+                                }
+                            </td>
+                            <td>@order.OrderDate.ToShortDateString()</td>
+                            <td>$@order.TotalAmount.ToString("F2")</td>
+                            <td>
+                                @switch (order.Status)
+                                {
+                                    case EcommerceStarter.Models.OrderStatus.Pending:
+                                        <span class="badge bg-warning">Pending</span>
+                                        break;
+                                    case EcommerceStarter.Models.OrderStatus.Processing:
+                                        <span class="badge bg-info">Processing</span>
+                                        break;
+                                    case EcommerceStarter.Models.OrderStatus.Shipped:
+                                        <span class="badge bg-primary">Shipped</span>
+                                        break;
+                                    case EcommerceStarter.Models.OrderStatus.Delivered:
+                                        <span class="badge bg-success">Delivered</span>
+                                        break;
+                                    case EcommerceStarter.Models.OrderStatus.Cancelled:
+                                        <span class="badge bg-danger">Cancelled</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                @switch (order.PaymentStatus)
+                                {
+                                    case EcommerceStarter.Models.PaymentStatus.Pending:
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-clock"></i> Pending
+                                        </span>
+                                        break;
+                                    case EcommerceStarter.Models.PaymentStatus.Succeeded:
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Paid
+                                        </span>
+                                        break;
+                                    case EcommerceStarter.Models.PaymentStatus.Failed:
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle"></i> Failed
+                                        </span>
+                                        break;
+                                    case EcommerceStarter.Models.PaymentStatus.Refunded:
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Refunded
+                                        </span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                <a asp-page="Details" asp-route-id="@order.Id" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> View Details
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No orders found.
+        </div>
+    }
+</div>

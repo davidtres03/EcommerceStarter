@@ -1,0 +1,100 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2>Create a new account</h2>
+                <p class="mb-0 text-muted">Simple, secure, and privacy-focused</p>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success border-success mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-shield-check fs-4 me-3 text-success"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2">Your Privacy Matters</h6>
+                            <p class="mb-0 small">
+                                We believe in minimal data collection. We only ask for your email to create your account—no 
+                                unnecessary personal information required. Your shipping details are collected only when you 
+                                place an order and are not stored in your profile.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3">
+                        @if (ModelState.IsValid == false && ViewData.ModelState[""]?.ToString() != null)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>Registration Error
+                                </h6>
+                                <div asp-validation-summary="ModelOnly"></div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Input.Email" class="form-label"></label>
+                        <input asp-for="Input.Email" class="form-control @(ModelState.IsValid == false && Model.Input?.Email != null ? "is-invalid" : "")" placeholder="your@email.com" autofocus />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Input.Password" class="form-label"></label>
+                        <input asp-for="Input.Password" class="form-control" />
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            <i class="bi bi-info-circle me-1"></i>Minimum 6 characters
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+                        <input asp-for="Input.ConfirmPassword" class="form-control" />
+                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded border-start border-4" style="border-color: #0d6efd !important;">
+                        <small class="text-muted d-block">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            <strong>Password Requirements:</strong>
+                        </small>
+                        <ul class="small text-muted mb-0 mt-2 ps-4">
+                            <li>At least 6 characters</li>
+                            <li>Mix of uppercase and lowercase letters recommended</li>
+                            <li>Include numbers and symbols for stronger security</li>
+                        </ul>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 mb-2">Create Account</button>
+                    <div class="text-center">
+                        <a asp-page="/Account/Login" class="btn btn-link">Already have an account? Sign in</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3 border-0 bg-light">
+            <div class="card-body">
+                <h6 class="mb-3"><i class="bi bi-lock-fill text-success"></i> Our Privacy Promise</h6>
+                <ul class="small mb-0">
+                    <li class="mb-2"><strong>No unnecessary data:</strong> We only collect what's essential for your shopping experience</li>
+                    <li class="mb-2"><strong>No permanent address storage:</strong> Shipping details are kept with orders only, not your profile</li>
+                    <li class="mb-2"><strong>Full control:</strong> Update your email or delete your account anytime</li>
+                    <li><strong>Secure by design:</strong> Your password is encrypted and never stored in plain text</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,387 @@
+@using Microsoft.AspNetCore.Identity
+@using EcommerceStarter.Models
+@using EcommerceStarter.Services
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject ICartService CartService
+@inject ISiteSettingsService SiteSettingsService
+
+@{
+    var siteSettings = await SiteSettingsService.GetSettingsAsync();
+    var pageTitle = string.IsNullOrEmpty(ViewData["Title"]?.ToString()) 
+        ? siteSettings.SiteName 
+        : $"{ViewData["Title"]} - {siteSettings.SiteName}";
+
+    // Get CSP nonce generated in middleware
+    var nonce = Context.Items.ContainsKey("CspNonce") ? Context.Items["CspNonce"] as string : null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="true" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>@pageTitle</title>
+    
+    <!-- Dynamic SEO Meta Tags -->
+    <meta name="description" content="@siteSettings.MetaDescription">
+    @if (!string.IsNullOrEmpty(siteSettings.MetaKeywords))
+    {
+        <meta name="keywords" content="@siteSettings.MetaKeywords">
+    }
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="@pageTitle">
+    <meta property="og:description" content="@siteSettings.MetaDescription">
+    <meta property="og:site_name" content="@siteSettings.SiteName">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@pageTitle">
+    <meta name="twitter:description" content="@siteSettings.MetaDescription">
+    
+    <!-- Favicon -->
+    @if (!string.IsNullOrEmpty(siteSettings.FaviconUrl))
+    {
+        <link rel="icon" href="@siteSettings.FaviconUrl" type="image/x-icon">
+    }
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @* Dynamic Theme CSS with cache-busting version parameter *@
+    <link rel="stylesheet" href="/api/theme/css?v=@siteSettings.LastModified.Ticks" />
+    
+    @* Google Analytics 4 Integration *@
+    @await Html.PartialAsync("_GoogleAnalytics")
+    
+    @* Only allow trusted, sanitized custom header HTML. Admins must sanitize inputs before saving. *@
+    @if (!string.IsNullOrEmpty(siteSettings.CustomHeaderHtml))
+    {
+        @Html.Raw(siteSettings.CustomHeaderHtml)
+    }
+</head>
+<body>
+    @* Google Tag Manager (noscript fallback) - GTM only, GA4 doesn't need this *@
+    @{
+        var tagId = (await SiteSettingsService.GetSettingsAsync()).GoogleAnalyticsMeasurementId;
+        if (!string.IsNullOrEmpty(tagId) && tagId.StartsWith("GTM-"))
+        {
+            <!-- Google Tag Manager (noscript) -->
+            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=@tagId"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+            <!-- End Google Tag Manager (noscript) -->
+        }
+    }
+    
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light border-bottom">
+            <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-page="/Index">
+                    @if (!string.IsNullOrEmpty(siteSettings.SiteIcon))
+                    {
+                        <span class="me-2" style="font-size: 1.5rem;">@siteSettings.SiteIcon</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-flower2 me-2" style="font-size: 1.5rem;"></i>
+                    }
+                    <span>@siteSettings.SiteName</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-page="/Index">
+                                <i class="bi bi-house-door"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-page="/Products/Index">
+                                <i class="bi bi-bag"></i> Products
+                            </a>
+                        </li>
+                        @if (!SignInManager.IsSignedIn(User))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Orders/TrackOrder">
+                                    <i class="bi bi-search"></i> Track Order
+                                </a>
+                            </li>
+                        }
+                        @if (SignInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-danger fw-bold" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-shield-lock"></i> Admin Panel
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-admin" aria-labelledby="adminDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Dashboard">
+                                            <i class="bi bi-speedometer2 text-primary"></i> Dashboard
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Analytics">
+                                            <i class="bi bi-graph-up text-success"></i> Analytics
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li class="dropdown-header">Management</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Products/Index">
+                                            <i class="bi bi-box-seam text-primary"></i> Products
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Orders/Index">
+                                            <i class="bi bi-cart text-success"></i> Orders
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Customers/Index">
+                                            <i class="bi bi-people text-info"></i> Customers
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" asp-page="/Admin/AdminUsers">
+                                            <i class="bi bi-shield-lock"></i> Admin Users
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li class="dropdown-header">Settings & Configuration</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Settings/Branding">
+                                            <i class="bi bi-palette text-primary"></i> Branding & Theme
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Settings/GoogleAnalytics">
+                                            <i class="bi bi-graph-up-arrow text-info"></i> Google Analytics
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Settings/Security">
+                                            <i class="bi bi-shield-check text-primary"></i> Security Settings
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Security/AuditLog">
+                                            <i class="bi bi-clock-history text-info"></i> Security Audit Log
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Settings/SaveSslCertificate">
+                                            <i class="bi bi-shield-lock-fill text-success"></i> SSL Certificate
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Admin/Settings/ApiKeys">
+                                            <i class="bi bi-key-fill text-warning"></i> API Keys & Credentials
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            @{
+                                var cartItemCount = CartService.GetCartItemCount();
+                            }
+                            <a class="nav-link position-relative" asp-page="/Cart/Index" title="Shopping Cart">
+                                <i class="bi bi-cart3" style="font-size: 1.5rem;"></i>
+                                @if (cartItemCount > 0)
+                                {
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        @cartItemCount
+                                        <span class="visually-hidden">items in cart</span>
+                                    </span>
+                                }
+                            </a>
+                        </li>
+                        <li class="nav-item d-flex align-items-center">
+                            <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+                                <span class="theme-toggle-slider">
+                                    <i class="bi bi-sun-fill theme-toggle-icon"></i>
+                                </span>
+                            </button>
+                        </li>
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i> @User.Identity?.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Orders/Index">
+                                            <i class="bi bi-box-seam"></i> My Orders
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Account/Settings">
+                                            <i class="bi bi-gear"></i> Account Settings
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Account/Logout">
+                                            <i class="bi bi-box-arrow-right"></i> Logout
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Account/Login">
+                                    <i class="bi bi-box-arrow-in-right"></i> Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Account/Register">
+                                    <i class="bi bi-person-plus"></i> Register
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <div class="container fade-in">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer mt-auto">
+        <div class="container">
+            <div class="row py-4">
+                <div class="col-md-4 mb-3">
+                    <h5 class="text-white mb-3">
+                        @if (!string.IsNullOrEmpty(siteSettings.SiteIcon))
+                        {
+                            <span class="me-2">@siteSettings.SiteIcon</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-flower2 me-2"></i>
+                        }
+                        @siteSettings.CompanyName
+                    </h5>
+                    <p class="mb-2">@siteSettings.SiteTagline</p>
+                    <div class="social-links mt-3">
+                        @if (!string.IsNullOrEmpty(siteSettings.FacebookUrl))
+                        {
+                            <a href="@siteSettings.FacebookUrl" target="_blank" rel="noopener noreferrer" class="me-3" title="Facebook">
+                                <i class="bi bi-facebook"></i>
+                            </a>
+                        }
+                        @if (!string.IsNullOrEmpty(siteSettings.TwitterUrl))
+                        {
+                            <a href="@siteSettings.TwitterUrl" target="_blank" rel="noopener noreferrer" class="me-3" title="Twitter">
+                                <i class="bi bi-twitter"></i>
+                            </a>
+                        }
+                        @if (!string.IsNullOrEmpty(siteSettings.InstagramUrl))
+                        {
+                            <a href="@siteSettings.InstagramUrl" target="_blank" rel="noopener noreferrer" class="me-3" title="Instagram">
+                                <i class="bi bi-instagram"></i>
+                            </a>
+                        }
+                        @if (!string.IsNullOrEmpty(siteSettings.LinkedInUrl))
+                        {
+                            <a href="@siteSettings.LinkedInUrl" target="_blank" rel="noopener noreferrer" class="me-3" title="LinkedIn">
+                                <i class="bi bi-linkedin"></i>
+                            </a>
+                        }
+                        @if (!string.IsNullOrEmpty(siteSettings.YouTubeUrl))
+                        {
+                            <a href="@siteSettings.YouTubeUrl" target="_blank" rel="noopener noreferrer" title="YouTube">
+                                <i class="bi bi-youtube"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <h6 class="text-white mb-3">Shop</h6>
+                    <ul class="list-unstyled">
+                        <li><a asp-page="/Products/Index">All Products</a></li>
+                        @await Component.InvokeAsync("ActiveCategories")
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <h6 class="text-white mb-3">Account</h6>
+                    <ul class="list-unstyled">
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <li><a asp-page="/Orders/Index">My Orders</a></li>
+                            <li><a asp-page="/Account/Settings">Settings</a></li>
+                            <li><a asp-page="/Account/Logout">Logout</a></li>
+                        }
+                        else
+                        {
+                            <li><a asp-page="/Orders/TrackOrder">Track Order</a></li>
+                            <li><a asp-page="/Account/Login">Login</a></li>
+                            <li><a asp-page="/Account/Register">Register</a></li>
+                        }
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6 class="text-white mb-3">Contact</h6>
+                    <ul class="list-unstyled">
+                        @if (!string.IsNullOrEmpty(siteSettings.ContactEmail))
+                        {
+                            <li><i class="bi bi-envelope me-2"></i> @siteSettings.ContactEmail</li>
+                        }
+                        @if (!string.IsNullOrEmpty(siteSettings.Phone))
+                        {
+                            <li><i class="bi bi-telephone me-2"></i> @siteSettings.Phone</li>
+                        }
+                        @if (!string.IsNullOrEmpty(siteSettings.Address))
+                        {
+                            <li><i class="bi bi-geo-alt me-2"></i> @siteSettings.Address</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+            <hr style="border-color: rgba(255, 255, 255, 0.1);">
+            <div class="row py-3">
+                <div class="col-md-6 text-center text-md-start">
+                    <small>&copy; @DateTime.Now.Year @siteSettings.CompanyName. All rights reserved.</small>
+                    <br>
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check"></i> Privacy-focused • Minimal data collection
+                    </small>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a asp-page="/Privacy" class="me-3"><small>Privacy Policy</small></a>
+                    <a asp-page="/Terms"><small>Terms of Service</small></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    @* Only allow sanitized custom footer HTML *@
+    @if (!string.IsNullOrEmpty(siteSettings.CustomFooterHtml))
+    {
+        @Html.Raw(siteSettings.CustomFooterHtml)
+    }
+    
+    <script src="~/lib/jquery/dist/jquery.min.js" integrity="" crossorigin="anonymous"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" integrity="" crossorigin="anonymous"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/enhancements.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

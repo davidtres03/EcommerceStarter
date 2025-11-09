@@ -1,0 +1,162 @@
+@page
+@model SettingsModel
+@{
+    ViewData["Title"] = "Account Settings";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="mb-4">Account Settings</h1>
+
+            @if (!string.IsNullOrEmpty(Model.StatusMessage))
+            {
+                <div class="alert @(Model.StatusMessage.Contains("Error") ? "alert-danger" : "alert-success") alert-dismissible alert-temporary fade show" role="alert">
+                    @Model.StatusMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <!-- Privacy Notice -->
+            <div class="alert alert-info border-info mb-4">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-shield-lock fs-4 me-3 text-info"></i>
+                    <div>
+                        <h6 class="alert-heading mb-2">Privacy-First Account Management</h6>
+                        <p class="mb-0 small">
+                            Your account contains only essential information: your email for login and order notifications. 
+                            We don't store names, addresses, or other personal details in your profile—keeping your data 
+                            minimal and your privacy maximized.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person-circle"></i> Account Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Email Address:</dt>
+                        <dd class="col-sm-8">@Model.Email</dd>
+
+                        <dt class="col-sm-4">Username:</dt>
+                        <dd class="col-sm-8">@Model.Username</dd>
+
+                        <dt class="col-sm-4">Account Created:</dt>
+                        <dd class="col-sm-8">@Model.CreatedAt.ToString("MMMM dd, yyyy")</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Update Email Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-envelope"></i> Update Email Address</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="ChangeEmail">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="EmailInput.NewEmail" class="form-label"></label>
+                            <input asp-for="EmailInput.NewEmail" class="form-control" placeholder="newemail@example.com" />
+                            <span asp-validation-for="EmailInput.NewEmail" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="EmailInput.Password" class="form-label"></label>
+                            <input asp-for="EmailInput.Password" class="form-control" type="password" />
+                            <span asp-validation-for="EmailInput.Password" class="text-danger"></span>
+                            <small class="form-text text-muted">Confirm your current password</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Update Email</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Change Password Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-key"></i> Change Password</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="ChangePassword">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="PasswordInput.OldPassword" class="form-label"></label>
+                            <input asp-for="PasswordInput.OldPassword" class="form-control" type="password" />
+                            <span asp-validation-for="PasswordInput.OldPassword" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="PasswordInput.NewPassword" class="form-label"></label>
+                            <input asp-for="PasswordInput.NewPassword" class="form-control" type="password" />
+                            <span asp-validation-for="PasswordInput.NewPassword" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="PasswordInput.ConfirmPassword" class="form-label"></label>
+                            <input asp-for="PasswordInput.ConfirmPassword" class="form-control" type="password" />
+                            <span asp-validation-for="PasswordInput.ConfirmPassword" class="text-danger"></span>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Privacy & Security Info -->
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-shield-check"></i> Why We Keep It Simple</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        <strong>At MyStore Supply Co., we believe less is more when it comes to your personal data.</strong>
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-check-circle text-success"></i> What We Store</h6>
+                            <ul class="small mb-0">
+                                <li>Your email address</li>
+                                <li>Encrypted password</li>
+                                <li>Account creation date</li>
+                                <li>Order history (with per-order shipping)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-x-circle text-danger"></i> What We Don't Store</h6>
+                            <ul class="small mb-0">
+                                <li>Your name in your profile</li>
+                                <li>Permanent address</li>
+                                <li>Phone number in profile</li>
+                                <li>Birth date or demographics</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="mt-3 mb-2">The Benefits for You:</h6>
+                    <ul class="mb-0 small">
+                        <li><strong>Enhanced Privacy:</strong> Less personal data means less risk if there's ever a data breach</li>
+                        <li><strong>Flexibility:</strong> Ship to different addresses for gifts, work, vacation homes—without updating your profile</li>
+                        <li><strong>Control:</strong> Your data, your choice. We only keep what's absolutely necessary</li>
+                        <li><strong>Peace of Mind:</strong> No outdated personal information sitting in our database</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a asp-page="/Index" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

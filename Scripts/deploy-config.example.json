@@ -1,0 +1,33 @@
+{
+  "$schema": "./deploy-config.schema.json",
+  "_comment": "Example configuration for automated EcommerceStarter deployment",
+  
+  "companyName": "My Awesome Store",
+  "siteTagline": "Quality Products, Great Prices",
+  
+  "adminEmail": "admin@mystore.com",
+  "adminPassword": "ChangeThisPassword123!",
+  
+  "database": {
+    "server": "localhost\\SQLEXPRESS",
+    "name": "MyStore"
+  },
+  
+  "website": {
+    "siteName": "MyAwesomeStore",
+    "domain": "www.mystore.com",
+    "port": 443
+  },
+  
+  "stripe": {
+    "publishableKey": "pk_test_YOUR_PUBLISHABLE_KEY_HERE",
+    "secretKey": "sk_test_YOUR_SECRET_KEY_HERE"
+  },
+  
+  "email": {
+    "provider": "Resend",
+    "resend": {
+      "apiKey": "re_YOUR_RESEND_API_KEY_HERE"
+    }
+  }
+}
