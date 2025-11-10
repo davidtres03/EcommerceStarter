@@ -1,0 +1,156 @@
+@page
+@model DashboardModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Admin Dashboard</h1>
+        <div>
+            <a asp-page="/Admin/AdminUsers" class="btn btn-outline-danger me-2">
+                <i class="bi bi-shield-lock"></i> Manage Admins
+            </a>
+            <a asp-page="/Admin/RegisterAdmin" class="btn btn-danger">
+                <i class="bi bi-shield-plus"></i> Add Admin User
+            </a>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Products</h5>
+                    <h2>@Model.TotalProducts</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Total Orders</h5>
+                    <h2>@Model.TotalOrders</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Total Customers</h5>
+                    <h2>@Model.TotalCustomers</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Revenue</h5>
+                    <h2>$@Model.TotalRevenue.ToString("N2")</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-box-seam" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Manage Products</h5>
+                    <p class="card-text flex-grow-1">Add, edit, or remove products</p>
+                    <a asp-page="/Admin/Products/Index" class="btn btn-primary mt-auto">Go to Products</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-cart" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Manage Orders</h5>
+                    <p class="card-text flex-grow-1">View and process orders</p>
+                    <a asp-page="/Admin/Orders/Index" class="btn btn-primary mt-auto">Go to Orders</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-people" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Manage Customers</h5>
+                    <p class="card-text flex-grow-1">View and manage users</p>
+                    <a asp-page="/Admin/Customers/Index" class="btn btn-primary mt-auto">Go to Customers</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-danger h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-shield-lock text-danger" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Admin Users</h5>
+                    <p class="card-text flex-grow-1">Manage administrator accounts</p>
+                    <a asp-page="/Admin/AdminUsers" class="btn btn-danger mt-auto">Manage Admins</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Row -->
+    <h3 class="mt-4 mb-3">Settings & Configuration</h3>
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card border-secondary h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-palette-fill text-secondary" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Branding & Theme</h5>
+                    <p class="card-text flex-grow-1">Customize site appearance & colors</p>
+                    <a asp-page="/Admin/Settings/Branding" class="btn btn-secondary mt-auto">Customize Branding</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-key-fill text-warning" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">API Keys & Credentials</h5>
+                    <p class="card-text flex-grow-1">Stripe, USPS, UPS, FedEx tracking</p>
+                    <a asp-page="/Admin/Settings/ApiKeys" class="btn btn-warning mt-auto">Manage API Keys</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-shield-lock-fill text-success" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">SSL Certificate</h5>
+                    <p class="card-text flex-grow-1">Manage SSL/TLS certificates</p>
+                    <a asp-page="/Admin/Settings/SaveSslCertificate" class="btn btn-success mt-auto">Manage Certificate</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-shield-check text-primary" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Security Settings</h5>
+                    <p class="card-text flex-grow-1">Configure security & intrusion detection</p>
+                    <a asp-page="/Admin/Settings/Security" class="btn btn-primary mt-auto">Configure Security</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Settings Row -->
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card border-dark h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-clock-history text-dark" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Security Audit Log</h5>
+                    <p class="card-text flex-grow-1">View security events & blocked IPs</p>
+                    <a asp-page="/Admin/Security/AuditLog" class="btn btn-dark mt-auto">View Audit Log</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

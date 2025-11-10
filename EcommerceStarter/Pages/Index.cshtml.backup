@@ -1,0 +1,135 @@
+@page "{category?}/{subcategory?}"
+@model CapAndCollarSupplyCo.Pages.IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="hero-section position-relative mb-5">
+    <img src="~/images/hero-banner.jpg" class="w-100" style="height: 500px; object-fit: cover;" alt="Mushroom Banner">
+    <div class="position-absolute top-50 start-50 translate-middle text-center text-white">
+        <h1 class="display-4 fw-bold">Welcome to Cap & Collar Supply Co.</h1>
+        <p class="lead">Your One-Stop Shop for Mushroom Apparel and Growing Supplies</p>
+        <a href="/Products" class="btn btn-primary btn-lg">Shop Now</a>
+    </div>
+</div>
+
+<div class="featured-categories mb-5">
+    <h2 class="text-center mb-4">Shop by Category</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <img src="~/images/apparel-category.jpg" class="card-img-top" alt="Apparel">
+                <div class="card-body">
+                    <h5 class="card-title">Apparel</h5>
+                    <p class="card-text">Show your love for mushrooms with our unique collection of t-shirts, hats, and hoodies.</p>
+                    <a href="/Apparel" class="btn btn-outline-primary">Shop Apparel</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <img src="~/images/drinkware-category.jpg" class="card-img-top" alt="Drinkware">
+                <div class="card-body">
+                    <h5 class="card-title">Drinkware</h5>
+                    <p class="card-text">Enjoy your favorite beverages in style with our mushroom-themed mugs and tumblers.</p>
+                    <a href="/Drinkware" class="btn btn-outline-primary">Shop Drinkware</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <img src="~/images/growing-category.jpg" class="card-img-top" alt="Growing Supplies">
+                <div class="card-body">
+                    <h5 class="card-title">Growing Supplies</h5>
+                    <p class="card-text">Everything you need for successful mushroom cultivation, from spawn to substrate.</p>
+                    <a href="/Growing" class="btn btn-outline-primary">Shop Supplies</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Products.Any())
+{
+    <div class="featured-products mb-5">
+        <h2 class="text-center mb-4">Featured Products</h2>
+        <div class="row g-4">
+            @foreach (var product in Model.Products)
+            {
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <img src="@product.ImageUrl" class="card-img-top" alt="@product.Name">
+                        <div class="card-body">
+                            <h5 class="card-title">@product.Name</h5>
+                            <p class="card-text">@product.Description</p>
+                            <p class="card-text"><strong>$@product.Price.ToString("0.00")</strong></p>
+                            <button class="btn btn-primary add-to-cart" data-product-id="@product.Id">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<div class="why-choose-us bg-light py-5 mb-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Why Choose Us</h2>
+        <div class="row g-4">
+            <div class="col-md-3 text-center">
+                <i class="bi bi-truck display-4 mb-3"></i>
+                <h5>Fast Shipping</h5>
+                <p>Quick delivery to your doorstep</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <i class="bi bi-shield-check display-4 mb-3"></i>
+                <h5>Quality Products</h5>
+                <p>Premium materials and supplies</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <i class="bi bi-heart display-4 mb-3"></i>
+                <h5>Customer Support</h5>
+                <p>Here to help when you need us</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <i class="bi bi-arrow-repeat display-4 mb-3"></i>
+                <h5>Easy Returns</h5>
+                <p>Hassle-free return policy</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.add-to-cart').forEach(button => {
+            button.addEventListener('click', async () => {
+                const productId = button.getAttribute('data-product-id');
+                try {
+                    const response = await fetch('/api/cart', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ productId: productId, quantity: 1 })
+                    });
+                    
+                    if (response.ok) {
+                        // Update cart count
+                        const cartCount = document.querySelector('.cart-count');
+                        const count = parseInt(cartCount.textContent) + 1;
+                        cartCount.textContent = count;
+                        
+                        // Show success message
+                        alert('Product added to cart!');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to add product to cart');
+                }
+            });
+        });
+    </script>
+}
