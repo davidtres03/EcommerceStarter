@@ -206,30 +206,34 @@ public class InstallationService
 
             StatusUpdate?.Invoke(this, "Running database migrations...");
 
-            // Find the EcommerceStarter project path
-            var currentDir = AppDomain.CurrentDomain.BaseDirectory;
-            var rootDir = Directory.GetParent(currentDir)?.Parent?.Parent?.Parent?.Parent?.FullName;
-            var projectPath = Path.Combine(rootDir ?? "", "EcommerceStarter", "EcommerceStarter.csproj");
+            // Find the bundled migration executable
+            var installerDir = AppDomain.CurrentDomain.BaseDirectory;
+            var migrationBundlePath = Path.Combine(installerDir, "migrations", "efbundle.exe");
 
-            if (!File.Exists(projectPath))
+            if (!File.Exists(migrationBundlePath))
             {
                 return new OperationResult
                 {
                     Success = false,
-                    ErrorMessage = $"EcommerceStarter project not found at: {projectPath}"
+                    ErrorMessage = $"Migration bundle not found at: {migrationBundlePath}. " +
+                                  "Please ensure the installer package was built correctly using Build-PortableInstaller.ps1"
                 };
             }
 
-            // Run dotnet ef database update
+            // Build connection string for migration bundle
+            var escapedServer = server.Replace("\"", "\\\"");
+            var connectionString = $"Server={escapedServer};Database={databaseName};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
+
+            // Run the bundled migration executable
             var psi2 = new ProcessStartInfo
             {
-                FileName = "dotnet",
-                Arguments = $"ef database update --project \"{projectPath}\" --context ApplicationDbContext",
+                FileName = migrationBundlePath,
+                Arguments = $"--connection \"{connectionString}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true,
-                WorkingDirectory = Path.GetDirectoryName(projectPath)
+                WorkingDirectory = Path.GetDirectoryName(migrationBundlePath)
             };
 
             using var process = Process.Start(psi2);
@@ -238,7 +242,7 @@ public class InstallationService
                 return new OperationResult
                 {
                     Success = false,
-                    ErrorMessage = "Failed to start dotnet process"
+                    ErrorMessage = "Failed to start migration process"
                 };
             }
 
@@ -361,55 +365,105 @@ ALTER ROLE [db_owner] ADD MEMBER [{appPoolUser}];
     {
         try
         {
-            StatusUpdate?.Invoke(this, "Publishing application...");
+            StatusUpdate?.Invoke(this, "Deploying application files...");
 
-            // Find the EcommerceStarter project
-            var currentDir = AppDomain.CurrentDomain.BaseDirectory;
-            var rootDir = Directory.GetParent(currentDir)?.Parent?.Parent?.Parent?.Parent?.FullName;
-            var projectPath = Path.Combine(rootDir ?? "", "EcommerceStarter", "EcommerceStarter.csproj");
+            // Find the bundled application files
+            var installerDir = AppDomain.CurrentDomain.BaseDirectory;
+            var bundledAppPath = Path.Combine(installerDir, "app");
 
-            if (!File.Exists(projectPath))
+            if (!Directory.Exists(bundledAppPath))
             {
                 return new OperationResult
                 {
                     Success = false,
-                    ErrorMessage = $"Project not found at: {projectPath}"
+                    ErrorMessage = $"Bundled application files not found at: {bundledAppPath}. " +
+                                  "Please ensure the installer package was built correctly using Build-PortableInstaller.ps1"
                 };
             }
 
-            // Create installation directory
-            Directory.CreateDirectory(installPath);
-
-            // Publish the application
-            var psi = new ProcessStartInfo
+            // Verify critical files exist in bundle
+            var criticalFiles = new[]
             {
-                FileName = "dotnet",
-                Arguments = $"publish \"{projectPath}\" -c Release -o \"{installPath}\" --no-restore",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
+                "EcommerceStarter.dll",
+                "EcommerceStarter.deps.json",
+                "EcommerceStarter.runtimeconfig.json",
+                "wwwroot"
             };
 
-            using var process = Process.Start(psi);
-            if (process == null)
+            foreach (var file in criticalFiles)
             {
-                return new OperationResult { Success = false, ErrorMessage = "Failed to start publish process" };
+                var filePath = Path.Combine(bundledAppPath, file);
+                if (!File.Exists(filePath) && !Directory.Exists(filePath))
+                {
+                    return new OperationResult
+                    {
+                        Success = false,
+                        ErrorMessage = $"Critical file/folder missing in bundle: {file}"
+                    };
+                }
             }
 
-            await process.WaitForExitAsync();
+            // Create installation directory
+            StatusUpdate?.Invoke(this, "Creating installation directory...");
+            Directory.CreateDirectory(installPath);
 
-            if (process.ExitCode != 0)
+            // Copy all files from bundled app to installation directory
+            StatusUpdate?.Invoke(this, "Copying application files...");
+            await Task.Run(() =>
             {
-                var error = await process.StandardError.ReadToEndAsync();
-                return new OperationResult { Success = false, ErrorMessage = $"Publish failed: {error}" };
+                CopyDirectory(bundledAppPath, installPath, true);
+            });
+
+            // Verify files were copied successfully
+            foreach (var file in criticalFiles)
+            {
+                var filePath = Path.Combine(installPath, file);
+                if (!File.Exists(filePath) && !Directory.Exists(filePath))
+                {
+                    return new OperationResult
+                    {
+                        Success = false,
+                        ErrorMessage = $"Critical file/folder missing after deployment: {file}"
+                    };
+                }
             }
 
-            return new OperationResult { Success = true, Message = "Application published successfully" };
+            StatusUpdate?.Invoke(this, "Application deployed successfully");
+            return new OperationResult { Success = true, Message = "Application deployed successfully" };
         }
         catch (Exception ex)
         {
-            return new OperationResult { Success = false, ErrorMessage = ex.Message };
+            return new OperationResult { Success = false, ErrorMessage = $"Deployment error: {ex.Message}" };
+        }
+    }
+
+    /// <summary>
+    /// Recursively copy directory contents
+    /// </summary>
+    private void CopyDirectory(string sourceDir, string destDir, bool overwrite = false)
+    {
+        var dir = new DirectoryInfo(sourceDir);
+
+        if (!dir.Exists)
+        {
+            throw new DirectoryNotFoundException($"Source directory not found: {sourceDir}");
+        }
+
+        // Create destination directory
+        Directory.CreateDirectory(destDir);
+
+        // Copy files
+        foreach (var file in dir.GetFiles())
+        {
+            var targetPath = Path.Combine(destDir, file.Name);
+            file.CopyTo(targetPath, overwrite);
+        }
+
+        // Copy subdirectories
+        foreach (var subDir in dir.GetDirectories())
+        {
+            var newDestDir = Path.Combine(destDir, subDir.Name);
+            CopyDirectory(subDir.FullName, newDestDir, overwrite);
         }
     }
 
@@ -502,7 +556,8 @@ ALTER ROLE [db_owner] ADD MEMBER [{appPoolUser}];
   ""Logging"": {{
     ""LogLevel"": {{
       ""Default"": ""Information"",
-      ""Microsoft.AspNetCore"": ""Warning""
+      ""Microsoft.AspNetCore"": ""Warning"",
+      ""Microsoft.EntityFrameworkCore"": ""Warning""
     }}
   }},
   ""AllowedHosts"": ""*""
@@ -510,29 +565,140 @@ ALTER ROLE [db_owner] ADD MEMBER [{appPoolUser}];
 
             await File.WriteAllTextAsync(appsettingsPath, appsettings);
 
-            // Create web.config to set ASPNETCORE_ENVIRONMENT to Production
-            // This will disable HTTPS redirection middleware if configured properly
+            // Create appsettings.Production.json with production-specific settings
+            var appsettingsProductionPath = Path.Combine(config.InstallationPath, "appsettings.Production.json");
+            var appsettingsProduction = $@"{{
+  ""Logging"": {{
+    ""LogLevel"": {{
+      ""Default"": ""Information"",
+      ""Microsoft.AspNetCore"": ""Warning"",
+      ""Microsoft.EntityFrameworkCore"": ""Warning"",
+      ""Microsoft.AspNetCore.Authentication"": ""Information"",
+      ""Microsoft.AspNetCore.Authorization"": ""Information""
+    }}
+  }},
+  ""DetailedErrors"": false,
+  ""IncludeExceptionDetails"": false
+}}";
+
+            await File.WriteAllTextAsync(appsettingsProductionPath, appsettingsProduction);
+
+            // Create web.config with comprehensive production settings
             var webConfigPath = Path.Combine(config.InstallationPath, "web.config");
+            var httpsVariable = "{HTTPS}";  // Escape IIS variable reference
             var webConfig = $@"<?xml version=""1.0"" encoding=""utf-8""?>
 <configuration>
   <location path=""."" inheritInChildApplications=""false"">
     <system.webServer>
+      <!-- Compression Settings -->
+      <urlCompression doStaticCompression=""true"" doDynamicCompression=""true"" />
+      <httpCompression>
+        <dynamicTypes>
+          <add mimeType=""application/json"" enabled=""true"" />
+          <add mimeType=""application/json; charset=utf-8"" enabled=""true"" />
+          <add mimeType=""application/javascript"" enabled=""true"" />
+          <add mimeType=""text/plain"" enabled=""true"" />
+          <add mimeType=""text/html"" enabled=""true"" />
+          <add mimeType=""text/css"" enabled=""true"" />
+        </dynamicTypes>
+      </httpCompression>
+
+      <!-- Module Handlers -->
       <handlers>
         <add name=""aspNetCore"" path=""*"" verb=""*"" modules=""AspNetCoreModuleV2"" resourceType=""Unspecified"" />
       </handlers>
+
+      <!-- ASP.NET Core Application Configuration -->
       <aspNetCore processPath=""dotnet"" arguments="".\EcommerceStarter.dll"" stdoutLogEnabled=""false"" stdoutLogFile="".\logs\stdout"" hostingModel=""inprocess"">
         <environmentVariables>
           <environmentVariable name=""ASPNETCORE_ENVIRONMENT"" value=""Production"" />
           <environmentVariable name=""ASPNETCORE_HTTPS_PORT"" value="""" />
+          <environmentVariable name=""ASPNETCORE_DETAILEDEERRORS"" value=""false"" />
         </environmentVariables>
       </aspNetCore>
+
+      <!-- Request Filtering -->
+      <security>
+        <requestFiltering>
+          <!-- Limit max upload size to 100 MB -->
+          <requestLimits maxAllowedContentLength=""104857600"" maxQueryString=""4096"" />
+        </requestFiltering>
+      </security>
+
+      <!-- Response Headers -->
+      <httpProtocol>
+        <customHeaders>
+          <add name=""X-Frame-Options"" value=""DENY"" />
+          <add name=""X-Content-Type-Options"" value=""nosniff"" />
+          <add name=""X-XSS-Protection"" value=""1; mode=block"" />
+          <add name=""Referrer-Policy"" value=""strict-origin-when-cross-origin"" />
+          <add name=""Permissions-Policy"" value=""geolocation=(), microphone=(), camera=()"" />
+        </customHeaders>
+      </httpProtocol>
+
+      <!-- Caching Configuration -->
+      <caching>
+        <profiles>
+          <add extension="".css"" policy=""CacheUntilChange"" kernelCachePolicy=""DontCache"" duration=""3600"" />
+          <add extension="".js"" policy=""CacheUntilChange"" kernelCachePolicy=""DontCache"" duration=""3600"" />
+          <add extension="".jpg"" policy=""CacheUntilChange"" kernelCachePolicy=""CacheUntilChange"" duration=""86400"" />
+          <add extension="".png"" policy=""CacheUntilChange"" kernelCachePolicy=""CacheUntilChange"" duration=""86400"" />
+          <add extension="".gif"" policy=""CacheUntilChange"" kernelCachePolicy=""CacheUntilChange"" duration=""86400"" />
+          <add extension="".woff"" policy=""CacheUntilChange"" kernelCachePolicy=""CacheUntilChange"" duration=""604800"" />
+          <add extension="".woff2"" policy=""CacheUntilChange"" kernelCachePolicy=""CacheUntilChange"" duration=""604800"" />
+        </profiles>
+      </caching>
+
+      <!-- Static Content Compression -->
+      <staticContent>
+        <clientCache cacheControlMode=""UseMaxAge"" cacheControlMaxAge=""31536000"" />
+      </staticContent>
+
+      <!-- Application Pool Recycling -->
+      <applicationPool recycleOnConfigChange=""true"" />
+
+      <!-- HTTP Strict Transport Security (HSTS) - Applied if HTTPS is used upstream -->
+      <rewrite>
+        <outboundRules>
+          <rule name=""Add Strict-Transport-Security when HTTPS"" patternSyntax=""Wildcard"">
+            <match serverVariable=""RESPONSE_HEADER_LOCATION"" pattern=""*"" negate=""false"" />
+            <conditions>
+              <add input=""{httpsVariable}"" pattern=""on"" ignoreCase=""true"" />
+            </conditions>
+            <action type=""Rewrite"" value=""max-age=31536000; includeSubDomains"" />
+          </rule>
+        </outboundRules>
+      </rewrite>
     </system.webServer>
   </location>
 </configuration>";
 
             await File.WriteAllTextAsync(webConfigPath, webConfig);
 
-            return new OperationResult { Success = true, Message = "Configuration applied successfully" };
+            // Cleanup debug files that shouldn't be in production
+            var debugFiles = new[]
+            {
+                Path.Combine(config.InstallationPath, "appsettings.Development.json"),
+                Path.Combine(config.InstallationPath, "appsettings.*.Development.json")
+            };
+
+            foreach (var pattern in debugFiles)
+            {
+                try
+                {
+                    // For simple filename, just delete if exists
+                    if (File.Exists(pattern))
+                    {
+                        File.Delete(pattern);
+                    }
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
+            }
+
+            return new OperationResult { Success = true, Message = "Production configuration applied successfully" };
         }
         catch (Exception ex)
         {
