@@ -92,7 +92,7 @@
                             {
                                 @foreach (var error in Model.Errors)
                                 {
-                                    <tr class="@(error.IsAcknowledged ? "table-light" : "")">
+                                    <tr class="@(error.IsAcknowledged ? "table-light" : "")" data-error-id="@error.Id" @(error.IsAcknowledged ? "data-acknowledged=\"true\"" : "")>
                                         <td class="small">@error.Timestamp.ToString("MMM dd HH:mm:ss")</td>
                                         <td>
                                             @if (error.Severity == "Critical")
@@ -214,20 +214,29 @@
         function acknowledgeAll() {
             if (confirm('Mark all unreviewed errors as acknowledged?')) {
                 // Get all unreviewed error IDs and acknowledge them
-                const errorIds = document.querySelectorAll('[data-error-id]:not([data-acknowledged])');
-                let acknowledged = 0;
+                const errorRows = document.querySelectorAll('tr[data-error-id]:not([data-acknowledged])');
+                
+                if (errorRows.length === 0) {
+                    alert('No unreviewed errors to acknowledge.');
+                    return;
+                }
 
-                errorIds.forEach(element => {
-                    const errorId = element.getAttribute('data-error-id');
+                let acknowledged = 0;
+                const totalErrors = errorRows.length;
+
+                errorRows.forEach(row => {
+                    const errorId = row.getAttribute('data-error-id');
                     fetch(`/api/admin/service/errors/${errorId}/acknowledge`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' }
-                    }).then(r => {
-                        acknowledged++;
-                        if (acknowledged === errorIds.length) {
-                            location.reload();
+                    }).then(response => {
+                        if (response.ok) {
+                            acknowledged++;
+                            if (acknowledged === totalErrors) {
+                                location.reload();
+                            }
                         }
-                    });
+                    }).catch(error => console.error('Error:', error));
                 });
             }
         }
