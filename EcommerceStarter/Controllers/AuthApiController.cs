@@ -11,7 +11,7 @@ namespace EcommerceStarter.Controllers
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly ILogger<AuthApiController> _logger;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             SignInManager<ApplicationUser> signInManager,
