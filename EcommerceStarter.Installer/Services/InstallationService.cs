@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -1203,65 +1204,6 @@ ALTER ROLE [db_owner] ADD MEMBER [{appPoolUser}];
         }
     }
 
-    private async Task<OperationResult> RegisterInWindowsAsync(InstallationConfig config)
-    {
-        try
-        {
-            StatusUpdate?.Invoke(this, "Registering in Programs & Features...");
-
-            // Get the path to the Uninstaller executable
-            var uninstallerPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EcommerceStarter.Installer.exe");
-            var displayIconPath = Path.Combine(config.InstallationPath, "favicon.ico");
-            var escapedUninstallerPath = uninstallerPath.Replace("\\", "\\\\");
-            var escapedDisplayIconPath = displayIconPath.Replace("\\", "\\\\");
-
-            // Write registry entries for Windows Programs & Features
-            var script = $@"
-                $regPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{config.SiteName}';
-                New-Item -Path $regPath -Force | Out-Null;
-                Set-ItemProperty -Path $regPath -Name 'DisplayName' -Value '{config.CompanyName}';
-                Set-ItemProperty -Path $regPath -Name 'Publisher' -Value 'EcommerceStarter';
-                Set-ItemProperty -Path $regPath -Name 'DisplayVersion' -Value '{VersionService.CURRENT_VERSION}';
-                Set-ItemProperty -Path $regPath -Name 'InstallLocation' -Value '{config.InstallationPath}';
-                Set-ItemProperty -Path $regPath -Name 'UninstallString' -Value '{escapedUninstallerPath}';
-                Set-ItemProperty -Path $regPath -Name 'DisplayIcon' -Value '{escapedDisplayIconPath}';
-                Set-ItemProperty -Path $regPath -Name 'NoModify' -Value 1 -Type DWord;
-                Set-ItemProperty -Path $regPath -Name 'NoRepair' -Value 1 -Type DWord;
-            ";
-
-            var psi = new ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(psi);
-            if (process == null)
-            {
-                return new OperationResult { Success = false, ErrorMessage = "Failed to start PowerShell" };
-            }
-
-            var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
-            await process.WaitForExitAsync();
-
-            if (process.ExitCode != 0)
-            {
-                return new OperationResult { Success = false, ErrorMessage = $"Registry operation failed: {error}" };
-            }
-
-            return new OperationResult { Success = true, Message = "Registered in Programs & Features" };
-        }
-        catch (Exception ex)
-        {
-            return new OperationResult { Success = false, ErrorMessage = ex.Message };
-        }
-    }
-
     /// <summary>
     /// Write installation configuration to registry for easy access and future-proofing
     /// </summary>
@@ -1526,7 +1468,7 @@ ALTER ROLE [db_owner] ADD MEMBER [{appPoolUser}];
 
             // Create new service
             var installScript = $@"
-                sc.exe create '{serviceName}' binPath= '\"{serviceExePath}\"' start= auto displayName= '{serviceName}';
+                sc.exe create '{serviceName}' binPath= '\""{serviceExePath}\""' start= auto displayName= '{serviceName}';
                 if ($LASTEXITCODE -eq 0) {{
                     sc.exe description '{serviceName}' 'Processes analytics, auditing, and monitoring for EcommerceStarter application';
                     sc.exe failure '{serviceName}' reset= 86400 actions= restart/60000/restart/60000/restart/60000;

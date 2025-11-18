@@ -421,7 +421,7 @@ If you find this project useful, please consider giving it a star! It helps othe
 
 ---
 
-**Version:** 1.2.0  
+**Version:** 1.2.0.3  
 **Last Updated:** November 17, 2025  
 **Framework:** ASP.NET Core 8.0 (Razor Pages)  
 **License:** MIT  
