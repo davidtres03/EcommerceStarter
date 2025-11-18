@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using EcommerceStarter.WindowsService.Services;
 
 /// <summary>
 /// Service for managing application updates
@@ -17,12 +18,14 @@ public class UpdateService
     private readonly HttpClient _httpClient;
     private readonly string _applicationPath;
     private readonly string _tempUpdatePath;
-    private const string VERSION_CHECK_ENDPOINT = "https://localhost:57578/api/mobile/app/version-check";
+    private readonly RegistryConfigService _registryConfig;
+    private string VersionCheckEndpoint => $"{_registryConfig.GetBaseUrl()}/api/mobile/app/version-check";
 
-    public UpdateService(ILogger<UpdateService> logger, HttpClient httpClient)
+    public UpdateService(ILogger<UpdateService> logger, HttpClient httpClient, RegistryConfigService registryConfig)
     {
         _logger = logger;
         _httpClient = httpClient;
+        _registryConfig = registryConfig;
         _applicationPath = AppDomain.CurrentDomain.BaseDirectory;
         _tempUpdatePath = Path.Combine(Path.GetTempPath(), "EcommerceStarter-Updates");
     }
@@ -37,7 +40,7 @@ public class UpdateService
             _logger.LogInformation("Checking for updates. Current version: {version}", currentVersion);
 
             var response = await _httpClient.GetAsync(
-                $"{VERSION_CHECK_ENDPOINT}?currentVersion={Uri.EscapeDataString(currentVersion)}",
+                $"{VersionCheckEndpoint}?currentVersion={Uri.EscapeDataString(currentVersion)}",
                 cancellationToken);
 
             if (!response.IsSuccessStatusCode)

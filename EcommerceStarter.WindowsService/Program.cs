@@ -18,6 +18,7 @@ if (isService)
 builder.Services.AddHttpClient();
 
 // Add custom services
+builder.Services.AddSingleton<EcommerceStarter.WindowsService.Services.RegistryConfigService>();
 builder.Services.AddScoped<UpdateService>();
 builder.Services.AddHostedService<BackgroundServiceWorker>();
 

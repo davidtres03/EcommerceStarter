@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using EcommerceStarter.WindowsService.Services;
 
 /// <summary>
 /// Background service worker for EcommerceStarter
@@ -17,6 +18,7 @@ public class BackgroundServiceWorker : BackgroundService
     private readonly HttpClient _httpClient;
     private readonly UpdateService _updateService;
     private readonly IConfiguration _configuration;
+    private readonly RegistryConfigService _registryConfig;
     private DateTime _lastHealthCheck = DateTime.MinValue;
     private DateTime _lastUpdateCheck = DateTime.MinValue;
     private DateTime _lastQueueProcessing = DateTime.MinValue;
@@ -30,14 +32,15 @@ public class BackgroundServiceWorker : BackgroundService
     private const int UPDATE_CHECK_INTERVAL_HOURS = 24;
     private const int QUEUE_PROCESSING_INTERVAL_SECONDS = 30;
     private const int STATUS_LOG_INTERVAL_MINUTES = 5;
-    private string ECOMMERCE_STARTER_URL => _configuration["EcommerceStarterUrl"] ?? "https://localhost:57578";
+    private string ECOMMERCE_STARTER_URL => _registryConfig.GetBaseUrl(_configuration["EcommerceStarterUrl"] ?? "http://localhost:8080");
 
-    public BackgroundServiceWorker(ILogger<BackgroundServiceWorker> logger, HttpClient httpClient, UpdateService updateService, IConfiguration configuration)
+    public BackgroundServiceWorker(ILogger<BackgroundServiceWorker> logger, HttpClient httpClient, UpdateService updateService, IConfiguration configuration, RegistryConfigService registryConfig)
     {
         _logger = logger;
         _httpClient = httpClient;
         _updateService = updateService;
         _configuration = configuration;
+        _registryConfig = registryConfig;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
