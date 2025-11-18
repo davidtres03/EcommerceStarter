@@ -22,11 +22,16 @@ namespace EcommerceStarter.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<SecurityAuditService> _logger;
+        private readonly IQueuedEventService? _queuedEventService;
 
-        public SecurityAuditService(ApplicationDbContext context, ILogger<SecurityAuditService> logger)
+        public SecurityAuditService(
+            ApplicationDbContext context, 
+            ILogger<SecurityAuditService> logger,
+            IQueuedEventService? queuedEventService = null)
         {
             _context = context;
             _logger = logger;
+            _queuedEventService = queuedEventService;
         }
 
         public async Task LogSecurityEventAsync(string eventType, string severity, string ipAddress, 
@@ -35,29 +40,55 @@ namespace EcommerceStarter.Services
         {
             try
             {
-                var logEntry = new SecurityAuditLog
+                // For critical events, write immediately to database
+                if (severity == "Critical" || severity == "High" || isBlocked)
                 {
-                    EventType = eventType,
-                    Severity = severity,
-                    IpAddress = ipAddress,
-                    UserId = userId,
-                    UserEmail = userEmail,
-                    Details = details,
-                    Endpoint = endpoint,
-                    UserAgent = userAgent,
-                    IsBlocked = isBlocked,
-                    Timestamp = DateTime.UtcNow
-                };
+                    var logEntry = new SecurityAuditLog
+                    {
+                        EventType = eventType,
+                        Severity = severity,
+                        IpAddress = ipAddress,
+                        UserId = userId,
+                        UserEmail = userEmail,
+                        Details = details,
+                        Endpoint = endpoint,
+                        UserAgent = userAgent,
+                        IsBlocked = isBlocked,
+                        Timestamp = DateTime.UtcNow
+                    };
 
-                _context.SecurityAuditLogs.Add(logEntry);
-                await _context.SaveChangesAsync();
+                    _context.SecurityAuditLogs.Add(logEntry);
+                    await _context.SaveChangesAsync();
 
-                // Log to application logs for critical events
-                if (severity == "Critical" || severity == "High")
-                {
                     _logger.LogWarning(
                         "Security Event: {EventType} | Severity: {Severity} | IP: {IpAddress} | User: {UserEmail} | Details: {Details}",
                         eventType, severity, ipAddress, userEmail ?? "Unknown", details ?? "None");
+                }
+                else if (_queuedEventService != null)
+                {
+                    // For non-critical events, queue for batch processing
+                    _queuedEventService.QueueSecurityAudit(eventType, severity, ipAddress, 
+                        userId, userEmail, details, endpoint, userAgent, isBlocked);
+                }
+                else
+                {
+                    // Fallback: write directly if queue service not available
+                    var logEntry = new SecurityAuditLog
+                    {
+                        EventType = eventType,
+                        Severity = severity,
+                        IpAddress = ipAddress,
+                        UserId = userId,
+                        UserEmail = userEmail,
+                        Details = details,
+                        Endpoint = endpoint,
+                        UserAgent = userAgent,
+                        IsBlocked = isBlocked,
+                        Timestamp = DateTime.UtcNow
+                    };
+
+                    _context.SecurityAuditLogs.Add(logEntry);
+                    await _context.SaveChangesAsync();
                 }
             }
             catch (Exception ex)

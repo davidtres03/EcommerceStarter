@@ -102,6 +102,16 @@
     <h3 class="mt-4 mb-3">System Monitoring</h3>
     <div class="row">
         <div class="col-md-3 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-graph-up text-success" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Analytics</h5>
+                    <p class="card-text flex-grow-1">Visitor tracking & site analytics</p>
+                    <a asp-page="/Admin/Analytics" class="btn btn-success mt-auto">View Analytics</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
             <div class="card border-info h-100">
                 <div class="card-body text-center d-flex flex-column">
                     <i class="bi bi-speedometer2 text-info" style="font-size: 3rem;"></i>
@@ -187,10 +197,16 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Additional Settings Row -->
-    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card border-info h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-graph-up-arrow text-info" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Google Analytics</h5>
+                    <p class="card-text flex-grow-1">Configure Google Analytics tracking</p>
+                    <a asp-page="/Admin/Settings/GoogleAnalytics" class="btn btn-info mt-auto">Configure Analytics</a>
+                </div>
+            </div>
+        </div>
         <div class="col-md-3 mb-3">
             <div class="card border-dark h-100">
                 <div class="card-body text-center d-flex flex-column">
@@ -198,6 +214,16 @@
                     <h5 class="card-title mt-3">Security Audit Log</h5>
                     <p class="card-text flex-grow-1">View security events & blocked IPs</p>
                     <a asp-page="/Admin/Security/AuditLog" class="btn btn-dark mt-auto">View Audit Log</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-secondary h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-gear text-secondary" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Legacy API Keys</h5>
+                    <p class="card-text flex-grow-1">Manage legacy API configurations</p>
+                    <a asp-page="/Admin/Settings/ApiKeys" class="btn btn-secondary mt-auto">Manage Keys</a>
                 </div>
             </div>
         </div>

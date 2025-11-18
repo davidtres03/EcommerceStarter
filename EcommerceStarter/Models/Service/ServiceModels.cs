@@ -57,6 +57,11 @@ namespace EcommerceStarter.Models.Service
         public int ActiveUserCount { get; set; }
 
         /// <summary>
+        /// Current queue size for analytics/audit events
+        /// </summary>
+        public int QueueSize { get; set; }
+
+        /// <summary>
         /// Any error or warning message
         /// </summary>
         public string? ErrorMessage { get; set; }

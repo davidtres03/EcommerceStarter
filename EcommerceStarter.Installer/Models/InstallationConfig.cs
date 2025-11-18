@@ -24,6 +24,8 @@ public class InstallationConfig : INotifyPropertyChanged
     public string SiteName { get; set; } = "MyStore";
     public string Domain { get; set; } = "localhost";
     public int Port { get; set; } = 443;
+    public string WebAppUrl { get; set; } = "https://localhost"; // Public-facing URL
+    public int LocalhostPort { get; set; } = 8080; // IIS localhost port for service communication
 
     // Optional Features
     public bool ConfigureStripe { get; set; } = false;

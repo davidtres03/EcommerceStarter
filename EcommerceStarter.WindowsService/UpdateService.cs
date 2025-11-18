@@ -17,7 +17,7 @@ public class UpdateService
     private readonly HttpClient _httpClient;
     private readonly string _applicationPath;
     private readonly string _tempUpdatePath;
-    private const string VERSION_CHECK_ENDPOINT = "http://localhost:5000/api/mobile/app/version-check";
+    private const string VERSION_CHECK_ENDPOINT = "https://localhost:57578/api/mobile/app/version-check";
 
     public UpdateService(ILogger<UpdateService> logger, HttpClient httpClient)
     {

@@ -210,17 +210,41 @@ public class UpgradeService
             }
             ReportProgress(currentStep, 85, "Migrations complete");
 
-            // Step 7: Start IIS (85-100%)
-            ReportProgress(++currentStep, 90, "Starting IIS Application Pool...");
-            StatusUpdate?.Invoke(this, "[UpgradeService] Step 7: Starting IIS...");
+            // Step 7: Upgrade Windows Service (85-90%)
+            ReportProgress(++currentStep, 87, "Upgrading Windows Service...");
+            StatusUpdate?.Invoke(this, "[UpgradeService] Step 7: Upgrading Windows Service...");
+            var serviceResult = await UpgradeWindowsServiceAsync(tempExtractPath, installation.DatabaseServer, installation.DatabaseName);
+            if (!serviceResult.Success)
+            {
+                StatusUpdate?.Invoke(this, $"Warning: Windows Service upgrade failed: {serviceResult.Message}");
+            }
+            else
+            {
+                StatusUpdate?.Invoke(this, serviceResult.Message);
+            }
+            ReportProgress(currentStep, 90, "Windows Service upgraded");
+
+            // Step 8: Start IIS (90-95%)
+            ReportProgress(++currentStep, 92, "Starting IIS Application Pool...");
+            StatusUpdate?.Invoke(this, "[UpgradeService] Step 8: Starting IIS...");
             await StartIISAsync(installation.SiteName);
             StatusUpdate?.Invoke(this, "[UpgradeService] IIS started");
             ReportProgress(currentStep, 95, "IIS started");
 
-            // Step 8: Update registry version (95-98%)
+            // Step 9: Update registry version (95-98%)
             ReportProgress(++currentStep, 96, "Updating registry...");
-            StatusUpdate?.Invoke(this, "[UpgradeService] Step 8: Updating registry version...");
+            StatusUpdate?.Invoke(this, "[UpgradeService] Step 9: Updating registry version...");
             await UpdateRegistryVersionAsync(installation.SiteName, newVersion);
+            await UpdateRegistryConfigurationAsync(installation);
+            
+            // Run registry migrations to bring schema up to date
+            var migrationService = new RegistryMigrationService(_logger);
+            var registryMigrationResult = await migrationService.RunMigrationsAsync(installation.SiteName);
+            if (registryMigrationResult.AppliedMigrations.Count > 0)
+            {
+                StatusUpdate?.Invoke(this, $"✓ Applied {registryMigrationResult.AppliedMigrations.Count} registry migration(s)");
+            }
+            
             StatusUpdate?.Invoke(this, "[UpgradeService] Registry updated");
             ReportProgress(currentStep, 98, "Registry updated");
 
@@ -1285,6 +1309,340 @@ catch {{
             StatusUpdate?.Invoke(this, $"[ExtractTarGzAsync] Exception: {ex.Message}");
             throw;
         }
+    }
+
+    /// <summary>
+    /// Upgrade the Windows Service to the new version
+    /// </summary>
+    private async Task<OperationResult> UpgradeWindowsServiceAsync(string sourceExtractPath, string dbServer, string dbName)
+    {
+        try
+        {
+            var serviceName = "EcommerceStarter Background Service";
+            var programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var servicePath = Path.Combine(programFilesPath, "EcommerceStarter", "WindowsService");
+            var serviceSourcePath = Path.Combine(sourceExtractPath, "WindowsService");
+
+            // Check if service source files exist in upgrade package
+            if (!Directory.Exists(serviceSourcePath))
+            {
+                StatusUpdate?.Invoke(this, "Windows Service files not found in upgrade package - skipping");
+                return new OperationResult 
+                { 
+                    Success = true, 
+                    Message = "Windows Service not included in upgrade package (will use existing)" 
+                };
+            }
+
+            // Check if service is currently installed
+            var serviceExistsScript = $@"
+                $service = Get-Service -Name '{serviceName}' -ErrorAction SilentlyContinue;
+                if ($service) {{ Write-Output 'EXISTS' }} else {{ Write-Output 'NOT_FOUND' }}
+            ";
+
+            var checkPsi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{serviceExistsScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            string serviceStatus;
+            using (var checkProcess = Process.Start(checkPsi))
+            {
+                if (checkProcess == null)
+                {
+                    return new OperationResult { Success = false, ErrorMessage = "Could not check service status" };
+                }
+                serviceStatus = (await checkProcess.StandardOutput.ReadToEndAsync()).Trim();
+                await checkProcess.WaitForExitAsync();
+            }
+
+            if (serviceStatus != "EXISTS")
+            {
+                StatusUpdate?.Invoke(this, "Windows Service not currently installed - skipping upgrade");
+                return new OperationResult 
+                { 
+                    Success = true, 
+                    Message = "Windows Service was not installed (skipped)" 
+                };
+            }
+
+            StatusUpdate?.Invoke(this, "Stopping Windows Service...");
+
+            // Stop the service
+            var stopScript = $@"
+                Stop-Service -Name '{serviceName}' -Force -ErrorAction SilentlyContinue;
+                Start-Sleep -Seconds 3;
+                Write-Output 'Service stopped';
+            ";
+
+            var stopPsi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{stopScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using (var stopProcess = Process.Start(stopPsi))
+            {
+                if (stopProcess != null)
+                {
+                    await stopProcess.WaitForExitAsync();
+                }
+            }
+
+            // Backup current appsettings.json (preserve configuration)
+            var currentSettingsPath = Path.Combine(servicePath, "appsettings.json");
+            var backupSettingsPath = Path.Combine(servicePath, "appsettings.json.backup");
+            
+            if (File.Exists(currentSettingsPath))
+            {
+                File.Copy(currentSettingsPath, backupSettingsPath, overwrite: true);
+                StatusUpdate?.Invoke(this, "Backed up Windows Service configuration");
+            }
+
+            // Copy new service files
+            StatusUpdate?.Invoke(this, "Copying new Windows Service files...");
+            await CopyDirectoryAsync(serviceSourcePath, servicePath);
+
+            // Restore configuration if backup exists
+            if (File.Exists(backupSettingsPath))
+            {
+                File.Copy(backupSettingsPath, currentSettingsPath, overwrite: true);
+                File.Delete(backupSettingsPath);
+                StatusUpdate?.Invoke(this, "Restored Windows Service configuration");
+            }
+            else
+            {
+                // No backup - create new settings
+                var escapedServer = dbServer.Replace(@"\", @"\\");
+                var connectionString = $"Server={escapedServer};Database={dbName};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
+
+                var serviceSettings = $@"{{
+  ""Logging"": {{
+    ""LogLevel"": {{
+      ""Default"": ""Information"",
+      ""Microsoft.Hosting.Lifetime"": ""Information""
+    }}
+  }},
+  ""EcommerceStarterUrl"": ""http://localhost:8080"",
+  ""ConnectionStrings"": {{
+    ""DefaultConnection"": ""{connectionString}""
+  }}
+}}";
+
+                await File.WriteAllTextAsync(currentSettingsPath, serviceSettings);
+                StatusUpdate?.Invoke(this, "Created Windows Service configuration");
+            }
+
+            // Start the service
+            StatusUpdate?.Invoke(this, "Starting Windows Service...");
+            var startScript = $@"
+                Start-Service -Name '{serviceName}' -ErrorAction SilentlyContinue;
+                Start-Sleep -Seconds 2;
+                $service = Get-Service -Name '{serviceName}';
+                if ($service.Status -eq 'Running') {{
+                    Write-Output 'Service started successfully';
+                }} else {{
+                    Write-Error 'Service failed to start';
+                    exit 1;
+                }}
+            ";
+
+            var startPsi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{startScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using (var startProcess = Process.Start(startPsi))
+            {
+                if (startProcess == null)
+                {
+                    return new OperationResult { Success = false, ErrorMessage = "Could not start service" };
+                }
+
+                var output = await startProcess.StandardOutput.ReadToEndAsync();
+                var error = await startProcess.StandardError.ReadToEndAsync();
+                await startProcess.WaitForExitAsync();
+
+                if (startProcess.ExitCode != 0)
+                {
+                    return new OperationResult 
+                    { 
+                        Success = false, 
+                        ErrorMessage = $"Service failed to start: {error}" 
+                    };
+                }
+            }
+
+            StatusUpdate?.Invoke(this, "✓ Windows Service upgraded successfully");
+            return new OperationResult 
+            { 
+                Success = true, 
+                Message = "Windows Service upgraded and running" 
+            };
+        }
+        catch (Exception ex)
+        {
+            return new OperationResult 
+            { 
+                Success = false, 
+                ErrorMessage = $"Windows Service upgrade failed: {ex.Message}" 
+            };
+        }
+    }
+
+    /// <summary>
+    /// Recursively copy directory contents
+    /// </summary>
+    private async Task CopyDirectoryAsync(string sourceDir, string targetDir)
+    {
+        Directory.CreateDirectory(targetDir);
+
+        // Copy all files
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var fileName = Path.GetFileName(file);
+            var destFile = Path.Combine(targetDir, fileName);
+            File.Copy(file, destFile, overwrite: true);
+        }
+
+        // Copy all subdirectories
+        foreach (var directory in Directory.GetDirectories(sourceDir))
+        {
+            var dirName = Path.GetFileName(directory);
+            var destDir = Path.Combine(targetDir, dirName);
+            await CopyDirectoryAsync(directory, destDir);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Update registry configuration with current installation details
+    /// </summary>
+    private async Task UpdateRegistryConfigurationAsync(ExistingInstallation installation)
+    {
+        try
+        {
+            StatusUpdate?.Invoke(this, "Updating registry configuration...");
+
+            var escapedSiteName = installation.SiteName.Replace("'", "''");
+            var escapedDbServer = installation.DatabaseServer.Replace("\\", "\\\\").Replace("'", "''");
+            var escapedDbName = installation.DatabaseName.Replace("'", "''");
+            var escapedInstallPath = installation.InstallPath.Replace("'", "''");
+
+            var programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var serviceInstallPath = Path.Combine(programFilesPath, "EcommerceStarter", "WindowsService").Replace("'", "''");
+
+            // Try to detect localhost port from IIS
+            var localhostPort = await DetectLocalhostPortAsync(installation.SiteName);
+
+            var script = $@"
+                $configPath = 'HKLM:\SOFTWARE\EcommerceStarter\{escapedSiteName}';
+                
+                if (Test-Path $configPath) {{
+                    # Update existing configuration
+                    Set-ItemProperty -Path $configPath -Name 'InstallPath' -Value '{escapedInstallPath}' -Type String -ErrorAction SilentlyContinue;
+                    Set-ItemProperty -Path $configPath -Name 'LastUpgradeDate' -Value '{DateTime.Now:yyyy-MM-dd HH:mm:ss}' -Type String -ErrorAction SilentlyContinue;
+                    Set-ItemProperty -Path $configPath -Name 'Version' -Value '{VersionService.CURRENT_VERSION}' -Type String -ErrorAction SilentlyContinue;
+                    Set-ItemProperty -Path $configPath -Name 'DatabaseServer' -Value '{escapedDbServer}' -Type String -ErrorAction SilentlyContinue;
+                    Set-ItemProperty -Path $configPath -Name 'DatabaseName' -Value '{escapedDbName}' -Type String -ErrorAction SilentlyContinue;
+                    Set-ItemProperty -Path $configPath -Name 'ServiceInstallPath' -Value '{serviceInstallPath}' -Type String -ErrorAction SilentlyContinue;
+                    
+                    # Update localhost port if detected
+                    {(localhostPort > 0 ? $"Set-ItemProperty -Path $configPath -Name 'LocalhostPort' -Value {localhostPort} -Type DWord -ErrorAction SilentlyContinue;" : "")}
+                    {(localhostPort > 0 ? $"Set-ItemProperty -Path $configPath -Name 'ServiceUrl' -Value 'http://localhost:{localhostPort}' -Type String -ErrorAction SilentlyContinue;" : "")}
+                    
+                    Write-Output 'Configuration updated in registry';
+                }} else {{
+                    Write-Output 'Configuration not found in registry - skipping';
+                }}
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process != null)
+            {
+                await process.WaitForExitAsync();
+                StatusUpdate?.Invoke(this, "✓ Registry configuration updated");
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusUpdate?.Invoke(this, $"Warning: Could not update registry configuration: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Detect localhost port from IIS bindings
+    /// </summary>
+    private async Task<int> DetectLocalhostPortAsync(string siteName)
+    {
+        try
+        {
+            var escapedSiteName = siteName.Replace("'", "''");
+            var script = $@"
+                Import-Module WebAdministration -ErrorAction SilentlyContinue;
+                $binding = Get-WebBinding -Name '{escapedSiteName}' -ErrorAction SilentlyContinue | Select-Object -First 1;
+                if ($binding) {{
+                    $port = $binding.bindingInformation -replace '.*:(\d+):.*', '$1';
+                    Write-Output $port;
+                }} else {{
+                    Write-Output '0';
+                }}
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process != null)
+            {
+                var output = (await process.StandardOutput.ReadToEndAsync()).Trim();
+                await process.WaitForExitAsync();
+
+                if (int.TryParse(output, out int port) && port > 0)
+                {
+                    StatusUpdate?.Invoke(this, $"Detected IIS port: {port}");
+                    return port;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors - port detection is optional
+        }
+
+        return 0;
     }
 }
 

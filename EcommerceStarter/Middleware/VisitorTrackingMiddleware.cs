@@ -1,4 +1,5 @@
 using EcommerceStarter.Services.Analytics;
+using EcommerceStarter.Services;
 
 namespace EcommerceStarter.Middleware
 {
@@ -18,7 +19,7 @@ namespace EcommerceStarter.Middleware
             _logger = logger;
         }
 
-        public async Task InvokeAsync(HttpContext context, IVisitorTrackingService trackingService)
+        public async Task InvokeAsync(HttpContext context, IVisitorTrackingService trackingService, IQueuedEventService queuedEventService)
         {
             try
             {
@@ -27,15 +28,15 @@ namespace EcommerceStarter.Middleware
                 
                 if (ShouldTrack(path))
                 {
-                    // Get or create session
+                    // Get or create session (still synchronous - needed for session ID)
                     var session = await trackingService.GetOrCreateSessionAsync(context);
 
-                    // Track page view
+                    // Queue page view (non-blocking) instead of direct DB write
                     var url = context.Request.Path + context.Request.QueryString;
                     var referrer = context.Request.Headers["Referer"].ToString();
                     var pageTitle = ExtractPageTitle(path);
 
-                    await trackingService.TrackPageViewAsync(
+                    queuedEventService.QueuePageView(
                         session.Id,
                         url,
                         pageTitle,

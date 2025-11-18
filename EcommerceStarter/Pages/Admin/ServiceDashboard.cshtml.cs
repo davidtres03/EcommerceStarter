@@ -26,73 +26,89 @@ namespace EcommerceStarter.Pages.Admin
 
         public async Task OnGetAsync()
         {
-            // Get current status
-            var latestStatus = await _context.ServiceStatusLogs
-                .OrderByDescending(s => s.Timestamp)
-                .FirstOrDefaultAsync();
-
-            if (latestStatus != null)
+            try
             {
-                CurrentStatus = new ServiceStatusDto
+                // Get current status
+                var latestStatus = await _context.ServiceStatusLogs
+                    .OrderByDescending(s => s.Timestamp)
+                    .FirstOrDefaultAsync();
+
+                if (latestStatus != null)
                 {
-                    Timestamp = latestStatus.Timestamp,
-                    IsWebServiceOnline = latestStatus.IsWebServiceOnline,
-                    ResponseTimeMs = latestStatus.ResponseTimeMs,
-                    IsBackgroundServiceRunning = latestStatus.IsBackgroundServiceRunning,
-                    MemoryUsageMb = latestStatus.MemoryUsageMb,
-                    CpuUsagePercent = latestStatus.CpuUsagePercent,
-                    DatabaseConnected = latestStatus.DatabaseConnected,
-                    UptimePercent = latestStatus.UptimePercent
-                };
+                    CurrentStatus = new ServiceStatusDto
+                    {
+                        Timestamp = latestStatus.Timestamp,
+                        IsWebServiceOnline = latestStatus.IsWebServiceOnline,
+                        ResponseTimeMs = latestStatus.ResponseTimeMs,
+                        IsBackgroundServiceRunning = latestStatus.IsBackgroundServiceRunning,
+                        PendingOrdersCount = latestStatus.PendingOrdersCount,
+                        MemoryUsageMb = latestStatus.MemoryUsageMb,
+                        CpuUsagePercent = latestStatus.CpuUsagePercent,
+                        DatabaseConnected = latestStatus.DatabaseConnected,
+                        ActiveUserCount = latestStatus.ActiveUserCount,
+                        QueueSize = latestStatus.QueueSize,
+                        UptimePercent = latestStatus.UptimePercent,
+                        ErrorMessage = latestStatus.ErrorMessage
+                    };
+                }
+
+                // Get recent updates
+                RecentUpdates = await _context.UpdateHistories
+                    .OrderByDescending(u => u.AppliedAt)
+                    .Take(10)
+                    .Select(u => new UpdateHistoryDto
+                    {
+                        Id = u.Id,
+                        Version = u.Version,
+                        AppliedAt = u.AppliedAt,
+                        Status = u.Status,
+                        ReleaseNotes = u.ReleaseNotes,
+                        ErrorMessage = u.ErrorMessage,
+                        ApplyDurationSeconds = u.ApplyDurationSeconds
+                    })
+                    .ToListAsync();
+
+                // Get recent errors
+                RecentErrors = await _context.ServiceErrorLogs
+                    .Where(e => !e.IsAcknowledged)
+                    .OrderByDescending(e => e.Timestamp)
+                    .Take(10)
+                    .Select(e => new ServiceErrorDto
+                    {
+                        Id = e.Id,
+                        Timestamp = e.Timestamp,
+                        Source = e.Source,
+                        Severity = e.Severity,
+                        Message = e.Message,
+                        IsAcknowledged = e.IsAcknowledged
+                    })
+                    .ToListAsync();
+
+                // Get performance metrics (last 24 hours)
+                var last24Hours = DateTime.UtcNow.AddHours(-24);
+                var statusLogs = await _context.ServiceStatusLogs
+                    .Where(s => s.Timestamp >= last24Hours)
+                    .ToListAsync();
+
+                if (statusLogs.Any())
+                {
+                    Metrics = new PerformanceMetricsDto
+                    {
+                        AverageResponseTimeMs = (int)statusLogs.Average(s => s.ResponseTimeMs),
+                        AverageCpuUsagePercent = (decimal)statusLogs.Average(s => (double)s.CpuUsagePercent),
+                        AverageMemoryUsageMb = (int)statusLogs.Average(s => s.MemoryUsageMb),
+                        UptimePercent = (decimal)statusLogs.Average(s => s.UptimePercent)
+                    };
+                }
             }
-
-            // Get recent updates
-            RecentUpdates = await _context.UpdateHistories
-                .OrderByDescending(u => u.AppliedAt)
-                .Take(10)
-                .Select(u => new UpdateHistoryDto
-                {
-                    Id = u.Id,
-                    Version = u.Version,
-                    AppliedAt = u.AppliedAt,
-                    Status = u.Status,
-                    ReleaseNotes = u.ReleaseNotes,
-                    ErrorMessage = u.ErrorMessage,
-                    ApplyDurationSeconds = u.ApplyDurationSeconds
-                })
-                .ToListAsync();
-
-            // Get recent errors
-            RecentErrors = await _context.ServiceErrorLogs
-                .Where(e => !e.IsAcknowledged)
-                .OrderByDescending(e => e.Timestamp)
-                .Take(10)
-                .Select(e => new ServiceErrorDto
-                {
-                    Id = e.Id,
-                    Timestamp = e.Timestamp,
-                    Source = e.Source,
-                    Severity = e.Severity,
-                    Message = e.Message,
-                    IsAcknowledged = e.IsAcknowledged
-                })
-                .ToListAsync();
-
-            // Get performance metrics (last 24 hours)
-            var last24Hours = DateTime.UtcNow.AddHours(-24);
-            var statusLogs = await _context.ServiceStatusLogs
-                .Where(s => s.Timestamp >= last24Hours)
-                .ToListAsync();
-
-            if (statusLogs.Any())
+            catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Message.Contains("Invalid object name"))
             {
-                Metrics = new PerformanceMetricsDto
-                {
-                    AverageResponseTimeMs = (int)statusLogs.Average(s => s.ResponseTimeMs),
-                    AverageCpuUsagePercent = (decimal)statusLogs.Average(s => (double)s.CpuUsagePercent),
-                    AverageMemoryUsageMb = (int)statusLogs.Average(s => s.MemoryUsageMb),
-                    UptimePercent = (decimal)statusLogs.Average(s => s.UptimePercent)
-                };
+                // Service monitoring tables don't exist yet - migration needs to be run
+                // Initialize empty collections so the page doesn't crash
+                CurrentStatus = null;
+                RecentUpdates = new List<UpdateHistoryDto>();
+                RecentErrors = new List<ServiceErrorDto>();
+                Metrics = null;
             }
         }
     }
@@ -103,10 +119,12 @@ namespace EcommerceStarter.Pages.Admin
         public bool IsWebServiceOnline { get; set; }
         public int ResponseTimeMs { get; set; }
         public bool IsBackgroundServiceRunning { get; set; }
+        public int PendingOrdersCount { get; set; }
         public int MemoryUsageMb { get; set; }
         public decimal CpuUsagePercent { get; set; }
         public bool DatabaseConnected { get; set; }
         public int ActiveUserCount { get; set; }
+        public int QueueSize { get; set; }
         public decimal UptimePercent { get; set; }
         public string? ErrorMessage { get; set; }
     }

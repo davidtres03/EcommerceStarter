@@ -2,7 +2,7 @@
 @model ServiceDashboardModel
 @{
     ViewData["Title"] = "Service Dashboard";
-    Layout = "_AdminLayout";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
 <div class="container-fluid mt-4">
@@ -68,6 +68,44 @@
                         <span class="text-success fw-bold">@(Model.CurrentStatus?.UptimePercent ?? 0)%</span>
                     </p>
                     <small class="text-muted">Last checked: @(Model.CurrentStatus?.Timestamp.ToString("g") ?? "N/A")</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-primary shadow-sm">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Queue Size</h6>
+                            <h4 class="fw-bold">@(Model.CurrentStatus?.QueueSize ?? 0)</h4>
+                            <small class="text-muted">Pending events</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Active Users</h6>
+                            <h4 class="fw-bold">@(Model.CurrentStatus?.ActiveUserCount ?? 0)</h4>
+                            <small class="text-muted">Current sessions</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Pending Orders</h6>
+                            <h4 class="fw-bold">@(Model.CurrentStatus?.PendingOrdersCount ?? 0)</h4>
+                            <small class="text-muted">Awaiting processing</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Error Message</h6>
+                            @if (!string.IsNullOrEmpty(Model.CurrentStatus?.ErrorMessage))
+                            {
+                                <p class="text-danger mb-0"><small>@Model.CurrentStatus.ErrorMessage</small></p>
+                            }
+                            else
+                            {
+                                <p class="text-success mb-0"><i class="bi bi-check-circle-fill"></i> No errors</p>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

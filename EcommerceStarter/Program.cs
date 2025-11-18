@@ -193,6 +193,9 @@ builder.Services.AddScoped<ITrackingStatusService, TrackingStatusService>();
 // Register Visitor Analytics Service
 builder.Services.AddScoped<EcommerceStarter.Services.Analytics.IVisitorTrackingService, EcommerceStarter.Services.Analytics.VisitorTrackingService>();
 
+// Register Queued Event Service (for batching analytics/audit writes)
+builder.Services.AddSingleton<IQueuedEventService, QueuedEventService>();
+
 // Register Carrier Tracking Providers
 builder.Services.AddScoped<ICarrierTrackingProvider, UspsTrackingProvider>();
 // UPS and FedEx providers will be added later

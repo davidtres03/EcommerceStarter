@@ -12,15 +12,18 @@ namespace EcommerceStarter.Services.Analytics
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<VisitorTrackingService> _logger;
+        private readonly IQueuedEventService? _queuedEventService;
         private const string SessionCookieName = "visitor_session_id";
         private static readonly TimeSpan SessionTimeout = TimeSpan.FromMinutes(30);
 
         public VisitorTrackingService(
             ApplicationDbContext context,
-            ILogger<VisitorTrackingService> logger)
+            ILogger<VisitorTrackingService> logger,
+            IQueuedEventService? queuedEventService = null)
         {
             _context = context;
             _logger = logger;
+            _queuedEventService = queuedEventService;
         }
 
         /// <summary>
@@ -109,6 +112,14 @@ namespace EcommerceStarter.Services.Analytics
         {
             try
             {
+                // If queue service available, use it for non-blocking writes
+                if (_queuedEventService != null)
+                {
+                    _queuedEventService.QueuePageView(sessionId, url, pageTitle, referrer);
+                    return;
+                }
+
+                // Fallback: direct write if queue service not available
                 var pageView = new PageView
                 {
                     SessionId = sessionId,
@@ -132,7 +143,7 @@ namespace EcommerceStarter.Services.Analytics
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error tracking page view for session {SessionId}", sessionId);
+                _logger.LogError(ex, "Error tracking page view for session {SessionId}: {Url}", sessionId, url);
             }
         }
 
@@ -143,6 +154,14 @@ namespace EcommerceStarter.Services.Analytics
         {
             try
             {
+                // If queue service available, use it for non-blocking writes
+                if (_queuedEventService != null)
+                {
+                    _queuedEventService.QueueVisitorEvent(sessionId, category, action, label, value, metadata);
+                    return;
+                }
+
+                // Fallback: direct write if queue service not available
                 var visitorEvent = new VisitorEvent
                 {
                     SessionId = sessionId,

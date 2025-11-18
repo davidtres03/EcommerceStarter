@@ -163,8 +163,25 @@ public class InstallationService
             await Task.Delay(1000);
             ReportProgress(5, 90, "Configuration applied!", true);
 
-            // Step 6: Finalization (90-100%)
-            ReportProgress(6, 95, "Finalizing installation...");
+            // Step 6: Windows Service Installation (90-95%)
+            ReportProgress(6, 92, "Installing Windows Service...");
+            if (!isDebugMode)
+            {
+                var serviceResult = await InstallWindowsServiceAsync(config);
+                if (!serviceResult.Success)
+                {
+                    // Non-fatal - log warning but continue
+                    StatusUpdate?.Invoke(this, $"Warning: Could not install Windows Service: {serviceResult.ErrorMessage}");
+                    StatusUpdate?.Invoke(this, "You can install the Windows Service manually after installation.");
+                }
+                else
+                {
+                    StatusUpdate?.Invoke(this, serviceResult.Message);
+                }
+            }
+
+            // Step 7: Finalization (95-100%)
+            ReportProgress(7, 97, "Finalizing installation...");
 
             // Register in Windows Programs & Features
             if (!isDebugMode)
@@ -175,10 +192,30 @@ public class InstallationService
                     // Non-fatal - log warning but continue
                     StatusUpdate?.Invoke(this, $"Warning: Could not register in Programs & Features: {registryResult.ErrorMessage}");
                 }
+
+                // Write configuration to registry for easy access
+                var configRegistryResult = await WriteConfigurationToRegistryAsync(config);
+                if (!configRegistryResult.Success)
+                {
+                    // Non-fatal - log warning but continue
+                    StatusUpdate?.Invoke(this, $"Warning: Could not write configuration to registry: {configRegistryResult.ErrorMessage}");
+                }
+
+                // Run registry migrations to ensure schema is up to date
+                var migrationService = new RegistryMigrationService(_logger);
+                var migrationResult = await migrationService.RunMigrationsAsync(config.SiteName);
+                if (!migrationResult.Success)
+                {
+                    StatusUpdate?.Invoke(this, $"Warning: Registry migration issue: {migrationResult.ErrorMessage}");
+                }
+                else if (migrationResult.AppliedMigrations.Count > 0)
+                {
+                    StatusUpdate?.Invoke(this, $"✓ Applied {migrationResult.AppliedMigrations.Count} registry migration(s)");
+                }
             }
 
             await Task.Delay(500);
-            ReportProgress(6, 100, "Installation complete!", true);
+            ReportProgress(7, 100, "Installation complete!", true);
 
             result.Success = true;
             result.Message = "Installation completed successfully!";
@@ -1163,6 +1200,525 @@ ALTER ROLE [db_owner] ADD MEMBER [{appPoolUser}];
         catch (Exception ex)
         {
             return new OperationResult { Success = false, ErrorMessage = ex.Message };
+        }
+    }
+
+    private async Task<OperationResult> RegisterInWindowsAsync(InstallationConfig config)
+    {
+        try
+        {
+            StatusUpdate?.Invoke(this, "Registering in Programs & Features...");
+
+            // Get the path to the Uninstaller executable
+            var uninstallerPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "EcommerceStarter.Installer.exe");
+            var displayIconPath = Path.Combine(config.InstallationPath, "favicon.ico");
+            var escapedUninstallerPath = uninstallerPath.Replace("\\", "\\\\");
+            var escapedDisplayIconPath = displayIconPath.Replace("\\", "\\\\");
+
+            // Write registry entries for Windows Programs & Features
+            var script = $@"
+                $regPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{config.SiteName}';
+                New-Item -Path $regPath -Force | Out-Null;
+                Set-ItemProperty -Path $regPath -Name 'DisplayName' -Value '{config.CompanyName}';
+                Set-ItemProperty -Path $regPath -Name 'Publisher' -Value 'EcommerceStarter';
+                Set-ItemProperty -Path $regPath -Name 'DisplayVersion' -Value '{VersionService.CURRENT_VERSION}';
+                Set-ItemProperty -Path $regPath -Name 'InstallLocation' -Value '{config.InstallationPath}';
+                Set-ItemProperty -Path $regPath -Name 'UninstallString' -Value '{escapedUninstallerPath}';
+                Set-ItemProperty -Path $regPath -Name 'DisplayIcon' -Value '{escapedDisplayIconPath}';
+                Set-ItemProperty -Path $regPath -Name 'NoModify' -Value 1 -Type DWord;
+                Set-ItemProperty -Path $regPath -Name 'NoRepair' -Value 1 -Type DWord;
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process == null)
+            {
+                return new OperationResult { Success = false, ErrorMessage = "Failed to start PowerShell" };
+            }
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                return new OperationResult { Success = false, ErrorMessage = $"Registry operation failed: {error}" };
+            }
+
+            return new OperationResult { Success = true, Message = "Registered in Programs & Features" };
+        }
+        catch (Exception ex)
+        {
+            return new OperationResult { Success = false, ErrorMessage = ex.Message };
+        }
+    }
+
+    /// <summary>
+    /// Write installation configuration to registry for easy access and future-proofing
+    /// </summary>
+    private async Task<OperationResult> WriteConfigurationToRegistryAsync(InstallationConfig config)
+    {
+        try
+        {
+            StatusUpdate?.Invoke(this, "Writing configuration to registry...");
+
+            // Escape single quotes and backslashes for PowerShell
+            var escapedSiteName = config.SiteName.Replace("'", "''");
+            var escapedDbServer = config.DatabaseServer.Replace("\\", "\\\\").Replace("'", "''");
+            var escapedDbName = config.DatabaseName.Replace("'", "''");
+            var escapedInstallPath = config.InstallationPath.Replace("'", "''");
+            var escapedCompanyName = config.CompanyName.Replace("'", "''");
+            var escapedWebAppUrl = config.WebAppUrl.Replace("'", "''");
+
+            var programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var serviceInstallPath = Path.Combine(programFilesPath, "EcommerceStarter", "WindowsService").Replace("'", "''");
+
+            // Create registry entries under HKLM:\SOFTWARE\EcommerceStarter\{SiteName}
+            var script = $@"
+                $basePath = 'HKLM:\SOFTWARE\EcommerceStarter';
+                $configPath = ""$basePath\{escapedSiteName}"";
+                
+                # Create base path if it doesn't exist
+                if (-not (Test-Path $basePath)) {{
+                    New-Item -Path $basePath -Force | Out-Null;
+                }}
+                
+                # Create site-specific configuration path
+                New-Item -Path $configPath -Force | Out-Null;
+                
+                # Installation information
+                Set-ItemProperty -Path $configPath -Name 'SiteName' -Value '{escapedSiteName}' -Type String;
+                Set-ItemProperty -Path $configPath -Name 'CompanyName' -Value '{escapedCompanyName}' -Type String;
+                Set-ItemProperty -Path $configPath -Name 'InstallPath' -Value '{escapedInstallPath}' -Type String;
+                Set-ItemProperty -Path $configPath -Name 'InstallDate' -Value '{DateTime.Now:yyyy-MM-dd HH:mm:ss}' -Type String;
+                Set-ItemProperty -Path $configPath -Name 'Version' -Value '{VersionService.CURRENT_VERSION}' -Type String;
+                
+                # Database configuration
+                Set-ItemProperty -Path $configPath -Name 'DatabaseServer' -Value '{escapedDbServer}' -Type String;
+                Set-ItemProperty -Path $configPath -Name 'DatabaseName' -Value '{escapedDbName}' -Type String;
+                
+                # Web application configuration
+                Set-ItemProperty -Path $configPath -Name 'WebAppUrl' -Value '{escapedWebAppUrl}' -Type String;
+                Set-ItemProperty -Path $configPath -Name 'LocalhostPort' -Value {config.LocalhostPort} -Type DWord;
+                Set-ItemProperty -Path $configPath -Name 'Domain' -Value '{config.Domain.Replace("'", "''")}' -Type String;
+                Set-ItemProperty -Path $configPath -Name 'Port' -Value {config.Port} -Type DWord;
+                
+                # Windows Service configuration
+                Set-ItemProperty -Path $configPath -Name 'ServiceInstallPath' -Value '{serviceInstallPath}' -Type String;
+                Set-ItemProperty -Path $configPath -Name 'ServiceUrl' -Value 'http://localhost:{config.LocalhostPort}' -Type String;
+                
+                # Optional features flags
+                Set-ItemProperty -Path $configPath -Name 'StripeConfigured' -Value {(config.ConfigureStripe ? 1 : 0)} -Type DWord;
+                Set-ItemProperty -Path $configPath -Name 'EmailConfigured' -Value {(config.ConfigureEmail ? 1 : 0)} -Type DWord;
+                Set-ItemProperty -Path $configPath -Name 'EmailProvider' -Value '{config.EmailProvider}' -Type String;
+                
+                # Registry schema version (for migrations)
+                Set-ItemProperty -Path $configPath -Name 'RegistrySchemaVersion' -Value 1 -Type DWord;
+                Set-ItemProperty -Path $configPath -Name 'LastMigrationDate' -Value '{DateTime.Now:yyyy-MM-dd HH:mm:ss}' -Type String;
+                
+                Write-Output 'Configuration written to registry successfully';
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process == null)
+            {
+                return new OperationResult { Success = false, ErrorMessage = "Failed to start PowerShell" };
+            }
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                return new OperationResult { Success = false, ErrorMessage = $"Registry write failed: {error}" };
+            }
+
+            StatusUpdate?.Invoke(this, $"✓ Configuration stored in registry: HKLM\\SOFTWARE\\EcommerceStarter\\{config.SiteName}");
+            return new OperationResult { Success = true, Message = "Configuration written to registry" };
+        }
+        catch (Exception ex)
+        {
+            return new OperationResult { Success = false, ErrorMessage = ex.Message };
+        }
+    }
+
+    /// <summary>
+    /// Read installation configuration from registry
+    /// </summary>
+    public async Task<Dictionary<string, string>> ReadConfigurationFromRegistryAsync(string siteName)
+    {
+        try
+        {
+            var config = new Dictionary<string, string>();
+            var escapedSiteName = siteName.Replace("'", "''");
+
+            var script = $@"
+                $configPath = 'HKLM:\SOFTWARE\EcommerceStarter\{escapedSiteName}';
+                if (Test-Path $configPath) {{
+                    $props = Get-ItemProperty -Path $configPath;
+                    $props.PSObject.Properties | Where-Object {{ $_.Name -notlike 'PS*' }} | ForEach-Object {{
+                        Write-Output ""$($_.Name)=$($_.Value)"";
+                    }}
+                }} else {{
+                    Write-Error 'Configuration not found';
+                    exit 1;
+                }}
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process == null)
+            {
+                return config;
+            }
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode == 0)
+            {
+                foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var parts = line.Trim().Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        config[parts[0]] = parts[1];
+                    }
+                }
+            }
+
+            return config;
+        }
+        catch
+        {
+            return new Dictionary<string, string>();
+        }
+    }
+
+    /// <summary>
+    /// Install and configure the Windows Service for background processing
+    /// </summary>
+    private async Task<OperationResult> InstallWindowsServiceAsync(InstallationConfig config)
+    {
+        try
+        {
+            StatusUpdate?.Invoke(this, "Installing EcommerceStarter Background Service...");
+
+            // Service installation path under Program Files
+            var programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var servicePath = Path.Combine(programFilesPath, "EcommerceStarter", "WindowsService");
+            var serviceSourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WindowsService");
+
+            // Check if service files exist in package
+            if (!Directory.Exists(serviceSourcePath))
+            {
+                StatusUpdate?.Invoke(this, $"Windows Service files not found at: {serviceSourcePath}");
+                return new OperationResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "Windows Service files not included in installer package" 
+                };
+            }
+
+            // Create service directory
+            StatusUpdate?.Invoke(this, $"Creating service directory: {servicePath}");
+            Directory.CreateDirectory(servicePath);
+
+            // Copy service files
+            StatusUpdate?.Invoke(this, "Copying Windows Service files...");
+            await CopyDirectoryAsync(serviceSourcePath, servicePath);
+
+            // Update appsettings.json with correct URL and connection string
+            var appsettingsPath = Path.Combine(servicePath, "appsettings.json");
+            if (File.Exists(appsettingsPath))
+            {
+                StatusUpdate?.Invoke(this, "Configuring Windows Service settings...");
+                
+                // Use localhost with detected port for internal service communication
+                var webAppUrl = $"http://localhost:{config.LocalhostPort}";
+                StatusUpdate?.Invoke(this, $"Service will connect to: {webAppUrl}");
+                
+                // Escape backslashes for JSON
+                var escapedServer = config.DatabaseServer.Replace(@"\", @"\\");
+                var connectionString = $"Server={escapedServer};Database={config.DatabaseName};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
+
+                var serviceSettings = $@"{{
+  ""Logging"": {{
+    ""LogLevel"": {{
+      ""Default"": ""Information"",
+      ""Microsoft.Hosting.Lifetime"": ""Information""
+    }}
+  }},
+  ""EcommerceStarterUrl"": ""{webAppUrl}"",
+  ""ConnectionStrings"": {{
+    ""DefaultConnection"": ""{connectionString}""
+  }}
+}}";
+
+                await File.WriteAllTextAsync(appsettingsPath, serviceSettings);
+            }
+
+            // Install Windows Service using sc.exe
+            StatusUpdate?.Invoke(this, "Registering Windows Service...");
+            var serviceName = "EcommerceStarter Background Service";
+            var serviceExePath = Path.Combine(servicePath, "EcommerceStarter.WindowsService.exe");
+
+            // Check if service already exists and delete it
+            var checkScript = $@"
+                $existingService = Get-Service -Name '{serviceName}' -ErrorAction SilentlyContinue;
+                if ($existingService) {{
+                    Stop-Service -Name '{serviceName}' -Force -ErrorAction SilentlyContinue;
+                    Start-Sleep -Seconds 2;
+                    sc.exe delete '{serviceName}';
+                    Start-Sleep -Seconds 2;
+                    Write-Output 'Existing service removed';
+                }} else {{
+                    Write-Output 'No existing service found';
+                }}
+            ";
+
+            var checkPsi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{checkScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using (var checkProcess = Process.Start(checkPsi))
+            {
+                if (checkProcess != null)
+                {
+                    await checkProcess.WaitForExitAsync();
+                }
+            }
+
+            // Create new service
+            var installScript = $@"
+                sc.exe create '{serviceName}' binPath= '\"{serviceExePath}\"' start= auto displayName= '{serviceName}';
+                if ($LASTEXITCODE -eq 0) {{
+                    sc.exe description '{serviceName}' 'Processes analytics, auditing, and monitoring for EcommerceStarter application';
+                    sc.exe failure '{serviceName}' reset= 86400 actions= restart/60000/restart/60000/restart/60000;
+                    Start-Service -Name '{serviceName}';
+                    Write-Output 'Service installed and started successfully';
+                }} else {{
+                    Write-Error 'Service installation failed';
+                    exit 1;
+                }}
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{installScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process == null)
+            {
+                return new OperationResult { Success = false, ErrorMessage = "Failed to start PowerShell for service installation" };
+            }
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                StatusUpdate?.Invoke(this, $"Service installation output: {output}");
+                StatusUpdate?.Invoke(this, $"Service installation error: {error}");
+                return new OperationResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = $"Windows Service installation failed: {error}" 
+                };
+            }
+
+            StatusUpdate?.Invoke(this, "✓ Windows Service installed and running");
+            return new OperationResult 
+            { 
+                Success = true, 
+                Message = "EcommerceStarter Background Service installed successfully" 
+            };
+        }
+        catch (Exception ex)
+        {
+            return new OperationResult 
+            { 
+                Success = false, 
+                ErrorMessage = $"Windows Service installation exception: {ex.Message}" 
+            };
+        }
+    }
+
+    /// <summary>
+    /// Recursively copy directory contents
+    /// </summary>
+    private async Task CopyDirectoryAsync(string sourceDir, string targetDir)
+    {
+        Directory.CreateDirectory(targetDir);
+
+        // Copy all files
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var fileName = Path.GetFileName(file);
+            var destFile = Path.Combine(targetDir, fileName);
+            File.Copy(file, destFile, overwrite: true);
+        }
+
+        // Copy all subdirectories
+        foreach (var directory in Directory.GetDirectories(sourceDir))
+        {
+            var dirName = Path.GetFileName(directory);
+            var destDir = Path.Combine(targetDir, dirName);
+            await CopyDirectoryAsync(directory, destDir);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Reconfigure Windows Service with new URL/port settings
+    /// </summary>
+    public async Task<OperationResult> ReconfigureWindowsServiceAsync(string webAppUrl, string connectionString)
+    {
+        try
+        {
+            var programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            var servicePath = Path.Combine(programFilesPath, "EcommerceStarter", "WindowsService");
+            var appsettingsPath = Path.Combine(servicePath, "appsettings.json");
+
+            if (!File.Exists(appsettingsPath))
+            {
+                return new OperationResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "Windows Service not found. Please install the service first." 
+                };
+            }
+
+            StatusUpdate?.Invoke(this, "Stopping Windows Service...");
+
+            // Stop service
+            var stopScript = @"
+                $serviceName = 'EcommerceStarter Background Service';
+                Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue;
+                Start-Sleep -Seconds 2;
+            ";
+
+            var stopPsi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{stopScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using (var stopProcess = Process.Start(stopPsi))
+            {
+                if (stopProcess != null)
+                {
+                    await stopProcess.WaitForExitAsync();
+                }
+            }
+
+            // Update configuration
+            StatusUpdate?.Invoke(this, $"Updating service configuration to: {webAppUrl}");
+
+            var escapedConnectionString = connectionString.Replace(@"\", @"\\");
+
+            var serviceSettings = $@"{{
+  ""Logging"": {{
+    ""LogLevel"": {{
+      ""Default"": ""Information"",
+      ""Microsoft.Hosting.Lifetime"": ""Information""
+    }}
+  }},
+  ""EcommerceStarterUrl"": ""{webAppUrl}"",
+  ""ConnectionStrings"": {{
+    ""DefaultConnection"": ""{escapedConnectionString}""
+  }}
+}}";
+
+            await File.WriteAllTextAsync(appsettingsPath, serviceSettings);
+
+            // Start service
+            StatusUpdate?.Invoke(this, "Starting Windows Service...");
+
+            var startScript = @"
+                $serviceName = 'EcommerceStarter Background Service';
+                Start-Service -Name $serviceName -ErrorAction SilentlyContinue;
+                Start-Sleep -Seconds 2;
+            ";
+
+            var startPsi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{startScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using (var startProcess = Process.Start(startPsi))
+            {
+                if (startProcess != null)
+                {
+                    await startProcess.WaitForExitAsync();
+                }
+            }
+
+            return new OperationResult 
+            { 
+                Success = true, 
+                Message = "Windows Service reconfigured successfully" 
+            };
+        }
+        catch (Exception ex)
+        {
+            return new OperationResult 
+            { 
+                Success = false, 
+                ErrorMessage = $"Reconfiguration failed: {ex.Message}" 
+            };
         }
     }
 
