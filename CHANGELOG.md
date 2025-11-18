@@ -19,6 +19,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.2.2] - 2025-11-18
+
+### Added
+- 🎨 **Branding API** - New `/api/branding` endpoint for mobile apps
+  - Returns business branding configuration (colors, name, logo, support contacts)
+  - Enables dynamic theming in mobile applications
+  - Configured with Cap & Collar Supply Co branding
+  - Primary: #2E4057 (Navy), Secondary: #048A81 (Teal), Accent: #54C6EB (Sky Blue)
+
+### Changed
+- 📱 **Mobile App Theming** - Android admin app can now fetch and apply server branding automatically
+  - App theme matches website branding from server configuration
+  - Cached locally for offline use
+
 ## [1.2.2.0] - 2025-11-18
 
 ### Added
