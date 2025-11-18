@@ -1,42 +1,42 @@
 # Code of Conduct
 
-## ?? Our Pledge
+## 🛡️ Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.
 
 We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.
 
-## ?? Our Standards
+## ✨ Our Standards
 
 ### Examples of behavior that contributes to a positive environment:
 
-- ? Using welcoming and inclusive language
-- ? Being respectful of differing viewpoints and experiences
-- ? Gracefully accepting constructive criticism
-- ? Focusing on what is best for the community
-- ? Showing empathy towards other community members
-- ? Giving credit where credit is due
-- ? Being patient with new contributors
-- ? Helping others learn and grow
+- ✅ Using welcoming and inclusive language
+- ✅ Being respectful of differing viewpoints and experiences
+- ✅ Gracefully accepting constructive criticism
+- ✅ Focusing on what is best for the community
+- ✅ Showing empathy towards other community members
+- ✅ Giving credit where credit is due
+- ✅ Being patient with new contributors
+- ✅ Helping others learn and grow
 
 ### Examples of unacceptable behavior:
 
-- ? The use of sexualized language or imagery
-- ? Trolling, insulting/derogatory comments, and personal or political attacks
-- ? Public or private harassment
-- ? Publishing others' private information without explicit permission
-- ? Dismissing or attacking inclusion-focused requests
-- ? Other conduct which could reasonably be considered inappropriate in a professional setting
-- ? Sustained disruption of discussions
-- ? Unwelcome sexual attention or advances
+- ❌ The use of sexualized language or imagery
+- ❌ Trolling, insulting/derogatory comments, and personal or political attacks
+- ❌ Public or private harassment
+- ❌ Publishing others' private information without explicit permission
+- ❌ Dismissing or attacking inclusion-focused requests
+- ❌ Other conduct which could reasonably be considered inappropriate in a professional setting
+- ❌ Sustained disruption of discussions
+- ❌ Unwelcome sexual attention or advances
 
-## ????? Enforcement Responsibilities
+## 👮 Enforcement Responsibilities
 
 Project maintainers are responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any behavior that they deem inappropriate, threatening, offensive, or harmful.
 
 Project maintainers have the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that are not aligned with this Code of Conduct, and will communicate reasons for moderation decisions when appropriate.
 
-## ?? Scope
+## 🌍 Scope
 
 This Code of Conduct applies within all community spaces, including but not limited to:
 
@@ -48,7 +48,7 @@ This Code of Conduct applies within all community spaces, including but not limi
 
 This Code of Conduct also applies when an individual is officially representing the community in public spaces.
 
-## ?? Enforcement
+## ⚖️ Enforcement
 
 ### Reporting
 
@@ -91,7 +91,7 @@ Project maintainers will follow these Community Impact Guidelines in determining
 
 **Consequence:** A permanent ban from any sort of public interaction within the community.
 
-## ? Attribution
+## 📝 Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1, available at https://www.contributor-covenant.org/version/2/1/code_of_conduct.html.
 
@@ -99,7 +99,7 @@ Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcem
 
 For answers to common questions about this code of conduct, see the FAQ at https://www.contributor-covenant.org/faq. Translations are available at https://www.contributor-covenant.org/translations.
 
-## ?? Our Commitment
+## 🤝 Our Commitment
 
 We are committed to providing a welcoming and inspiring community for all. We expect all participants in our community to abide by our Code of Conduct in all interactions.
 
@@ -121,7 +121,7 @@ We are committed to providing a welcoming and inspiring community for all. We ex
 - Respect confidentiality
 - Be transparent about enforcement actions (when appropriate)
 
-## ?? Contact
+## 📧 Contact
 
 If you have questions or concerns about this Code of Conduct:
 
@@ -129,7 +129,7 @@ If you have questions or concerns about this Code of Conduct:
 - Contact project maintainers
 - Email: conduct@yourproject.com (if configured)
 
-## ?? Thank You
+## 🙏 Thank You
 
 Thank you for helping make this a welcoming, friendly community for everyone!
 
@@ -141,4 +141,4 @@ Thank you for helping make this a welcoming, friendly community for everyone!
 
 ---
 
-*Together, we create better software and a better community.* ?
+*Together, we create better software and a better community.* ❤️
