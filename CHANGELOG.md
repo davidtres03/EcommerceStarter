@@ -19,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.9] - 2025-11-18
+
+### Fixed
+- 🐛 **Service Dashboard Version Display** - Fixed version numbers showing as literal text
+  - Changed `v@update.Version` to `v@(update.Version)` in Service Dashboard
+  - Recent Updates list now displays version numbers correctly
+
 ## [1.2.1.8] - 2025-11-18
 
 ### Fixed
