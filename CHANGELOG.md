@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.8] - 2025-11-18
+
+### Fixed
+- 🐛 **Acknowledge All Button** - Fixed "Acknowledge All Unreviewed" button on Error Log page
+  - Added `data-error-id` attributes to table rows
+  - Button now properly acknowledges all unreviewed errors
+  - Added error handling and user feedback
+
 ## [1.2.1.7] - 2025-11-18
 
 ### Fixed
