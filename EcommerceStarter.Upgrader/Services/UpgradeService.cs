@@ -1818,28 +1818,39 @@ catch {{
 
     /// <summary>
     /// Record upgrade completion to registry for web app to save to UpdateHistory table on next startup
+    /// Also updates DisplayVersion in main registry location
     /// </summary>
     private async Task RecordUpgradeCompletionAsync(string siteName, string newVersion)
     {
         try
         {
             var registryPath = $@"SOFTWARE\EcommerceStarter\{siteName}\PendingUpdateHistory";
+            var mainRegistryPath = $@"SOFTWARE\EcommerceStarter\{siteName}";
+            
+            // Normalize version to 3-part format for DisplayVersion (1.2.1 instead of 1.2.1.0)
+            var parts = newVersion.Split('.');
+            var displayVersion = parts.Length >= 3 ? $"{parts[0]}.{parts[1]}.{parts[2]}" : newVersion;
             
             var timestamp = DateTime.UtcNow.ToString("o"); // ISO 8601 format
             var script = $@"
+                # Update PendingUpdateHistory (for UpdateHistoryRecorderService)
                 $regPath = 'HKLM:\{registryPath}';
-                
-                # Create registry key if it doesn't exist
                 if (!(Test-Path $regPath)) {{
                     New-Item -Path $regPath -Force | Out-Null;
                 }}
-                
-                # Write update completion details
                 Set-ItemProperty -Path $regPath -Name 'Version' -Value '{newVersion}' -Type String;
                 Set-ItemProperty -Path $regPath -Name 'CompletedAt' -Value '{timestamp}' -Type String;
                 Set-ItemProperty -Path $regPath -Name 'Status' -Value 'Success' -Type String;
                 
-                Write-Output 'Upgrade completion recorded to registry';
+                # Update main registry location (Version + DisplayVersion)
+                $mainRegPath = 'HKLM:\{mainRegistryPath}';
+                if (!(Test-Path $mainRegPath)) {{
+                    New-Item -Path $mainRegPath -Force | Out-Null;
+                }}
+                Set-ItemProperty -Path $mainRegPath -Name 'Version' -Value '{newVersion}' -Type String;
+                Set-ItemProperty -Path $mainRegPath -Name 'DisplayVersion' -Value '{displayVersion}' -Type String;
+                
+                Write-Output 'Registry updated: Version={newVersion}, DisplayVersion={displayVersion}';
             ";
 
             var psi = new ProcessStartInfo
