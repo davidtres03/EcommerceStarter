@@ -1,0 +1,106 @@
+﻿<Application x:Class="EcommerceStarter.Installer.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.modernwpf.com/2019">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Modern WPF UI Theme -->
+                <ui:ThemeResources RequestedTheme="Light" />
+                <ui:XamlControlsResources />
+                
+                <!-- Custom Styles -->
+                <ResourceDictionary>
+                    <!-- Brand Colors -->
+                    <SolidColorBrush x:Key="BrandPrimaryBrush" Color="#0d6efd"/>
+                    <SolidColorBrush x:Key="BrandSuccessBrush" Color="#198754"/>
+                    <SolidColorBrush x:Key="BrandDangerBrush" Color="#dc3545"/>
+                    <SolidColorBrush x:Key="BrandWarningBrush" Color="#ffc107"/>
+                    <SolidColorBrush x:Key="BrandInfoBrush" Color="#0dcaf0"/>
+                    
+                    <!-- Window Style -->
+                    <Style TargetType="Window" BasedOn="{StaticResource {x:Type Window}}">
+                        <Setter Property="Background" Value="{DynamicResource SystemControlPageBackgroundAltHighBrush}"/>
+                        <Setter Property="FontFamily" Value="Segoe UI"/>
+                        <Setter Property="FontSize" Value="14"/>
+                    </Style>
+                    
+                    <!-- Page Title Style -->
+                    <Style x:Key="PageTitleStyle" TargetType="TextBlock">
+                        <Setter Property="FontSize" Value="28"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Margin" Value="0,0,0,20"/>
+                        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                    </Style>
+                    
+                    <!-- Page Subtitle Style -->
+                    <Style x:Key="PageSubtitleStyle" TargetType="TextBlock">
+                        <Setter Property="FontSize" Value="14"/>
+                        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <Setter Property="TextWrapping" Value="Wrap"/>
+                        <Setter Property="Margin" Value="0,0,0,30"/>
+                    </Style>
+                    
+                    <!-- Section Header Style -->
+                    <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+                        <Setter Property="FontSize" Value="16"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Margin" Value="0,20,0,10"/>
+                    </Style>
+                    
+                    <!-- Primary Button Style -->
+                    <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+                        <Setter Property="MinWidth" Value="120"/>
+                        <Setter Property="MinHeight" Value="36"/>
+                        <Setter Property="Margin" Value="5"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                    </Style>
+                    
+                    <!-- Secondary Button Style -->
+                    <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                        <Setter Property="MinWidth" Value="120"/>
+                        <Setter Property="MinHeight" Value="36"/>
+                        <Setter Property="Margin" Value="5"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                    </Style>
+                    
+                    <!-- Form Label Style -->
+                    <Style x:Key="FormLabelStyle" TargetType="TextBlock">
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Margin" Value="0,10,0,5"/>
+                    </Style>
+                    
+                    <!-- Form TextBox Style -->
+                    <Style x:Key="FormTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+                        <Setter Property="MinHeight" Value="32"/>
+                        <Setter Property="Padding" Value="8,6"/>
+                    </Style>
+                    
+                    <!-- Form PasswordBox Style -->
+                    <Style x:Key="FormPasswordBoxStyle" TargetType="PasswordBox" BasedOn="{StaticResource DefaultPasswordBoxStyle}">
+                        <Setter Property="MinHeight" Value="32"/>
+                        <Setter Property="Padding" Value="8,6"/>
+                    </Style>
+                    
+                    <!-- Success Icon Style -->
+                    <Style x:Key="SuccessIconStyle" TargetType="TextBlock">
+                        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+                        <Setter Property="FontSize" Value="48"/>
+                        <Setter Property="Foreground" Value="{StaticResource BrandSuccessBrush}"/>
+                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                        <Setter Property="Text" Value="&#xE73E;"/> <!-- CheckMark -->
+                    </Style>
+                    
+                    <!-- Error Icon Style -->
+                    <Style x:Key="ErrorIconStyle" TargetType="TextBlock">
+                        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+                        <Setter Property="FontSize" Value="48"/>
+                        <Setter Property="Foreground" Value="{StaticResource BrandDangerBrush}"/>
+                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                        <Setter Property="Text" Value="&#xE711;"/> <!-- Error -->
+                    </Style>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

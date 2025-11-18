@@ -1,0 +1,1029 @@
+﻿@page
+@model ApiConfigurationsModel
+@{
+    ViewData["Title"] = "API Configurations";
+    var activeTab = Request.Query["tab"].ToString() ?? Model.ActiveTab ?? "stripe";
+}
+
+<style>
+    .config-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+    }
+
+    .config-card-header {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .config-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-test {
+        background-color: #cfe2ff;
+        color: #084298;
+    }
+
+    .status-live {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+
+    .config-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .config-actions .form-check.form-switch {
+        margin: 0;
+        padding: 0;
+        background: none;
+        border: none;
+    }
+
+    /* Bootstrap Toggle Switch */
+    .form-check-input {
+        width: 2.5rem;
+        height: 1.25rem;
+        margin-top: 0.125rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+
+    .form-check-input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .form-check-input:focus {
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+    }
+
+    .toggle-spinner {
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        margin-left: 0.5rem;
+    }
+
+    .config-form {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: monospace;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        border: 1px solid #dee2e6;
+    }
+
+    .form-check.form-switch {
+        padding-left: 0;
+        min-height: auto;
+    }
+
+    .form-check-label {
+        font-weight: 500;
+        cursor: pointer;
+        margin: 0;
+        user-select: none;
+    }
+
+    .form-check .form-check-input {
+        flex-shrink: 0;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .audit-log {
+        margin-top: 2rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+    }
+
+    .audit-log h5 {
+        margin-bottom: 1rem;
+    }
+
+    .audit-entry {
+        padding: 0.75rem;
+        border-left: 3px solid #0d6efd;
+        background: white;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+    }
+
+    .audit-action {
+        font-weight: 600;
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        margin-right: 0.5rem;
+    }
+
+    .audit-action.created {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .audit-action.updated {
+        background-color: #cfe2ff;
+        color: #084298;
+    }
+
+    .audit-action.deleted {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .audit-action.tested {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>API Configurations</h1>
+            <p class="text-muted">Manage all external API credentials and configurations. All values are encrypted and stored securely.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs mb-4" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @(activeTab == "stripe" ? "active" : "")" 
+                       href="?tab=stripe" 
+                       role="tab">
+                        <i class="bi bi-credit-card me-1"></i>Stripe
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @(activeTab == "cloudinary" ? "active" : "")" 
+                       href="?tab=cloudinary" 
+                       role="tab">
+                        <i class="bi bi-image me-1"></i>Cloudinary
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @(activeTab == "usps" ? "active" : "")" 
+                       href="?tab=usps" 
+                       role="tab">
+                        <i class="bi bi-box me-1"></i>USPS
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @(activeTab == "ups" ? "active" : "")" 
+                       href="?tab=ups" 
+                       role="tab">
+                        <i class="bi bi-box me-1"></i>UPS
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @(activeTab == "fedex" ? "active" : "")" 
+                       href="?tab=fedex" 
+                       role="tab">
+                        <i class="bi bi-box me-1"></i>FedEx
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @(activeTab == "claude" ? "active" : "")" 
+                       href="?tab=claude" 
+                       role="tab">
+                        <i class="bi bi-cpu me-1"></i>Claude
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @(activeTab == "ollama" ? "active" : "")" 
+                       href="?tab=ollama" 
+                       role="tab">
+                        <i class="bi bi-lightning me-1"></i>Ollama
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link @(activeTab == "audit" ? "active" : "")" 
+                       href="?tab=audit" 
+                       role="tab">
+                        <i class="bi bi-clock-history me-1"></i>Audit Log
+                    </a>
+                </li>
+            </ul>
+
+            <!-- STRIPE TAB -->
+            @if (activeTab == "stripe")
+            {
+                <h3>Stripe Configuration</h3>
+
+                @if (Model.StripeConfigurations.Any())
+                {
+                    @foreach (var config in Model.StripeConfigurations)
+                    {
+                        <div class="config-card">
+                            <div class="config-card-header">
+                                <div>
+                                    <h5>@config.Name</h5>
+                                    <small class="text-muted">@config.Description</small>
+                                </div>
+                                <div class="config-actions">
+                                    <span class="config-status @(config.IsActive ? "status-active" : "status-inactive")">
+                                        @(config.IsActive ? "✓ Active" : "✗ Inactive")
+                                    </span>
+                                    <span class="config-status @(config.IsTestMode ? "status-test" : "status-live")">
+                                        @(config.IsTestMode ? "TEST" : "LIVE")
+                                    </span>
+                                    @if (config.IsActive)
+                                    {
+                                        <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                            <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                        </span>
+                                    }
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input config-toggle" type="checkbox" 
+                                               id="toggle_@config.Id" 
+                                               data-config-id="@config.Id"
+                                               @(config.IsActive ? "checked" : "") 
+                                               onchange="toggleConfigActive(this)" />
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@config.Id)">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <h5>Add New Stripe Configuration</h5>
+                    </div>
+                    <form method="post" asp-page-handler="SaveStripe" class="config-form">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="stripePublishableKey">Publishable Key</label>
+                                    <input type="password" id="stripePublishableKey" asp-for="StripeInput.PublishableKey" placeholder="pk_live_..." />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="stripeSecretKey">Secret Key</label>
+                                    <input type="password" id="stripeSecretKey" asp-for="StripeInput.SecretKey" placeholder="sk_live_..." />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="stripeWebhookSecret">Webhook Secret</label>
+                            <input type="password" id="stripeWebhookSecret" asp-for="StripeInput.WebhookSecret" placeholder="whsec_..." />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="stripeDescription">Description</label>
+                            <textarea id="stripeDescription" asp-for="StripeInput.Description" placeholder="Optional notes about this configuration"></textarea>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input type="checkbox" id="stripeIsTestMode" asp-for="StripeInput.IsTestMode" class="form-check-input" role="switch" />
+                            <label for="stripeIsTestMode" class="form-check-label">Use Test Mode (disable for Live keys)</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </form>
+                </div>
+            }
+
+            <!-- CLOUDINARY TAB -->
+            @if (activeTab == "cloudinary")
+            {
+                <h3>Cloudinary Configuration</h3>
+
+                @if (Model.CloudinaryConfigurations.Any())
+                {
+                    @foreach (var config in Model.CloudinaryConfigurations)
+                    {
+                        <div class="config-card">
+                            <div class="config-card-header">
+                                <div>
+                                    <h5>@config.Name</h5>
+                                    <small class="text-muted">@config.Description</small>
+                                </div>
+                                <div class="config-actions">
+                                    <span class="config-status @(config.IsActive ? "status-active" : "status-inactive")">
+                                        @(config.IsActive ? "✓ Active" : "✗ Inactive")
+                                    </span>
+                                    @if (config.IsActive)
+                                    {
+                                        <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                            <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                        </span>
+                                    }
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input config-toggle" type="checkbox" 
+                                               id="toggle_@config.Id" 
+                                               data-config-id="@config.Id"
+                                               @(config.IsActive ? "checked" : "") 
+                                               onchange="toggleConfigActive(this)" />
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@config.Id)">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <h5>Add New Cloudinary Configuration</h5>
+                    </div>
+                    <form method="post" asp-page-handler="SaveCloudinary" class="config-form">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cloudinaryCloudName">Cloud Name</label>
+                                    <input type="text" id="cloudinaryCloudName" asp-for="CloudinaryInput.CloudName" placeholder="your-cloud-name" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cloudinaryApiKey">API Key</label>
+                                    <input type="password" id="cloudinaryApiKey" asp-for="CloudinaryInput.ApiKey" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cloudinaryApiSecret">API Secret</label>
+                                    <input type="password" id="cloudinaryApiSecret" asp-for="CloudinaryInput.ApiSecret" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cloudinaryDescription">Description</label>
+                            <textarea id="cloudinaryDescription" asp-for="CloudinaryInput.Description" placeholder="Optional notes about this configuration"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </form>
+                </div>
+            }
+
+            <!-- SHIPPING APIs TAB (USPS) -->
+            @if (activeTab == "usps")
+            {
+                <h3>USPS Configuration</h3>
+
+                @foreach (var uspsConfig in Model.ShippingConfigurations.Where(c => c.ApiType == "USPS"))
+                {
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div>
+                                <h5>@uspsConfig.Name</h5>
+                                <small class="text-muted">@uspsConfig.Description</small>
+                            </div>
+                            <div class="config-actions">
+                                <span class="config-status @(uspsConfig.IsActive ? "status-active" : "status-inactive")">
+                                    @(uspsConfig.IsActive ? "✓ Active" : "✗ Inactive")
+                                </span>
+                                @if (uspsConfig.IsActive)
+                                {
+                                    <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                        <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                    </span>
+                                }
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_@uspsConfig.Id" 
+                                           data-config-id="@uspsConfig.Id"
+                                           @(uspsConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@uspsConfig.Id)">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <h5>Add New USPS Configuration</h5>
+                    </div>
+                    <form method="post" asp-page-handler="SaveShipping" class="config-form">
+                        <input type="hidden" name="apiType" value="USPS" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="uspsKey1">API Key</label>
+                                    <input type="password" id="uspsKey1" asp-for="UspsInput.Key1" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="uspsKey2">Account Number</label>
+                                    <input type="text" id="uspsKey2" asp-for="UspsInput.Key2" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="uspsDescription">Description</label>
+                            <textarea id="uspsDescription" asp-for="UspsInput.Description" placeholder="USPS configuration details"></textarea>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input type="checkbox" id="uspsUseSandbox" asp-for="UspsInput.UseSandbox" class="form-check-input" role="switch" />
+                            <label for="uspsUseSandbox" class="form-check-label">Use Sandbox/Test Environment</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </form>
+                </div>
+            }
+
+            <!-- SHIPPING APIs TAB (UPS) -->
+            @if (activeTab == "ups")
+            {
+                <h3>UPS Configuration</h3>
+
+                @foreach (var upsConfig in Model.ShippingConfigurations.Where(c => c.ApiType == "UPS"))
+                {
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div>
+                                <h5>@upsConfig.Name</h5>
+                                <small class="text-muted">@upsConfig.Description</small>
+                            </div>
+                            <div class="config-actions">
+                                <span class="config-status @(upsConfig.IsActive ? "status-active" : "status-inactive")">
+                                    @(upsConfig.IsActive ? "✓ Active" : "✗ Inactive")
+                                </span>
+                                @if (upsConfig.IsActive)
+                                {
+                                    <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                        <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                    </span>
+                                }
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_@upsConfig.Id" 
+                                           data-config-id="@upsConfig.Id"
+                                           @(upsConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@upsConfig.Id)">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <h5>Add New UPS Configuration</h5>
+                    </div>
+                    <form method="post" asp-page-handler="SaveShipping" class="config-form">
+                        <input type="hidden" name="apiType" value="UPS" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="upsKey1">API Key</label>
+                                    <input type="password" id="upsKey1" asp-for="UpsInput.Key1" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="upsKey2">API Secret</label>
+                                    <input type="password" id="upsKey2" asp-for="UpsInput.Key2" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="upsKey3">Account Number</label>
+                                    <input type="text" id="upsKey3" asp-for="UpsInput.Key3" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="upsKey4">Optional Parameter</label>
+                                    <input type="text" id="upsKey4" asp-for="UpsInput.Key4" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="upsDescription">Description</label>
+                            <textarea id="upsDescription" asp-for="UpsInput.Description" placeholder="UPS configuration details"></textarea>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input type="checkbox" id="upsUseSandbox" asp-for="UpsInput.UseSandbox" class="form-check-input" role="switch" />
+                            <label for="upsUseSandbox" class="form-check-label">Use Sandbox/Test Environment</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </form>
+                </div>
+            }
+
+            <!-- SHIPPING APIs TAB (FedEx) -->
+            @if (activeTab == "fedex")
+            {
+                <h3>FedEx Configuration</h3>
+
+                @foreach (var fedexConfig in Model.ShippingConfigurations.Where(c => c.ApiType == "FedEx"))
+                {
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div>
+                                <h5>@fedexConfig.Name</h5>
+                                <small class="text-muted">@fedexConfig.Description</small>
+                            </div>
+                            <div class="config-actions">
+                                <span class="config-status @(fedexConfig.IsActive ? "status-active" : "status-inactive")">
+                                    @(fedexConfig.IsActive ? "✓ Active" : "✗ Inactive")
+                                </span>
+                                @if (fedexConfig.IsActive)
+                                {
+                                    <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                        <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                    </span>
+                                }
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_@fedexConfig.Id" 
+                                           data-config-id="@fedexConfig.Id"
+                                           @(fedexConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@fedexConfig.Id)">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <h5>Add New FedEx Configuration</h5>
+                    </div>
+                    <form method="post" asp-page-handler="SaveShipping" class="config-form">
+                        <input type="hidden" name="apiType" value="FedEx" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="fedexKey1">API Key</label>
+                                    <input type="password" id="fedexKey1" asp-for="FedexInput.Key1" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="fedexKey2">API Secret</label>
+                                    <input type="password" id="fedexKey2" asp-for="FedexInput.Key2" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="fedexKey3">Account Number</label>
+                                    <input type="text" id="fedexKey3" asp-for="FedexInput.Key3" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="fedexKey4">Meter Number</label>
+                                    <input type="text" id="fedexKey4" asp-for="FedexInput.Key4" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fedexDescription">Description</label>
+                            <textarea id="fedexDescription" asp-for="FedexInput.Description" placeholder="FedEx configuration details"></textarea>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input type="checkbox" id="fedexUseSandbox" asp-for="FedexInput.UseSandbox" class="form-check-input" role="switch" />
+                            <label for="fedexUseSandbox" class="form-check-label">Use Sandbox/Test Environment</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </form>
+                </div>
+            }
+
+            <!-- AI APIs TAB (Claude) -->
+            @if (activeTab == "claude")
+            {
+                <h3>Claude Configuration</h3>
+
+                @foreach (var claudeConfig in Model.AIConfigurations.Where(c => c.ApiType == "Claude"))
+                {
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div>
+                                <h5>@claudeConfig.Name</h5>
+                                <small class="text-muted">@claudeConfig.Description</small>
+                            </div>
+                            <div class="config-actions">
+                                <span class="config-status @(claudeConfig.IsActive ? "status-active" : "status-inactive")">
+                                    @(claudeConfig.IsActive ? "✓ Active" : "✗ Inactive")
+                                </span>
+                                @if (claudeConfig.IsActive)
+                                {
+                                    <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                        <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                    </span>
+                                }
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_@claudeConfig.Id" 
+                                           data-config-id="@claudeConfig.Id"
+                                           @(claudeConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                    <label class="form-check-label ms-2" for="toggle_@claudeConfig.Id" style="font-size: 0.875rem; color: #6c757d;">Active</label>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@claudeConfig.Id)">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <h5>Add New Claude Configuration</h5>
+                    </div>
+                    <form method="post" asp-page-handler="SaveAI" class="config-form">
+                        <input type="hidden" name="aiType" value="Claude" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="claudeApiKey">API Key</label>
+                                    <input type="password" id="claudeApiKey" asp-for="ClaudeInput.ApiKey" placeholder="sk-ant-..." />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="claudeModel">Model</label>
+                                    <input type="text" id="claudeModel" asp-for="ClaudeInput.Model" placeholder="claude-3-sonnet-20240229" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="claudeMaxTokens">Max Tokens</label>
+                                    <input type="number" id="claudeMaxTokens" asp-for="ClaudeInput.MaxTokens" value="2000" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="claudeDescription">Description</label>
+                            <textarea id="claudeDescription" asp-for="ClaudeInput.Description" placeholder="Claude configuration notes"></textarea>
+                        </div>
+
+                        <div class="form-check form-switch" style="margin-bottom: 1.5rem;">
+                            <input type="checkbox" id="claudeEnabled" asp-for="ClaudeInput.Enabled" class="form-check-input" role="switch" />
+                            <label for="claudeEnabled" class="form-check-label" style="margin-left: 0.5rem;">
+                                <strong>Enable for AI Operations</strong>
+                                <br />
+                                <small class="text-muted">When enabled, this configuration can be used for AI chat features</small>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </form>
+                </div>
+            }
+
+            <!-- AI APIs TAB (Ollama) -->
+            @if (activeTab == "ollama")
+            {
+                <h3>Ollama Configuration</h3>
+
+                @foreach (var ollamaConfig in Model.AIConfigurations.Where(c => c.ApiType == "Ollama"))
+                {
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <div>
+                                <h5>@ollamaConfig.Name</h5>
+                                <small class="text-muted">@ollamaConfig.Description</small>
+                            </div>
+                            <div class="config-actions">
+                                <span class="config-status @(ollamaConfig.IsActive ? "status-active" : "status-inactive")">
+                                    @(ollamaConfig.IsActive ? "✓ Active" : "✗ Inactive")
+                                </span>
+                                @if (ollamaConfig.IsActive)
+                                {
+                                    <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                        <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                    </span>
+                                }
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_@ollamaConfig.Id" 
+                                           data-config-id="@ollamaConfig.Id"
+                                           @(ollamaConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                    <label class="form-check-label ms-2" for="toggle_@ollamaConfig.Id" style="font-size: 0.875rem; color: #6c757d;">Active</label>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@ollamaConfig.Id)">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="config-card">
+                    <div class="config-card-header">
+                        <h5>Add New Ollama Configuration</h5>
+                    </div>
+                    <form method="post" asp-page-handler="SaveAI" class="config-form">
+                        <input type="hidden" name="aiType" value="Ollama" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="ollamaEndpoint">Endpoint URL</label>
+                                    <input type="text" id="ollamaEndpoint" asp-for="OllamaInput.Endpoint" placeholder="http://localhost:11434" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="ollamaModel">Model</label>
+                                    <input type="text" id="ollamaModel" asp-for="OllamaInput.Model" placeholder="llama2" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="ollamaMaxTokens">Max Tokens</label>
+                                    <input type="number" id="ollamaMaxTokens" asp-for="OllamaInput.MaxTokens" value="2000" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ollamaDescription">Description</label>
+                            <textarea id="ollamaDescription" asp-for="OllamaInput.Description" placeholder="Ollama configuration notes"></textarea>
+                        </div>
+
+                        <div class="form-check form-switch" style="margin-bottom: 1.5rem;">
+                            <input type="checkbox" id="ollamaEnabled" asp-for="OllamaInput.Enabled" class="form-check-input" role="switch" />
+                            <label for="ollamaEnabled" class="form-check-label" style="margin-left: 0.5rem;">
+                                <strong>Enable for AI Operations</strong>
+                                <br />
+                                <small class="text-muted">When enabled, this configuration can be used for AI chat features</small>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </form>
+                </div>
+            }
+
+            <!-- AUDIT LOG TAB -->
+            @if (activeTab == "audit")
+            {
+                <h3>Audit Log</h3>
+                <p class="text-muted">Recent changes to API configurations</p>
+
+                <div class="audit-log">
+                    @if (Model.RecentAudits.Any())
+                    {
+                        @foreach (var audit in Model.RecentAudits)
+                        {
+                            <div class="audit-entry">
+                                <span class="audit-action @audit.Action.ToLower()">@audit.Action</span>
+                                <strong>@audit.ApiConfiguration?.Name</strong>
+                                <br />
+                                <small class="text-muted">
+                                    @audit.Timestamp.ToString("MMM dd, yyyy HH:mm:ss") by @audit.UserEmail
+                                </small>
+                                @if (!string.IsNullOrEmpty(audit.TestStatus))
+                                {
+                                    <br />
+                                    <small>Test Status: <strong>@audit.TestStatus</strong></small>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">No audit logs available</p>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<form id="deleteForm" method="post" asp-page-handler="Delete" style="display:none;">
+    <input type="hidden" name="configId" id="configId" />
+</form>
+
+<script>
+    // Delete configuration with confirmation
+    function deleteConfig(configId) {
+        if (confirm('Are you sure you want to delete this configuration? This action cannot be undone.')) {
+            document.getElementById('configId').value = configId;
+            document.getElementById('deleteForm').submit();
+        }
+    }
+
+    // Toggle configuration active status with AJAX
+    async function toggleConfigActive(toggleElement) {
+        const configId = toggleElement.getAttribute('data-config-id');
+        const isActive = toggleElement.checked;
+        
+        // Disable toggle during request
+        toggleElement.disabled = true;
+        
+        try {
+            // Create form data
+            const formData = new FormData();
+            formData.append('configId', configId);
+            formData.append('isActive', isActive);
+            formData.append('__RequestVerificationToken', getCSRFToken());
+            
+            const response = await fetch('?handler=ToggleActive', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update the status badge
+                const statusSpan = toggleElement.closest('.config-actions').querySelector('.config-status:first-child');
+                if (statusSpan) {
+                    statusSpan.className = 'config-status ' + (isActive ? 'status-active' : 'status-inactive');
+                    statusSpan.textContent = isActive ? '✓ Active' : '✗ Inactive';
+                }
+                
+                // Show success toast
+                showNotification(data.message, 'success');
+            } else {
+                // Revert toggle on error
+                toggleElement.checked = !isActive;
+                showNotification('Error: ' + (data.message || 'Failed to update configuration'), 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            // Revert toggle on error
+            toggleElement.checked = !isActive;
+            showNotification('Error: ' + error.message, 'error');
+        } finally {
+            // Re-enable toggle
+            toggleElement.disabled = false;
+        }
+    }
+
+    // Get CSRF token from page
+    function getCSRFToken() {
+        // Try to find token in form
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (tokenInput) {
+            return tokenInput.value;
+        }
+        
+        // Try to find token in meta tag
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        if (tokenMeta) {
+            return tokenMeta.getAttribute('content');
+        }
+        
+        return '';
+    }
+
+    // Show notification toast
+    function showNotification(message, type = 'info') {
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Insert at top of page
+        const container = document.querySelector('.row');
+        if (container) {
+            container.insertAdjacentElement('beforebegin', alertDiv);
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    }
+</script>
