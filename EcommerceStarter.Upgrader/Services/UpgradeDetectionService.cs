@@ -13,6 +13,13 @@ namespace EcommerceStarter.Upgrader.Services;
 /// </summary>
 public class UpgradeDetectionService
 {
+    private readonly LoggerService? _logger;
+
+    public UpgradeDetectionService(LoggerService? logger = null)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// Detect if there's an existing installation
     /// </summary>
@@ -20,27 +27,19 @@ public class UpgradeDetectionService
     {
         try
         {
-            System.Diagnostics.Debug.WriteLine("[UpgradeDetectionService] === DETECTION START ===");
-
             // Check registry for existing installations
-            System.Diagnostics.Debug.WriteLine("[UpgradeDetectionService] Checking registry...");
             var registryInstallations = GetRegistryInstallations();
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Found {registryInstallations.Count} installations in registry");
 
             if (registryInstallations.Count == 0)
             {
-                System.Diagnostics.Debug.WriteLine("[UpgradeDetectionService] No existing installation found");
                 return null; // No existing installation
             }
 
             // Get the first installation found
             var installInfo = registryInstallations.First();
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Analyzing first installation: {installInfo.SiteName}");
 
             // Analyze the installation
             var analysis = await AnalyzeInstallationAsync(installInfo);
-
-            System.Diagnostics.Debug.WriteLine("[UpgradeDetectionService] === DETECTION COMPLETE ===");
 
             return new ExistingInstallation
             {
@@ -60,25 +59,9 @@ public class UpgradeDetectionService
                 Issues = analysis.Issues
             };
         }
-        catch (InvalidOperationException invalidEx)
-        {
-            System.Diagnostics.Debug.WriteLine("[UpgradeDetectionService] === DETECTION FAILED WITH InvalidOperationException ===");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Message: {invalidEx.Message}");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Source: {invalidEx.Source}");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Stack: {invalidEx.StackTrace}");
-            if (invalidEx.InnerException != null)
-            {
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Inner Exception: {invalidEx.InnerException.GetType().Name}");
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Inner Message: {invalidEx.InnerException.Message}");
-            }
-            throw; // Re-throw so caller can handle
-        }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine("[UpgradeDetectionService] === DETECTION FAILED WITH EXCEPTION ===");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Exception Type: {ex.GetType().Name}");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Message: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Stack: {ex.StackTrace}");
+            _logger?.LogError($"Installation detection failed", ex);
             throw; // Re-throw so caller can handle
         }
     }
@@ -148,35 +131,28 @@ public class UpgradeDetectionService
 
         try
         {
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Analyzing installation: {installInfo.InstallPath}");
-
             // Check if files exist
             if (!Directory.Exists(installInfo.InstallPath))
             {
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Installation directory not found");
                 analysis.IsHealthy = false;
                 analysis.Issues.Add("Installation directory not found");
+                _logger?.LogWarning($"Installation directory not found: {installInfo.InstallPath}");
                 return analysis;
             }
 
             // Read appsettings.json to get database connection
             var appsettingsPath = Path.Combine(installInfo.InstallPath, "appsettings.json");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Looking for appsettings at: {appsettingsPath}");
 
             if (File.Exists(appsettingsPath))
             {
                 var json = await File.ReadAllTextAsync(appsettingsPath);
                 var connectionString = ExtractConnectionString(json);
 
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Connection string extracted: {!string.IsNullOrEmpty(connectionString)}");
-
                 if (!string.IsNullOrEmpty(connectionString))
                 {
                     var (server, database) = ParseConnectionString(connectionString);
                     analysis.DatabaseServer = server;
                     analysis.DatabaseName = database;
-
-                    System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Database: {database} @ {server}");
 
                     // Try to connect to database and get statistics
                     var dbStats = await GetDatabaseStatisticsAsync(connectionString);
@@ -187,13 +163,12 @@ public class UpgradeDetectionService
                         analysis.OrderCount = dbStats.OrderCount;
                         analysis.UserCount = dbStats.UserCount;
                         analysis.CompanyName = dbStats.CompanyName;
-                        System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Database connection successful");
                     }
                     else
                     {
                         analysis.HasDatabase = false;
                         analysis.Issues.Add("Cannot connect to database");
-                        System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Database connection failed");
+                        _logger?.LogWarning($"Cannot connect to database: {database} @ {server}");
                     }
                 }
             }
@@ -201,15 +176,14 @@ public class UpgradeDetectionService
             {
                 analysis.IsHealthy = false;
                 analysis.Issues.Add("Configuration file not found");
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] appsettings.json not found");
+                _logger?.LogWarning($"Configuration file not found: {appsettingsPath}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Analysis error: {ex.GetType().Name}: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Stack trace: {ex.StackTrace}");
             analysis.IsHealthy = false;
             analysis.Issues.Add($"Analysis error: {ex.Message}");
+            _logger?.LogError("Installation analysis failed", ex);
         }
 
         return analysis;
@@ -222,14 +196,8 @@ public class UpgradeDetectionService
     {
         try
         {
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Attempting database connection...");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Connection string (first 100 chars): {connectionString.Substring(0, Math.Min(100, connectionString.Length))}");
-
             using var connection = new SqlConnection(connectionString);
-
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Opening connection...");
             await connection.OpenAsync();
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Connection opened successfully");
 
             var stats = new DatabaseStatistics();
 
@@ -241,11 +209,10 @@ public class UpgradeDetectionService
                     var result = await cmd.ExecuteScalarAsync();
                     stats.ProductCount = result != null ? Convert.ToInt32(result) : 0;
                 }
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Product count: {stats.ProductCount}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] ERROR getting product count: {ex.GetType().Name}: {ex.Message}");
+                _logger?.LogWarning($"Could not get product count: {ex.Message}");
                 stats.ProductCount = -1; // Indicate error
             }
 
@@ -257,11 +224,10 @@ public class UpgradeDetectionService
                     var result = await cmd.ExecuteScalarAsync();
                     stats.OrderCount = result != null ? Convert.ToInt32(result) : 0;
                 }
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Order count: {stats.OrderCount}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] ERROR getting order count: {ex.GetType().Name}: {ex.Message}");
+                _logger?.LogWarning($"Could not get order count: {ex.Message}");
                 stats.OrderCount = -1;
             }
 
@@ -273,11 +239,10 @@ public class UpgradeDetectionService
                     var result = await cmd.ExecuteScalarAsync();
                     stats.UserCount = result != null ? Convert.ToInt32(result) : 0;
                 }
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] User count: {stats.UserCount}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] ERROR getting user count: {ex.GetType().Name}: {ex.Message}");
+                _logger?.LogWarning($"Could not get user count: {ex.Message}");
                 stats.UserCount = -1;
             }
 
@@ -289,31 +254,18 @@ public class UpgradeDetectionService
                     var result = await cmd.ExecuteScalarAsync();
                     stats.CompanyName = result?.ToString() ?? "Unknown";
                 }
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Company name: {stats.CompanyName}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] ERROR getting company name: {ex.GetType().Name}: {ex.Message}");
+                _logger?.LogWarning($"Could not get company name: {ex.Message}");
                 stats.CompanyName = "Unknown";
             }
 
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Database analysis complete");
             return stats;
-        }
-        catch (InvalidOperationException invalidEx)
-        {
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] InvalidOperationException during database access: {invalidEx.Message}");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Stack trace: {invalidEx.StackTrace}");
-            if (invalidEx.InnerException != null)
-            {
-                System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Inner exception: {invalidEx.InnerException.Message}");
-            }
-            return null; // Database not accessible
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Exception during database access: {ex.GetType().Name}: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[UpgradeDetectionService] Stack trace: {ex.StackTrace}");
+            _logger?.LogWarning($"Database connection failed: {ex.Message}");
             return null; // Database not accessible
         }
     }
