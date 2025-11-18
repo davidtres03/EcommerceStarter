@@ -254,8 +254,13 @@ public partial class UpgradeProgressPage : Page
     {
         Dispatcher.Invoke(() =>
         {
+            // Hide progress section
+            ProgressSection.Visibility = Visibility.Collapsed;
+            
+            // Show result banner at top with success styling
             ResultPanel.Visibility = Visibility.Visible;
-            ProgressSection.Visibility = Visibility.Collapsed; // Hide progress bar, but keep log visible
+            ResultPanel.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(232, 245, 233)); // #E8F5E9 (light green)
+            ResultPanel.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(76, 175, 80)); // #4CAF50 (green)
 
             // Set success icon (green background, white checkmark)
             ResultIconBackground.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(76, 175, 80)); // #4CAF50
@@ -278,8 +283,13 @@ public partial class UpgradeProgressPage : Page
     {
         Dispatcher.Invoke(() =>
         {
+            // Hide progress section
+            ProgressSection.Visibility = Visibility.Collapsed;
+            
+            // Show result banner at top with error styling
             ResultPanel.Visibility = Visibility.Visible;
-            ProgressSection.Visibility = Visibility.Collapsed; // Hide progress bar, but keep log visible
+            ResultPanel.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 235, 238)); // #FFEBEE (light red)
+            ResultPanel.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(244, 67, 54)); // #F44336 (red)
 
             // Set failure icon (red background, white X)
             ResultIconBackground.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(244, 67, 54)); // #F44336
