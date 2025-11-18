@@ -19,6 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.4] - 2025-11-18
+
+### Improved
+- 🎨 **Upgrade Progress UX** - Reorganized layout for better user experience
+  - Result banner (success/failure) now appears at top after completion
+  - Green border and background for successful upgrades (#4CAF50, #E8F5E9)
+  - Red border and background for failed upgrades (#F44336, #FFEBEE)
+  - Progress bar hidden after completion
+  - Log window remains visible at bottom for troubleshooting
+  - Applied to both Installer and Upgrader for consistency
+
+---
+
 ## [1.2.1.2] - 2025-11-18
 
 ### Added
