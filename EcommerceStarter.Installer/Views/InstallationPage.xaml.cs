@@ -359,7 +359,37 @@ public partial class InstallationPage : Page
     {
         if (!string.IsNullOrEmpty(_errorDetails))
         {
-            MessageBox.Show(_errorDetails, "Error Details", MessageBoxButton.OK, MessageBoxImage.Error);
+            // Show error details in a scrollable message box for long error messages
+            var detailsWindow = new Window
+            {
+                Title = "Error Details",
+                Width = 600,
+                Height = 400,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = Window.GetWindow(this)
+            };
+            
+            var scrollViewer = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Padding = new Thickness(10)
+            };
+            
+            var textBlock = new TextBlock
+            {
+                Text = _errorDetails,
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+                FontSize = 12
+            };
+            
+            scrollViewer.Content = textBlock;
+            detailsWindow.Content = scrollViewer;
+            detailsWindow.ShowDialog();
+        }
+        else
+        {
+            MessageBox.Show("No error details available.", "Error Details", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 

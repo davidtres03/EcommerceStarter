@@ -254,6 +254,20 @@ public class UpgradeService
             await Task.Delay(2000); // Give IIS time to start
             ReportProgress(currentStep, 100, "Upgrade complete!");
 
+            // Step 10: Record upgrade completion for Update History (98-100%)
+            ReportProgress(currentStep, 99, "Recording upgrade...");
+            StatusUpdate?.Invoke(this, "[UpgradeService] Step 10: Recording upgrade completion...");
+            try
+            {
+                await RecordUpgradeCompletionAsync(installation.SiteName, newVersion ?? VersionService.CURRENT_VERSION);
+                StatusUpdate?.Invoke(this, "[UpgradeService] Upgrade recorded successfully");
+            }
+            catch (Exception recordEx)
+            {
+                StatusUpdate?.Invoke(this, $"[UpgradeService] Warning: Could not record upgrade: {recordEx.Message}");
+                // Don't fail the upgrade if recording fails
+            }
+            
             result.Success = true;
             result.Message = "Upgrade completed successfully!";
             result.BackupPath = backupPath;
@@ -1566,7 +1580,10 @@ catch {{
                     -Description 'Background processing service for EcommerceStarter' `
                     -StartupType Automatic;
 
-                Write-Output 'Service registered successfully';
+                # Configure service to restart on failure (critical for production stability)
+                sc.exe failure $serviceName reset= 86400 actions= restart/60000/restart/60000/restart/60000;
+
+                Write-Output 'Service registered successfully with automatic restart on failure';
             ";
 
             var registerPsi = new ProcessStartInfo
@@ -1797,6 +1814,57 @@ catch {{
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// Record upgrade completion to registry for web app to save to UpdateHistory table on next startup
+    /// </summary>
+    private async Task RecordUpgradeCompletionAsync(string siteName, string newVersion)
+    {
+        try
+        {
+            var registryPath = $@"SOFTWARE\EcommerceStarter\{siteName}\PendingUpdateHistory";
+            
+            var timestamp = DateTime.UtcNow.ToString("o"); // ISO 8601 format
+            var script = $@"
+                $regPath = 'HKLM:\{registryPath}';
+                
+                # Create registry key if it doesn't exist
+                if (!(Test-Path $regPath)) {{
+                    New-Item -Path $regPath -Force | Out-Null;
+                }}
+                
+                # Write update completion details
+                Set-ItemProperty -Path $regPath -Name 'Version' -Value '{newVersion}' -Type String;
+                Set-ItemProperty -Path $regPath -Name 'CompletedAt' -Value '{timestamp}' -Type String;
+                Set-ItemProperty -Path $regPath -Name 'Status' -Value 'Success' -Type String;
+                
+                Write-Output 'Upgrade completion recorded to registry';
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process != null)
+            {
+                await process.WaitForExitAsync();
+                var output = await process.StandardOutput.ReadToEndAsync();
+                StatusUpdate?.Invoke(this, $"[RecordUpgradeCompletion] {output.Trim()}");
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusUpdate?.Invoke(this, $"[RecordUpgradeCompletion] Error: {ex.Message}");
+            // Don't throw - recording is optional
+        }
     }
 }
 

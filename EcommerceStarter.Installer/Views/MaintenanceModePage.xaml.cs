@@ -140,6 +140,12 @@ public partial class MaintenanceModePage : Page
     {
         try
         {
+            // Disable button and show loading state to provide visual feedback
+            UpgradeButton.IsEnabled = false;
+            var originalContent = UpgradeButton.Content;
+            UpgradeButton.Content = "⏳ Launching upgrader...";
+            UpgradeButton.Cursor = System.Windows.Input.Cursors.Wait;
+            
             // Download the latest release package
             var gitHubService = new Services.GitHubReleaseService();
             

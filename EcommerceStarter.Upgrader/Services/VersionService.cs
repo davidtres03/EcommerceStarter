@@ -8,7 +8,7 @@ namespace EcommerceStarter.Upgrader.Services;
 /// </summary>
 public class VersionService
 {
-    public const string CURRENT_VERSION = "1.0.9.11";
+    public const string CURRENT_VERSION = "1.2.0.3";
 
     // Define upgrade paths and any special handling needed
     private static readonly Dictionary<string, VersionInfo> KnownVersions = new()
