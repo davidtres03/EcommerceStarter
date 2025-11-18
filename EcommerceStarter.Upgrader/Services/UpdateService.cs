@@ -334,18 +334,7 @@ public class UpdateService
 
             var request = new HttpRequestMessage(HttpMethod.Get, downloadUri);
 
-            // Add Authorization header per-request for private repo access
-            if (!string.IsNullOrWhiteSpace(_authToken))
-            {
-                System.Diagnostics.Debug.WriteLine("[UpdateService] Adding Authorization header to download request");
-                request.Headers.Add("Authorization", $"Bearer {_authToken}");
-                DebugLogger.Log("[UpdateService] Using GitHub token for private repo download");
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("[UpdateService] WARNING: No auth token - download may fail for private repos");
-                DebugLogger.Log("[UpdateService] WARNING: No auth token available - download may fail");
-            }
+            // No authentication needed for public repository
 
             using (var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
             {
@@ -470,12 +459,7 @@ public class UpdateService
             System.Diagnostics.Debug.WriteLine("[UpdateService] Creating HttpRequestMessage...");
             var request = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
 
-            // Add Authorization header per-request (thread-safe with shared HttpClient)
-            if (!string.IsNullOrWhiteSpace(_authToken))
-            {
-                request.Headers.Add("Authorization", $"Bearer {_authToken}");
-                System.Diagnostics.Debug.WriteLine("[UpdateService] Authorization header added to request");
-            }
+            // No authentication needed for public repository
 
             System.Diagnostics.Debug.WriteLine("[UpdateService] Calling HttpClient.SendAsync...");
             var response = await _httpClient.SendAsync(request);
