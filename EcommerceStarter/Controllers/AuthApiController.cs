@@ -65,7 +65,7 @@ namespace EcommerceStarter.Controllers
                     {
                         Id = user.Id,
                         Email = user.Email ?? "",
-                        Name = user.FirstName + " " + user.LastName,
+                        Name = user.UserName ?? user.Email ?? "User",
                         Role = "Admin",
                         AvatarUrl = null
                     },
