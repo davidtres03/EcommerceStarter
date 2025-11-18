@@ -402,6 +402,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Documentation:** [docs/](docs)
 - **Deployment Help:** [Scripts/README.md](Scripts/README.md)
+- **Build/Release Guide:** [BUILD_PROCEDURE.md](BUILD_PROCEDURE.md) ⚠️ **Critical for releases**
 - **Issues:** [GitHub Issues](https://github.com/davidtres03/EcommerceStarter/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/davidtres03/EcommerceStarter/discussions)
 
