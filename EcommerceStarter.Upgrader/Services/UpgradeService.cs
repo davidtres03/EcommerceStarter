@@ -1850,6 +1850,43 @@ catch {{
                 Set-ItemProperty -Path $mainRegPath -Name 'Version' -Value '{newVersion}' -Type String;
                 Set-ItemProperty -Path $mainRegPath -Name 'DisplayVersion' -Value '{displayVersion}' -Type String;
                 
+                # Clean up orphaned/duplicate registry keys (keep only essential keys)
+                $essentialKeys = @(
+                    'DatabaseName',
+                    'DatabaseServer',
+                    'DisplayIcon',
+                    'DisplayName',
+                    'DisplayVersion',
+                    'InstallDate',
+                    'InstallLocation',
+                    'InstallPath',
+                    'LastMigrationDate',
+                    'LastUpgradeDate',
+                    'LocalhostPort',
+                    'ModifyPath',
+                    'NoModify',
+                    'NoRepair',
+                    'Publisher',
+                    'RegistrySchemaVersion',
+                    'ServiceInstallPath',
+                    'ServiceUrl',
+                    'UninstallString',
+                    'Version'
+                );
+                
+                $allKeys = (Get-Item -Path $mainRegPath -ErrorAction SilentlyContinue).Property;
+                if ($allKeys) {{
+                    $orphanKeys = $allKeys | Where-Object {{ $_ -notin $essentialKeys }};
+                    foreach ($key in $orphanKeys) {{
+                        try {{
+                            Remove-ItemProperty -Path $mainRegPath -Name $key -ErrorAction SilentlyContinue;
+                            Write-Output ""Removed orphan key: $key"";
+                        }} catch {{
+                            Write-Output ""Failed to remove key: $key"";
+                        }}
+                    }}
+                }}
+                
                 Write-Output 'Registry updated: Version={newVersion}, DisplayVersion={displayVersion}';
             ";
 

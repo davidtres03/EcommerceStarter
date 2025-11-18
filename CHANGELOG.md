@@ -19,6 +19,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.2] - 2025-11-18
+
+### Added
+- 🧹 **Automatic Registry Cleanup** - Orphaned and duplicate registry keys automatically removed during upgrades
+  - Keeps only 20 essential registry keys (Version, DisplayVersion, InstallPath, etc.)
+  - Removes legacy/duplicate keys automatically during upgrade process
+  - Ensures clean registry state after every upgrade
+  - Non-essential keys safely removed without affecting functionality
+  - Logging of removed keys for troubleshooting
+
+### Improved
+- 🔧 **Registry Management** - Enhanced upgrade process maintains clean registry state
+  - Automatic cleanup runs after Version and DisplayVersion updates
+  - Error handling ensures upgrade continues even if cleanup fails
+  - Whitelisted essential keys prevent accidental removal of critical values
+
+---
+
 ## [1.2.1.1] - 2025-11-18
 
 ### Fixed
