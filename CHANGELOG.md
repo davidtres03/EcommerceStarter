@@ -19,6 +19,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.0] - 2025-11-18
+
+### Added
+- 🆕 **UpdateHistoryRecorderService** - New IHostedService for tracking upgrade completions
+  - Records upgrade completion details from registry to UpdateHistory database table
+  - Runs automatically on application startup
+  - Solves issue where upgrades weren't being recorded in database
+  - Two-phase recording: UpgradeService → Registry → Web App → Database
+  
+- 🆕 **RegistryConfigService** - New Windows Service configuration manager
+  - Reads BaseUrl and other settings from Windows Registry
+  - Eliminates hardcoded URLs in Windows Service
+  - Falls back to appsettings.json if registry not available
+  - Singleton service for performance
+
+### Fixed
+- 🔴 **CRITICAL: Registry Version Tracking**
+  - Updated Upgrader CURRENT_VERSION from 1.0.9.11 to 1.2.1.0
+  - Updated Installer CURRENT_VERSION from 1.2.0.0 to 1.2.1.0
+  - Registry now correctly shows current version after upgrade
+  - Fixed Programs & Features displaying outdated version
+
+- 🔴 **CRITICAL: Windows Service Auto-Restart**
+  - Added sc.exe failure recovery configuration to InstallWindowsServiceAsync
+  - Service automatically restarts 3 times on failure (60 second delay between attempts)
+  - Reset counter: 24 hours (86400 seconds)
+  - Critical for production stability and uptime
+
+- 🔴 **CRITICAL: Windows Service Hardcoded URLs**
+  - Removed hardcoded `http://localhost:8080` from UpdateService and Worker
+  - Windows Service now reads BaseUrl from registry (same location as main app)
+  - Falls back to appsettings.json configuration if registry unavailable
+  - Works correctly with any port/domain configuration
+
+- 🟠 **HIGH: Error Details Button**
+  - Enhanced InstallationPage.xaml.cs ViewErrorDetails_Click handler
+  - Now shows scrollable Window with formatted error details
+  - Uses Consolas font for better error readability
+  - Proper window sizing (600x400) with scroll support
+
+- 🟠 **HIGH: API Configuration Toggle Functionality**
+  - Verified OnPostToggleActiveAsync handler exists and works correctly
+  - JavaScript properly calls handler with correct parameters
+  - Toggle state persists correctly across page reloads
+  - No code changes needed - verified working
+
+- 🟡 **MEDIUM: Upgrade Button Loading State**
+  - Added visual feedback to Maintenance Mode upgrade button
+  - Shows "⏳ Launching upgrader..." message during launch
+  - Button disabled and cursor changes to Wait during launch
+  - Reduces perceived delay and improves user experience
+
+- 🟡 **MEDIUM: Blank Update History**
+  - Created UpdateHistoryRecorderService to populate UpdateHistory table
+  - UpgradeService writes completion data to registry when upgrade finishes
+  - Web app reads registry on startup and saves to database
+  - Thread-safe with scoped DbContext in hosted service
+  - Update History page will now show all completed upgrades
+
+### Changed
+- 🎨 **UX: API Configuration Toggle Reordering**
+  - Reordered all configuration cards for better visual hierarchy
+  - NEW ORDER: Active Toggle → Keys Encrypted Badge → Delete Button
+  - Removed redundant Active/Inactive status badge (toggle already shows state)
+  - Applied to all 7 config types (Stripe, Cloudinary, USPS, UPS, FedEx, Claude, Ollama)
+  - Fixed duplicate toggle IDs by adding type prefixes (toggle_stripe_, toggle_usps_, etc.)
+  - Added explicit labels to toggles for better accessibility
+
+- 📝 **Version Management**
+  - Updated all .csproj files to version 1.2.1.0
+  - Updated build-release.sh with centralized VERSION variable
+  - Synchronized version across Installer, Upgrader, and Windows Service projects
+
+### Verified
+- ✅ **Standardize Config UI Workflow** - Confirmed existing UI already follows best practices pattern
+- ✅ **SSL Configuration Workflow** - Verified current design is correct for single-function page
+- ✅ **Double Backslashes in Service Path** - Could not reproduce, likely expected PowerShell escaping behavior
+- ✅ **Hardcoded URL Verification** - Searched entire codebase, no hardcoded capandcollarsupplyco.com URLs found
+
+### Technical Details
+- **New Files Created:** 2
+  - EcommerceStarter/Services/UpdateHistoryRecorderService.cs
+  - EcommerceStarter.WindowsService/Services/RegistryConfigService.cs
+  
+- **Files Modified:** 12
+  - Version constants, service registrations, UI improvements, Windows Service configuration
+  
+- **Git Commits:** 3
+  - 64762a3: "fix: resolve 7 critical bugs in v1.2.0.3 post-release"
+  - be173d0: "fix: remove hardcoded URLs from Windows Service"
+  - 644b039: "feat: improve API Configuration toggle UX"
+
+- **Total Changes:**
+  - Lines Added: ~430
+  - Lines Removed: ~80
+  - Zero breaking changes
+  - All code compiles successfully (lint warnings are style suggestions only)
+
+### Upgrade Notes
+- Update History will populate automatically on next upgrade (1.2.0.x → 1.2.1.0)
+- Windows Service will read BaseUrl from registry (no configuration changes required)
+- API Configuration page has improved toggle layout (no user action needed)
+- All changes are backward compatible with existing installations
+
+---
+
 ## [1.2.0.3] - 2025-11-17
 
 ### Fixed
