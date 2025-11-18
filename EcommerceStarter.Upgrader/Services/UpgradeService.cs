@@ -1364,12 +1364,10 @@ catch {{
 
             if (serviceStatus != "EXISTS")
             {
-                StatusUpdate?.Invoke(this, "Windows Service not currently installed - skipping upgrade");
-                return new OperationResult 
-                { 
-                    Success = true, 
-                    Message = "Windows Service was not installed (skipped)" 
-                };
+                StatusUpdate?.Invoke(this, "Windows Service not currently installed - installing new service...");
+                
+                // Service doesn't exist - perform fresh installation
+                return await InstallWindowsServiceAsync(serviceSourcePath, servicePath, serviceName, dbServer, dbName);
             }
 
             StatusUpdate?.Invoke(this, "Stopping Windows Service...");
@@ -1501,6 +1499,161 @@ catch {{
             { 
                 Success = false, 
                 ErrorMessage = $"Windows Service upgrade failed: {ex.Message}" 
+            };
+        }
+    }
+
+    /// <summary>
+    /// Install Windows Service for the first time (called during upgrade if service doesn't exist)
+    /// </summary>
+    private async Task<OperationResult> InstallWindowsServiceAsync(string serviceSourcePath, string servicePath, string serviceName, string dbServer, string dbName)
+    {
+        try
+        {
+            StatusUpdate?.Invoke(this, "Installing Windows Service for the first time...");
+
+            // Create service directory
+            Directory.CreateDirectory(servicePath);
+            StatusUpdate?.Invoke(this, $"Created service directory: {servicePath}");
+
+            // Copy service files
+            StatusUpdate?.Invoke(this, "Copying Windows Service files...");
+            await CopyDirectoryAsync(serviceSourcePath, servicePath);
+            StatusUpdate?.Invoke(this, "Service files copied");
+
+            // Create appsettings.json
+            var serviceExePath = Path.Combine(servicePath, "EcommerceStarter.WindowsService.exe");
+            var escapedServer = dbServer.Replace(@"\", @"\\");
+            var connectionString = $"Server={escapedServer};Database={dbName};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
+
+            var serviceSettings = $@"{{
+  ""Logging"": {{
+    ""LogLevel"": {{
+      ""Default"": ""Information"",
+      ""Microsoft.Hosting.Lifetime"": ""Information""
+    }}
+  }},
+  ""EcommerceStarterUrl"": ""http://localhost:8080"",
+  ""ConnectionStrings"": {{
+    ""DefaultConnection"": ""{connectionString}""
+  }}
+}}";
+
+            var settingsPath = Path.Combine(servicePath, "appsettings.json");
+            await File.WriteAllTextAsync(settingsPath, serviceSettings);
+            StatusUpdate?.Invoke(this, "Created service configuration");
+
+            // Register service with Windows
+            StatusUpdate?.Invoke(this, "Registering Windows Service...");
+            var escapedPath = serviceExePath.Replace(@"\", @"\\").Replace("\"", "\\\"");
+            var escapedServiceName = serviceName.Replace("'", "''");
+
+            var registerScript = $@"
+                $servicePath = '{escapedPath}';
+                $serviceName = '{escapedServiceName}';
+                
+                # Check if service already exists
+                $existingService = Get-Service -Name $serviceName -ErrorAction SilentlyContinue;
+                if ($existingService) {{
+                    Write-Output 'Service already registered';
+                    exit 0;
+                }}
+
+                # Create service
+                New-Service -Name $serviceName `
+                    -BinaryPathName $servicePath `
+                    -DisplayName $serviceName `
+                    -Description 'Background processing service for EcommerceStarter' `
+                    -StartupType Automatic;
+
+                Write-Output 'Service registered successfully';
+            ";
+
+            var registerPsi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{registerScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                Verb = "runas" // Run as admin
+            };
+
+            using (var registerProcess = Process.Start(registerPsi))
+            {
+                if (registerProcess == null)
+                {
+                    return new OperationResult 
+                    { 
+                        Success = false, 
+                        ErrorMessage = "Failed to register service" 
+                    };
+                }
+
+                var output = await registerProcess.StandardOutput.ReadToEndAsync();
+                var error = await registerProcess.StandardError.ReadToEndAsync();
+                await registerProcess.WaitForExitAsync();
+
+                if (registerProcess.ExitCode != 0)
+                {
+                    return new OperationResult 
+                    { 
+                        Success = false, 
+                        ErrorMessage = $"Service registration failed: {error}" 
+                    };
+                }
+
+                StatusUpdate?.Invoke(this, output.Trim());
+            }
+
+            // Start the service
+            StatusUpdate?.Invoke(this, "Starting Windows Service...");
+            var startScript = $@"
+                Start-Service -Name '{escapedServiceName}' -ErrorAction SilentlyContinue;
+                Start-Sleep -Seconds 2;
+                $service = Get-Service -Name '{escapedServiceName}';
+                if ($service.Status -eq 'Running') {{
+                    Write-Output 'Service started successfully';
+                }} else {{
+                    Write-Output 'Service registered but not started (may need manual start)';
+                }}
+            ";
+
+            var startPsi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{startScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using (var startProcess = Process.Start(startPsi))
+            {
+                if (startProcess != null)
+                {
+                    var startOutput = await startProcess.StandardOutput.ReadToEndAsync();
+                    await startProcess.WaitForExitAsync();
+                    StatusUpdate?.Invoke(this, startOutput.Trim());
+                }
+            }
+
+            StatusUpdate?.Invoke(this, "✓ Windows Service installed successfully");
+            return new OperationResult 
+            { 
+                Success = true, 
+                Message = "Windows Service installed and configured" 
+            };
+        }
+        catch (Exception ex)
+        {
+            StatusUpdate?.Invoke(this, $"Windows Service installation failed: {ex.Message}");
+            return new OperationResult 
+            { 
+                Success = false, 
+                ErrorMessage = $"Windows Service installation failed: {ex.Message}" 
             };
         }
     }
