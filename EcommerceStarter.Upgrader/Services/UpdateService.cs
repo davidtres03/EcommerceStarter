@@ -8,7 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Service for checking and applying updates from GitHub

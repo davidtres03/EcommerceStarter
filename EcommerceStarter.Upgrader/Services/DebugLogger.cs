@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Helper class for file-based logging to troubleshoot issues

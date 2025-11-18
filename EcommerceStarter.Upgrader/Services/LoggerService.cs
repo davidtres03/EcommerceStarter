@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Centralized logging service that writes to both UI and file

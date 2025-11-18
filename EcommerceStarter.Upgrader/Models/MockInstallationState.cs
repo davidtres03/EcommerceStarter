@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace EcommerceStarter.Installer.Models;
+namespace EcommerceStarter.Upgrader.Models;
 
 /// <summary>
 /// Mock installation state for testing/demo purposes

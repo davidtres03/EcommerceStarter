@@ -1,7 +1,7 @@
 using System;
 using System.Net.Http;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Shared HttpClient factory to avoid creating multiple instances

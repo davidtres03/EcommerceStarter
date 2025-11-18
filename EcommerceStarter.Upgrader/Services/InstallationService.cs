@@ -4,10 +4,10 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using EcommerceStarter.Installer.Models;
+using EcommerceStarter.Upgrader.Models;
 using Microsoft.AspNetCore.Identity;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Service for performing the actual installation

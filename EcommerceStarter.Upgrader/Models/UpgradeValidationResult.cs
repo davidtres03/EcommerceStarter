@@ -1,4 +1,4 @@
-namespace EcommerceStarter.Installer.Models;
+namespace EcommerceStarter.Upgrader.Models;
 
 /// <summary>
 /// Result of upgrade validation check

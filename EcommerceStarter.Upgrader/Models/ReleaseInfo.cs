@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace EcommerceStarter.Installer.Models;
+namespace EcommerceStarter.Upgrader.Models;
 
 /// <summary>
 /// Represents information about a GitHub release

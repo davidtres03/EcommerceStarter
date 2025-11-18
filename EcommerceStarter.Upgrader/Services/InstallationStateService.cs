@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Win32;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Service for detecting and managing installation state

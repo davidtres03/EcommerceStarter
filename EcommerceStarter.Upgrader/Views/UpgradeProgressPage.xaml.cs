@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using EcommerceStarter.Installer.Services;
+using EcommerceStarter.Upgrader.Services;
 
-namespace EcommerceStarter.Installer.Views;
+namespace EcommerceStarter.Upgrader.Views;
 
 public partial class UpgradeProgressPage : Page
 {

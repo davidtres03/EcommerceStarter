@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Reflection;
-using EcommerceStarter.Installer.Services;
-using EcommerceStarter.Installer.Models;
+using EcommerceStarter.Upgrader.Services;
+using EcommerceStarter.Upgrader.Models;
 
-namespace EcommerceStarter.Installer.Views;
+namespace EcommerceStarter.Upgrader.Views;
 
 public partial class UpgradeWelcomePage : Page
 {

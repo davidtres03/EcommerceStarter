@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text.Json;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Service for validating installation configuration settings

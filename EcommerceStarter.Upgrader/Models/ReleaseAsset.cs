@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace EcommerceStarter.Installer.Models;
+namespace EcommerceStarter.Upgrader.Models;
 
 /// <summary>
 /// Represents a single asset/file in a GitHub release

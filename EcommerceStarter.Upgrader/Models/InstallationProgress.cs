@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace EcommerceStarter.Installer.Models;
+namespace EcommerceStarter.Upgrader.Models;
 
 /// <summary>
 /// Tracks installation progress and status

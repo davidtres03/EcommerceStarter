@@ -5,9 +5,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using EcommerceStarter.Installer.Models;
+using EcommerceStarter.Upgrader.Models;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Service for downloading application from GitHub releases

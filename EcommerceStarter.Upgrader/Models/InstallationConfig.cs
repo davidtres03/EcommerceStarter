@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 
-namespace EcommerceStarter.Installer.Models;
+namespace EcommerceStarter.Upgrader.Models;
 
 /// <summary>
 /// Installation configuration settings collected from the wizard

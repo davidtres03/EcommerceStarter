@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Service for handling version comparisons and upgrade path logic

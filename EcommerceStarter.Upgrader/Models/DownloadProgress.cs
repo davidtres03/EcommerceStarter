@@ -1,6 +1,6 @@
 using System;
 
-namespace EcommerceStarter.Installer.Models;
+namespace EcommerceStarter.Upgrader.Models;
 
 /// <summary>
 /// Represents progress of a download operation

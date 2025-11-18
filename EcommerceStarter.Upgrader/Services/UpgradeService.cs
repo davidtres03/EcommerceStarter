@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Win32;
-using EcommerceStarter.Installer.Models;
+using EcommerceStarter.Upgrader.Models;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
+/// <summary>
 /// Service for upgrading existing installations
 /// </summary>
 public class UpgradeService

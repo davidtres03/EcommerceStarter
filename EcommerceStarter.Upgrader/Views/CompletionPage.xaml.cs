@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using EcommerceStarter.Installer.Models;
+using EcommerceStarter.Upgrader.Models;
 
-namespace EcommerceStarter.Installer.Views;
+namespace EcommerceStarter.Upgrader.Views;
 
 public partial class CompletionPage : Page
 {

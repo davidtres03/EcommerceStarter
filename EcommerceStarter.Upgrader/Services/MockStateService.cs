@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Text.Json;
-using EcommerceStarter.Installer.Models;
+using EcommerceStarter.Upgrader.Models;
 
-namespace EcommerceStarter.Installer.Services;
+namespace EcommerceStarter.Upgrader.Services;
 
 /// <summary>
 /// Manages persistent mock installation state for testing/demo

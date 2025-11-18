@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Windows;
-using EcommerceStarter.Installer.Views;
-using EcommerceStarter.Installer.Models;
+using EcommerceStarter.Upgrader.Views;
+using EcommerceStarter.Upgrader.Models;
 
-namespace EcommerceStarter.Installer;
+namespace EcommerceStarter.Upgrader;
 
 /// <summary>
 /// Interaction logic for App.xaml

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Windows;
-using EcommerceStarter.Installer.Views;
-using EcommerceStarter.Installer.Models;
-using EcommerceStarter.Installer.Services;
+using EcommerceStarter.Upgrader.Views;
+using EcommerceStarter.Upgrader.Models;
+using EcommerceStarter.Upgrader.Services;
 
-namespace EcommerceStarter.Installer;
+namespace EcommerceStarter.Upgrader;
 
 /// <summary>
 /// Upgrade application main window - launches directly to upgrade flow
