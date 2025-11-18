@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.7] - 2025-11-18
+
+### Fixed
+- 🐛 **Admin Page Modal Errors (ACTUAL FIX)** - Fixed "Details" buttons in the correct source files (Pages/Admin/)
+  - Previous v1.2.1.6 accidentally edited wrong files (root directory copies)
+  - Modal IDs now render correctly: `@(error.Id)` and `@(update.Id)` 
+  - Details modals now open properly when clicking Details button
+- 🐛 **Version Display (ACTUAL FIX)** - Fixed version numbers in actual source file
+  - Changed `v@update.Version` to `v@(update.Version)` in Pages/Admin/Updates.cshtml
+  - Versions now display correctly (e.g., "v1.2.1.7" instead of "v@update.Version")
+
 ## [1.2.1.6] - 2025-11-18
 
 ### Fixed
