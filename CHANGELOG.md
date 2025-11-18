@@ -27,10 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Scripts/Migration/WORKFLOW.md: Fixed 22 broken emojis in flowcharts and diagrams
   - Git commit messages: Re-encoded v1.2.0 commit with proper UTF-8 emojis
   - LinkedIn announcement: Updated with version corrections
+- 🔧 **Upgrade System Critical Fixes** (2025-11-18 update)
+  - Fixed Windows Service not included in upgrade package (was only building, not publishing)
+  - Fixed registry migration not copying configuration values to new location
+  - Registry now properly migrates from `HKLM\SOFTWARE\...\Uninstall\EcommerceStarter_SiteName` to `HKLM\SOFTWARE\EcommerceStarter\SiteName`
+  - Old registry location preserved for Windows uninstaller compatibility
+  - Package size increased to 176MB (includes 78MB Windows Service with dependencies)
 
 ### Changed
 - Updated all project versions to 1.2.0.3 for consistency
 - Improved GitHub rendering across all documentation files
+- Enhanced build.sh to publish Windows Service as self-contained executable
+- RegistryMigration_v1 now performs complete config migration instead of just marking schema version
 
 ---
 
