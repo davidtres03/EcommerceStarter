@@ -19,6 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.6] - 2025-11-18
+
+### Fixed
+- 🐛 **Admin Page Modal Errors** - Fixed "Details" buttons on Error Log and Update History pages
+  - Modal IDs now render correctly (changed `@error.Id` to `@(error.Id)`)
+  - Eliminated JavaScript querySelector syntax errors
+  - Details modals now open properly
+- 🐛 **Version Display** - Fixed version numbers showing as literal text
+  - Changed `v@update.Version` to `v@(update.Version)` 
+  - Versions now display correctly (e.g., "v1.2.1.4" instead of "v@update.Version")
+
+---
+
 ## [1.2.1.5] - 2025-11-18
 
 ### Fixed
