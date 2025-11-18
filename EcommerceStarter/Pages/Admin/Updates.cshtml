@@ -79,7 +79,7 @@
                                 @foreach (var update in Model.Updates)
                                 {
                                     <tr>
-                                        <td class="fw-bold">v@update.Version</td>
+                                        <td class="fw-bold">v@(update.Version)</td>
                                         <td>@update.AppliedAt.ToString("MMM dd, yyyy HH:mm:ss")</td>
                                         <td>
                                             @if (update.Status == "Success")
@@ -113,16 +113,16 @@
                                             }
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailsModal@update.Id">
+                                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailsModal@(update.Id)">
                                                 Details
                                             </button>
 
                                             <!-- Details Modal -->
-                                            <div class="modal fade" id="detailsModal@update.Id" tabindex="-1">
+                                            <div class="modal fade" id="detailsModal@(update.Id)" tabindex="-1">
                                                 <div class="modal-dialog modal-lg">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">Update Details - v@update.Version</h5>
+                                                            <h5 class="modal-title">Update Details - v@(update.Version)</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
