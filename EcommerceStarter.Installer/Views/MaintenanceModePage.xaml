@@ -168,7 +168,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Debug Info Section -->
+                    <!-- Version Check Info Section -->
                     <Border x:Name="DebugInfoBorder"
                             Background="#F0F0F0"
                             BorderBrush="#CCCCCC"
@@ -178,7 +178,7 @@
                             Margin="0,15,0,0"
                             Visibility="Collapsed">
                         <StackPanel>
-                            <TextBlock Text="[DEBUG] Version Check Info"
+                            <TextBlock Text="📋 Version Check Info"
                                        FontSize="11"
                                        FontWeight="SemiBold"
                                        Foreground="#666666"
