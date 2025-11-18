@@ -326,9 +326,14 @@
                                     <small class="text-muted">@config.Description</small>
                                 </div>
                                 <div class="config-actions">
-                                    <span class="config-status @(config.IsActive ? "status-active" : "status-inactive")">
-                                        @(config.IsActive ? "✓ Active" : "✗ Inactive")
-                                    </span>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input config-toggle" type="checkbox" 
+                                               id="toggle_stripe_@config.Id" 
+                                               data-config-id="@config.Id"
+                                               @(config.IsActive ? "checked" : "") 
+                                               onchange="toggleConfigActive(this)" />
+                                        <label class="form-check-label" for="toggle_stripe_@config.Id">Active</label>
+                                    </div>
                                     <span class="config-status @(config.IsTestMode ? "status-test" : "status-live")">
                                         @(config.IsTestMode ? "TEST" : "LIVE")
                                     </span>
@@ -338,13 +343,6 @@
                                             <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
                                         </span>
                                     }
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input config-toggle" type="checkbox" 
-                                               id="toggle_@config.Id" 
-                                               data-config-id="@config.Id"
-                                               @(config.IsActive ? "checked" : "") 
-                                               onchange="toggleConfigActive(this)" />
-                                    </div>
                                     <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@config.Id)">Delete</button>
                                 </div>
                             </div>
@@ -408,22 +406,20 @@
                                     <small class="text-muted">@config.Description</small>
                                 </div>
                                 <div class="config-actions">
-                                    <span class="config-status @(config.IsActive ? "status-active" : "status-inactive")">
-                                        @(config.IsActive ? "✓ Active" : "✗ Inactive")
-                                    </span>
-                                    @if (config.IsActive)
-                                    {
-                                        <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
-                                            <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
-                                        </span>
-                                    }
                                     <div class="form-check form-switch">
                                         <input class="form-check-input config-toggle" type="checkbox" 
                                                id="toggle_@config.Id" 
                                                data-config-id="@config.Id"
                                                @(config.IsActive ? "checked" : "") 
                                                onchange="toggleConfigActive(this)" />
+                                        <label class="form-check-label" for="toggle_@config.Id">Active</label>
                                     </div>
+                                    @if (config.IsActive)
+                                    {
+                                        <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                            <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                        </span>
+                                    }
                                     <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@config.Id)">Delete</button>
                                 </div>
                             </div>
@@ -481,22 +477,20 @@
                                 <small class="text-muted">@uspsConfig.Description</small>
                             </div>
                             <div class="config-actions">
-                                <span class="config-status @(uspsConfig.IsActive ? "status-active" : "status-inactive")">
-                                    @(uspsConfig.IsActive ? "✓ Active" : "✗ Inactive")
-                                </span>
-                                @if (uspsConfig.IsActive)
-                                {
-                                    <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
-                                        <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
-                                    </span>
-                                }
                                 <div class="form-check form-switch">
                                     <input class="form-check-input config-toggle" type="checkbox" 
                                            id="toggle_@uspsConfig.Id" 
                                            data-config-id="@uspsConfig.Id"
                                            @(uspsConfig.IsActive ? "checked" : "") 
                                            onchange="toggleConfigActive(this)" />
+                                    <label class="form-check-label" for="toggle_@uspsConfig.Id">Active</label>
                                 </div>
+                                @if (uspsConfig.IsActive)
+                                {
+                                    <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
+                                        <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
+                                    </span>
+                                }
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@uspsConfig.Id)">Delete</button>
                             </div>
                         </div>
@@ -554,22 +548,20 @@
                                 <small class="text-muted">@upsConfig.Description</small>
                             </div>
                             <div class="config-actions">
-                                <span class="config-status @(upsConfig.IsActive ? "status-active" : "status-inactive")">
-                                    @(upsConfig.IsActive ? "✓ Active" : "✗ Inactive")
-                                </span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_ups_@upsConfig.Id" 
+                                           data-config-id="@upsConfig.Id"
+                                           @(upsConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                    <label class="form-check-label" for="toggle_ups_@upsConfig.Id">Active</label>
+                                </div>
                                 @if (upsConfig.IsActive)
                                 {
                                     <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
                                         <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
                                     </span>
                                 }
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input config-toggle" type="checkbox" 
-                                           id="toggle_@upsConfig.Id" 
-                                           data-config-id="@upsConfig.Id"
-                                           @(upsConfig.IsActive ? "checked" : "") 
-                                           onchange="toggleConfigActive(this)" />
-                                </div>
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@upsConfig.Id)">Delete</button>
                             </div>
                         </div>
@@ -642,22 +634,20 @@
                                 <small class="text-muted">@fedexConfig.Description</small>
                             </div>
                             <div class="config-actions">
-                                <span class="config-status @(fedexConfig.IsActive ? "status-active" : "status-inactive")">
-                                    @(fedexConfig.IsActive ? "✓ Active" : "✗ Inactive")
-                                </span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_fedex_@fedexConfig.Id" 
+                                           data-config-id="@fedexConfig.Id"
+                                           @(fedexConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                    <label class="form-check-label" for="toggle_fedex_@fedexConfig.Id">Active</label>
+                                </div>
                                 @if (fedexConfig.IsActive)
                                 {
                                     <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
                                         <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
                                     </span>
                                 }
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input config-toggle" type="checkbox" 
-                                           id="toggle_@fedexConfig.Id" 
-                                           data-config-id="@fedexConfig.Id"
-                                           @(fedexConfig.IsActive ? "checked" : "") 
-                                           onchange="toggleConfigActive(this)" />
-                                </div>
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@fedexConfig.Id)">Delete</button>
                             </div>
                         </div>
@@ -730,23 +720,20 @@
                                 <small class="text-muted">@claudeConfig.Description</small>
                             </div>
                             <div class="config-actions">
-                                <span class="config-status @(claudeConfig.IsActive ? "status-active" : "status-inactive")">
-                                    @(claudeConfig.IsActive ? "✓ Active" : "✗ Inactive")
-                                </span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_claude_@claudeConfig.Id" 
+                                           data-config-id="@claudeConfig.Id"
+                                           @(claudeConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                    <label class="form-check-label" for="toggle_claude_@claudeConfig.Id">Active</label>
+                                </div>
                                 @if (claudeConfig.IsActive)
                                 {
                                     <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
                                         <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
                                     </span>
                                 }
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input config-toggle" type="checkbox" 
-                                           id="toggle_@claudeConfig.Id" 
-                                           data-config-id="@claudeConfig.Id"
-                                           @(claudeConfig.IsActive ? "checked" : "") 
-                                           onchange="toggleConfigActive(this)" />
-                                    <label class="form-check-label ms-2" for="toggle_@claudeConfig.Id" style="font-size: 0.875rem; color: #6c757d;">Active</label>
-                                </div>
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@claudeConfig.Id)">Delete</button>
                             </div>
                         </div>
@@ -817,23 +804,20 @@
                                 <small class="text-muted">@ollamaConfig.Description</small>
                             </div>
                             <div class="config-actions">
-                                <span class="config-status @(ollamaConfig.IsActive ? "status-active" : "status-inactive")">
-                                    @(ollamaConfig.IsActive ? "✓ Active" : "✗ Inactive")
-                                </span>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input config-toggle" type="checkbox" 
+                                           id="toggle_ollama_@ollamaConfig.Id" 
+                                           data-config-id="@ollamaConfig.Id"
+                                           @(ollamaConfig.IsActive ? "checked" : "") 
+                                           onchange="toggleConfigActive(this)" />
+                                    <label class="form-check-label" for="toggle_ollama_@ollamaConfig.Id">Active</label>
+                                </div>
                                 @if (ollamaConfig.IsActive)
                                 {
                                     <span class="config-status" style="background-color: #cfe2ff; color: #084298;">
                                         <i class="bi bi-lock-fill me-1"></i>Keys Encrypted
                                     </span>
                                 }
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input config-toggle" type="checkbox" 
-                                           id="toggle_@ollamaConfig.Id" 
-                                           data-config-id="@ollamaConfig.Id"
-                                           @(ollamaConfig.IsActive ? "checked" : "") 
-                                           onchange="toggleConfigActive(this)" />
-                                    <label class="form-check-label ms-2" for="toggle_@ollamaConfig.Id" style="font-size: 0.875rem; color: #6c757d;">Active</label>
-                                </div>
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@ollamaConfig.Id)">Delete</button>
                             </div>
                         </div>
