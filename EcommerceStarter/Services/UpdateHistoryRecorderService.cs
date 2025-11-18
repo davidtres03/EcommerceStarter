@@ -6,7 +6,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using System;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -109,12 +111,15 @@ namespace EcommerceStarter.Services
 
                 if (!exists)
                 {
+                    // Extract changelog for this version
+                    var releaseNotes = ExtractChangelogForVersion(version);
+
                     var updateHistory = new UpdateHistory
                     {
                         Version = version,
                         AppliedAt = completedAt,
                         Status = status,
-                        ReleaseNotes = $"Automatically upgraded to version {version}",
+                        ReleaseNotes = releaseNotes,
                         ApplyDurationSeconds = 0 // Unknown from post-upgrade recording
                     };
 
@@ -132,6 +137,55 @@ namespace EcommerceStarter.Services
             {
                 _logger.LogError(ex, "[UpdateHistoryRecorder] Error saving update history for v{Version}", version);
                 throw;
+            }
+        }
+
+        private string ExtractChangelogForVersion(string version)
+        {
+            try
+            {
+                // Look for CHANGELOG.md in the application directory
+                var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                var changelogPath = Path.Combine(appDirectory, "CHANGELOG.md");
+
+                if (!File.Exists(changelogPath))
+                {
+                    _logger.LogWarning("[UpdateHistoryRecorder] CHANGELOG.md not found at {Path}", changelogPath);
+                    return $"Automatically upgraded to version {version}";
+                }
+
+                var changelogContent = File.ReadAllText(changelogPath);
+
+                // Extract the section for this version
+                // Pattern: ## [version] - date ... content until next ##
+                var versionPattern = $@"##\s*\[{Regex.Escape(version)}\].*?\n(.*?)(?=\n##\s|\z)";
+                var match = Regex.Match(changelogContent, versionPattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+                if (match.Success)
+                {
+                    var versionChangelog = match.Groups[1].Value.Trim();
+                    
+                    // Clean up the changelog (remove excessive whitespace, limit length)
+                    versionChangelog = Regex.Replace(versionChangelog, @"\n{3,}", "\n\n");
+                    
+                    // Limit to reasonable length for database storage (2000 chars)
+                    if (versionChangelog.Length > 2000)
+                    {
+                        versionChangelog = versionChangelog.Substring(0, 1997) + "...";
+                    }
+
+                    return versionChangelog;
+                }
+                else
+                {
+                    _logger.LogWarning("[UpdateHistoryRecorder] No changelog entry found for version {Version}", version);
+                    return $"Automatically upgraded to version {version}";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[UpdateHistoryRecorder] Error extracting changelog for version {Version}", version);
+                return $"Automatically upgraded to version {version}";
             }
         }
     }
