@@ -1,0 +1,296 @@
+# Changelog
+
+All notable changes to EcommerceStarter will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Planned Features
+- Linux deployment script (Ubuntu/Debian)
+- Docker and docker-compose support
+- Product reviews and ratings
+- Wishlist functionality
+- Discount codes and promotions
+- Advanced search and filtering
+- Multi-currency support
+- Automated testing suite
+
+---
+
+## [1.2.0] - 2025-11-17
+
+### Added
+- 🧹 **Clean Public Release** - Comprehensive repository cleanup for open-source readiness
+- 📚 Professional documentation structure
+- 🗂️ Archive folder for development documentation
+- 📋 Consolidated CHANGELOG with complete version history
+
+### Changed
+- Moved internal development docs to `docs/archive/`
+- Cleaned root directory to essential files only
+- Updated README with current version information
+
+### Removed
+- Session logs and internal development notes
+- Redundant release management scripts
+- Old tarball packages
+- Individual release notes (consolidated into CHANGELOG)
+
+---
+
+## [1.1.0] - 2025-11-17
+
+### Added - AI Integration Complete 🤖
+- **Dual AI Backend System**
+  - Ollama integration (local, free, privacy-focused)
+  - Claude API integration (cloud-based, powerful)
+  - Smart backend selection and automatic fallback
+  - Real-time cost tracking and usage monitoring
+  
+- **AI Control Panel**
+  - Interactive chat interface with both AI backends
+  - Chat history tracking with timestamps
+  - Usage statistics (queries, tokens, estimated costs)
+  - Backend status indicators with visual feedback
+  - Configuration management with live updates
+
+- **AI-Powered Image Optimization**
+  - Automatic contrast adjustment
+  - Smart color correction
+  - Shadow removal/fill (40% strength)
+  - Professional sharpening (100 for products, 50 for banners)
+  - Retina display support (DPR auto)
+  - Smart compression (quality auto:best)
+
+- **Smart Image Workflow**
+  - First variant image auto-sets as main product image
+  - Image reuse selector - click existing variant images
+  - Toggle between upload and selector modes
+  - Visual feedback with thumbnails and selection
+
+### Fixed - Architecture & Stability 🔧
+- Fixed AI service lifetime issues (Singleton vs Scoped)
+- Implemented IServiceScopeFactory for proper dependency injection
+- Resolved disposed DbContext errors
+- Fixed variant images using local storage instead of Cloudinary
+- Fixed AI configuration toggle not saving enabled state
+- Fixed service provider disposal errors in scoped services
+
+### Changed
+- Configuration cache reduced from 5 minutes to 30 seconds
+- All product images now route through Cloudinary CDN
+- Enhanced logging throughout AI pipeline
+- Case-insensitive JSON property reading
+
+### Technical
+- Enhanced ApiConfigurations metadata support
+- Improved AIChatHistory tracking with backend identification
+- Encrypted API keys using IEncryptionService
+- Lazy backend initialization for better performance
+
+---
+
+## [1.0.9.6] - 2025-11-15
+
+### Added - Unified API Configuration System 🔒
+- **Centralized API Management**
+  - Support for 7 API types: Stripe, Cloudinary, USPS, UPS, FedEx, Claude, Ollama
+  - AES-256 encryption for all sensitive credentials
+  - New tabbed interface in Admin > API Settings
+  - Per-API configuration forms with edit/delete operations
+
+- **Comprehensive Audit Logging**
+  - Complete change history tracking
+  - User and IP address logging
+  - Action tracking (Create, Update, Delete)
+  - JSON diff of changes
+  - Last 20 changes viewer in admin panel
+
+- **Database Tables**
+  - ApiConfigurations table with encrypted storage
+  - ApiConfigurationAuditLogs for change tracking
+  - Optimized indexes for fast lookups
+
+### Fixed - Critical Stability Issues 🐛
+- **Version Rollback Bug** - Fixed Windows installer downgrade issue
+  - Synchronized AssemblyVersion across all projects to 1.0.9.6
+  - Resolved automatic rollback from 1.0.9.6 to 1.0.9.2
+  - Upgrade path now works correctly from Programs & Features
+  
+- **Double-Encryption Bug** - Fixed API configuration save failures
+  - Modified SaveConfigurationAsync to preserve encrypted values
+  - Added encryption detection to prevent re-encrypting
+  - USPS and all API configurations now save reliably
+
+- **Form Pre-Population** - Fixed missing credentials display
+  - Added pre-populate helper methods
+  - Existing configurations now decrypt and display properly
+  - Full edit workflow functional for all API types
+
+### Security
+- Environment variable-based key management
+- No credentials logged in application logs
+- Compliance tracking with user/IP logging
+
+---
+
+## [1.0.0] - 2025-01-15
+
+### Added - Initial Production Release 🚀
+
+#### Core E-Commerce Features
+- **Product Management**
+  - Complete product catalog with categories
+  - Product variants (size, color, custom attributes)
+  - Inventory tracking with stock levels
+  - Product images with Cloudinary CDN
+  - Bulk import/export capabilities
+
+- **Shopping Experience**
+  - Session-based shopping cart
+  - Guest checkout (no account required)
+  - Secure checkout process (two-step)
+  - Order confirmation emails
+  - Order tracking with carrier integration
+
+- **Payment Processing**
+  - Stripe integration (cards, digital wallets)
+  - Multiple payment methods support
+  - Apple Pay, Google Pay, Cash App Pay
+  - Link by Stripe
+  - PCI-compliant payment handling
+
+- **Admin Dashboard**
+  - Real-time metrics and analytics
+  - Sales reports and top products
+  - User management (customers and admins)
+  - Order management and fulfillment
+  - Security audit logging
+
+#### User Management
+- ASP.NET Core Identity integration
+- Role-based authorization (Admin/Customer)
+- Email confirmation for accounts
+- Password reset functionality
+- Secure authentication with cookies
+
+#### Customization
+- **Theme System**
+  - Customizable colors (primary, secondary, accent)
+  - Custom fonts and typography
+  - Logo and branding uploads
+  - Custom CSS/HTML support
+  - Dark mode with system detection
+
+- **Site Settings**
+  - Company name and tagline
+  - Contact information
+  - Hero images and banners
+  - Email templates
+  - Google Analytics integration
+
+#### Shipping & Tax
+- Optional sales tax calculation (state-based)
+- Configurable shipping rules
+- USPS tracking integration
+- Carrier notifications
+- Shipment status updates
+
+#### Security Features
+- HTTPS enforcement
+- SQL injection protection (parameterized queries)
+- XSS prevention (input validation)
+- CSRF protection (anti-forgery tokens)
+- Rate limiting and IP blocking
+- Security audit logging
+- Secure password requirements
+
+#### Developer Features
+- Clean, documented codebase
+- SOLID principles throughout
+- Service-oriented architecture
+- Dependency injection
+- Entity Framework migrations
+- Comprehensive XML documentation
+- Easy to extend and customize
+
+### Technical Stack
+- **Backend:** ASP.NET Core 8.0 (Razor Pages)
+- **Database:** SQL Server / SQL Server Express
+- **Frontend:** Bootstrap 5.3, Vanilla JavaScript
+- **Integrations:** Stripe, Resend, USPS, Google Analytics
+- **Cloud:** Cloudinary for image management
+
+### Deployment
+- **Windows Automated Installer**
+  - IIS configuration automation
+  - SQL Server setup scripts
+  - One-click deployment
+  - Self-contained executable
+  - Automatic dependency installation
+
+- **PowerShell Helpers**
+  - IIS module installation
+  - SQL Server Express setup
+  - URL Rewrite configuration
+  - Certificate management
+
+### Documentation
+- Complete deployment guide (Windows)
+- Configuration guide (all settings)
+- Stripe payment integration guide
+- Admin panel user guide
+- Security best practices guide
+- API documentation
+- Contributing guidelines
+- Code of Conduct
+
+### Files Included
+- Production-ready source code
+- Windows installer executable
+- PowerShell deployment scripts
+- Complete documentation
+- Sample data and images
+- MIT License
+
+---
+
+## Version History Summary
+
+| Version | Date | Key Features |
+|---------|------|--------------|
+| 1.2.0 | 2025-11-17 | Clean public release, documentation consolidation |
+| 1.1.0 | 2025-11-17 | AI integration (Ollama + Claude), Cloudinary AI enhancements |
+| 1.0.9.6 | 2025-11-15 | Unified API config, critical bug fixes, audit logging |
+| 1.0.0 | 2025-01-15 | Initial production release, full e-commerce platform |
+
+---
+
+## Categories Reference
+
+- **Added:** New features
+- **Changed:** Changes in existing functionality
+- **Deprecated:** Soon-to-be removed features
+- **Removed:** Removed features
+- **Fixed:** Bug fixes
+- **Security:** Security improvements
+- **Technical:** Internal technical changes
+
+---
+
+## Links
+
+- [GitHub Repository](https://github.com/yourusername/EcommerceStarter)
+- [Documentation](docs/)
+- [Issues](https://github.com/yourusername/EcommerceStarter/issues)
+- [Contributing](CONTRIBUTING.md)
+
+---
+
+[Unreleased]: https://github.com/yourusername/EcommerceStarter/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/yourusername/EcommerceStarter/releases/tag/v1.2.0
+[1.1.0]: https://github.com/yourusername/EcommerceStarter/releases/tag/v1.1.0
+[1.0.9.6]: https://github.com/yourusername/EcommerceStarter/releases/tag/v1.0.9.6
+[1.0.0]: https://github.com/yourusername/EcommerceStarter/releases/tag/v1.0.0

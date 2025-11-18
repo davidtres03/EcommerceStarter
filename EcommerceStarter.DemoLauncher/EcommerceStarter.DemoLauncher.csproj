@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>DemoLauncher</AssemblyName>
+    <!-- Version consistency with main application -->
+    <Version>1.0.9.15</Version>
+    <AssemblyVersion>1.0.9.7</AssemblyVersion>
+    <FileVersion>1.0.9.7</FileVersion>
+    <InformationalVersion>1.0.9.7</InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EcommerceStarter.Installer\EcommerceStarter.Installer.csproj" />
+  </ItemGroup>
+
+</Project>
