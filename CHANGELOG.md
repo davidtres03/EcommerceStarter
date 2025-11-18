@@ -19,6 +19,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.1] - 2025-11-18
+
+### Fixed
+- 🔧 **Registry DisplayVersion Auto-Update** - DisplayVersion now updates automatically during upgrades
+  - Previously DisplayVersion only set during installation, never updated during upgrades
+  - Windows "Programs & Features" would show stale version (e.g., 1.2.0.2 while app was 1.2.1.0)
+  - UpgradeService now updates both Version and DisplayVersion registry keys
+  - DisplayVersion normalized to 3-part format (1.2.1) matching Windows conventions
+  - Ensures Windows Control Panel always shows current version
+
+---
+
 ## [1.2.1.0] - 2025-11-18
 
 ### Added
