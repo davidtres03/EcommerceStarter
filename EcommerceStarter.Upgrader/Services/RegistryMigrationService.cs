@@ -224,11 +224,12 @@ public interface IRegistryMigration
 /// <summary>
 /// Migration v1: Initial registry schema
 /// Creates the base registry structure with all standard keys
+/// MIGRATES data from old Uninstall location to new EcommerceStarter location
 /// </summary>
 public class RegistryMigration_v1_InitialSchema : IRegistryMigration
 {
     public int Version => 1;
-    public string Description => "Initialize registry configuration structure";
+    public string Description => "Initialize registry configuration structure and migrate from Uninstall location";
 
     public async Task<bool> ExecuteAsync(string siteName)
     {
@@ -236,48 +237,132 @@ public class RegistryMigration_v1_InitialSchema : IRegistryMigration
         {
             var escapedSiteName = siteName.Replace("'", "''").Replace("\\", "\\\\");
 
-            // Check if registry already has data (upgrade from pre-registry version)
-            using var existingKey = Registry.LocalMachine.OpenSubKey($@"SOFTWARE\EcommerceStarter\{siteName}");
-            bool hasExistingData = existingKey != null;
+            // Check both possible old locations
+            var oldLocation1 = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\EcommerceStarter_{siteName}";
+            var oldLocation2 = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\EcommerceStarter";
+            
+            // Check if new location already exists
+            using var newKey = Registry.LocalMachine.OpenSubKey($@"SOFTWARE\EcommerceStarter\{siteName}");
+            bool newLocationExists = newKey != null;
 
-            if (hasExistingData)
+            if (newLocationExists)
             {
-                // Registry exists but has no schema version - this is a legacy install
-                // Just add the schema version marker, don't overwrite existing data
-                var script = $@"
+                // New location exists - just mark schema version
+                var markScript = $@"
                     $configPath = 'HKLM:\SOFTWARE\EcommerceStarter\{escapedSiteName}';
                     if (Test-Path $configPath) {{
                         Set-ItemProperty -Path $configPath -Name 'RegistrySchemaVersion' -Value 1 -Type DWord -ErrorAction SilentlyContinue;
                         Set-ItemProperty -Path $configPath -Name 'LastMigrationDate' -Value '{DateTime.Now:yyyy-MM-dd HH:mm:ss}' -Type String -ErrorAction SilentlyContinue;
-                        Write-Output 'Legacy installation upgraded to schema v1';
+                        Write-Output 'Schema version marked';
                     }}
                 ";
 
-                var psi = new ProcessStartInfo
+                var psi1 = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{markScript}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true
                 };
 
-                using var process = Process.Start(psi);
-                if (process != null)
+                using var process1 = Process.Start(psi1);
+                if (process1 != null)
                 {
-                    await process.WaitForExitAsync();
-                    return process.ExitCode == 0;
+                    await process1.WaitForExitAsync();
                 }
-
-                return false;
-            }
-            else
-            {
-                // New installation - will be created by installer's WriteConfigurationToRegistryAsync
-                // Just mark schema version as 1
                 return true;
             }
+
+            // New location doesn't exist - migrate from old location
+            var migrationScript = $@"
+                $oldPath1 = 'HKLM:\{oldLocation1.Replace(@"\", @"\\")}';
+                $oldPath2 = 'HKLM:\{oldLocation2.Replace(@"\", @"\\")}';
+                $newPath = 'HKLM:\SOFTWARE\EcommerceStarter\{escapedSiteName}';
+
+                # Find which old location has data
+                $sourcePath = $null;
+                if (Test-Path $oldPath1) {{
+                    $sourcePath = $oldPath1;
+                    Write-Output ""Found data at: $oldPath1"";
+                }} elseif (Test-Path $oldPath2) {{
+                    $sourcePath = $oldPath2;
+                    Write-Output ""Found data at: $oldPath2"";
+                }} else {{
+                    Write-Output ""No old installation data found - clean install"";
+                    # Create new location with schema marker
+                    New-Item -Path $newPath -Force | Out-Null;
+                    Set-ItemProperty -Path $newPath -Name 'RegistrySchemaVersion' -Value 1 -Type DWord;
+                    Set-ItemProperty -Path $newPath -Name 'LastMigrationDate' -Value '{DateTime.Now:yyyy-MM-dd HH:mm:ss}' -Type String;
+                    exit 0;
+                }}
+
+                # Create new registry location
+                New-Item -Path $newPath -Force | Out-Null;
+                Write-Output ""Created new registry location: $newPath"";
+
+                # Copy ALL properties from old to new location
+                $properties = Get-ItemProperty -Path $sourcePath;
+                $copiedCount = 0;
+                
+                foreach ($prop in $properties.PSObject.Properties) {{
+                    $name = $prop.Name;
+                    # Skip system properties
+                    if ($name -match '^PS') {{ continue; }}
+                    
+                    $value = $properties.$name;
+                    try {{
+                        # Determine type and copy
+                        if ($value -is [int]) {{
+                            Set-ItemProperty -Path $newPath -Name $name -Value $value -Type DWord -ErrorAction Stop;
+                        }} elseif ($value -is [string]) {{
+                            Set-ItemProperty -Path $newPath -Name $name -Value $value -Type String -ErrorAction Stop;
+                        }} else {{
+                            Set-ItemProperty -Path $newPath -Name $name -Value $value -ErrorAction Stop;
+                        }}
+                        $copiedCount++;
+                        Write-Output ""Copied: $name"";
+                    }} catch {{
+                        Write-Warning ""Failed to copy: $name - $_"";
+                    }}
+                }}
+
+                # Add schema version marker
+                Set-ItemProperty -Path $newPath -Name 'RegistrySchemaVersion' -Value 1 -Type DWord;
+                Set-ItemProperty -Path $newPath -Name 'LastMigrationDate' -Value '{DateTime.Now:yyyy-MM-dd HH:mm:ss}' -Type String;
+                
+                Write-Output ""Migration complete: Copied $copiedCount properties"";
+                exit 0;
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{migrationScript}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process != null)
+            {
+                var output = await process.StandardOutput.ReadToEndAsync();
+                var error = await process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync();
+
+                Console.WriteLine($"Migration v1 output: {output}");
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Console.WriteLine($"Migration v1 warnings: {error}");
+                }
+
+                return process.ExitCode == 0;
+            }
+
+            return false;
         }
         catch (Exception ex)
         {
