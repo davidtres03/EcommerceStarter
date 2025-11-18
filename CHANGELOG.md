@@ -19,6 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.2.0] - 2025-11-18
+
+### Added
+- 📝 **Automatic Changelog Extraction** - Update history now shows actual release notes from CHANGELOG.md
+  - UpdateHistoryRecorderService automatically extracts version-specific changelog entries
+  - Details modal in Update History page displays full changelog with proper formatting
+  - Release notes limited to 2000 characters for database storage
+  - Falls back to generic message if CHANGELOG.md is not found
+
+### Improved
+- 🎨 **Release Notes Display** - Enhanced formatting in Update History details modal
+  - Uses pre-wrap for proper markdown-style formatting
+  - Better readability with background color and padding
+  - Preserves line breaks and formatting from changelog
+
 ## [1.2.1.9] - 2025-11-18
 
 ### Fixed
