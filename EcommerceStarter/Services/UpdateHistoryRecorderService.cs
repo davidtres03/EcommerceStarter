@@ -1,5 +1,6 @@
 ﻿using EcommerceStarter.Data;
 using EcommerceStarter.Models;
+using EcommerceStarter.Models.Service;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
