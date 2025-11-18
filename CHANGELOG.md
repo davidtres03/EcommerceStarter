@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1.5] - 2025-11-18
+
+### Fixed
+- 🔧 **Windows Service Registry Warning** - Eliminated false warning in Event Viewer
+  - Service now reads `ServiceUrl` from registry (essential key) instead of `BaseUrl` (legacy)
+  - Falls back to legacy `BaseUrl` for backwards compatibility
+  - Changed warning to informational message when using fallback
+  - No more misleading "not found" warnings when configuration is correct
+
+---
+
 ## [1.2.1.4] - 2025-11-18
 
 ### Improved
