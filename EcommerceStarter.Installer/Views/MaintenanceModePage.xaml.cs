@@ -214,6 +214,16 @@ public partial class MaintenanceModePage : Page
             }
 
             // Build command-line arguments for the upgrader
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode] DEBUG - _existingInstall values:");
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode]   SiteName: {_existingInstall.SiteName}");
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode]   InstallPath: {_existingInstall.InstallPath}");
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode]   DatabaseServer: {_existingInstall.DatabaseServer}");
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode]   DatabaseName: {_existingInstall.DatabaseName}");
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode]   Version: {_existingInstall.Version}");
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode]   ProductCount: {_existingInstall.ProductCount}");
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode]   OrderCount: {_existingInstall.OrderCount}");
+            System.Diagnostics.Debug.WriteLine($"[MaintenanceMode]   UserCount: {_existingInstall.UserCount}");
+
             var args = $"--sitename \"{_existingInstall.SiteName}\" " +
                       $"--installpath \"{_existingInstall.InstallPath}\" " +
                       $"--dbserver \"{_existingInstall.DatabaseServer}\" " +
