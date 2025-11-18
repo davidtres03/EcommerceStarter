@@ -48,15 +48,21 @@ public class RegistryConfigService
                 return fallbackUrl;
             }
 
-            // Read BaseUrl from registry
-            var baseUrl = siteKey.GetValue("BaseUrl")?.ToString();
+            // Read ServiceUrl from registry (preferred) or BaseUrl (legacy fallback)
+            var baseUrl = siteKey.GetValue("ServiceUrl")?.ToString();
             if (string.IsNullOrEmpty(baseUrl))
             {
-                _logger.LogWarning("BaseUrl not found in registry for site: {Site}. Using fallback URL: {Url}", siteName, fallbackUrl);
+                // Try legacy BaseUrl key for backwards compatibility
+                baseUrl = siteKey.GetValue("BaseUrl")?.ToString();
+            }
+            
+            if (string.IsNullOrEmpty(baseUrl))
+            {
+                _logger.LogInformation("ServiceUrl not configured in registry for site: {Site}. Using fallback URL: {Url}", siteName, fallbackUrl);
                 return fallbackUrl;
             }
 
-            _logger.LogInformation("Using BaseUrl from registry: {Url} (Site: {Site})", baseUrl, siteName);
+            _logger.LogInformation("Using ServiceUrl from registry: {Url} (Site: {Site})", baseUrl, siteName);
             return baseUrl;
         }
         catch (Exception ex)
