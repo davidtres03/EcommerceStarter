@@ -25,7 +25,7 @@ namespace EcommerceStarter.Middleware
                 // Get Google Tag ID (GTM or GA4) and measurement path from settings
                 var settings = await siteSettingsService.GetSettingsAsync();
                 var tagId = settings.GoogleAnalyticsMeasurementId;
-                var measurementPath = settings.GoogleAnalyticsTag; // Repurposed field for measurement path
+                var measurementPath = settings.MeasurementPath ?? "/metrics";
 
                 // Only add headers if a Google Tag is configured (GTM or GA4)
                 if (!string.IsNullOrEmpty(tagId) && (tagId.StartsWith("GTM-") || tagId.StartsWith("G-")))

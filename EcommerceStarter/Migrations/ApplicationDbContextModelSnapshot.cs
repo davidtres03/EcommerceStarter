@@ -507,6 +507,12 @@ namespace EcommerceStarter.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -544,7 +550,13 @@ namespace EcommerceStarter.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("PostalCode")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("State")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("TwoFactorEnabled")
@@ -724,6 +736,13 @@ namespace EcommerceStarter.Migrations
 
                     b.Property<int>("PaymentStatus")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("RefundedAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("RefundedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ShippingAddress")
                         .IsRequired()
@@ -931,6 +950,110 @@ namespace EcommerceStarter.Migrations
                     b.HasIndex("ProductId", "DisplayOrder");
 
                     b.ToTable("ProductVariants");
+                });
+
+            modelBuilder.Entity("EcommerceStarter.Models.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByIp")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("EcommerceStarter.Models.RefundHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("InventoryRestocked")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProcessedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("ProcessedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("RefundAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RefundNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RefundReason")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RefundStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("RefundType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StripeRefundId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ProcessedDate");
+
+                    b.ToTable("RefundHistories");
                 });
 
             modelBuilder.Entity("EcommerceStarter.Models.SecurityAuditLog", b =>
@@ -1338,10 +1461,10 @@ namespace EcommerceStarter.Migrations
                     b.Property<bool>("EnableEmailNotifications")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("EnableGoogleAnalytics")
+                    b.Property<bool>("EnableGuestCheckout")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("EnableGuestCheckout")
+                    b.Property<bool>("EnableInternalServiceAuth")
                         .HasColumnType("bit");
 
                     b.Property<bool>("EnableProductReviews")
@@ -1362,9 +1485,6 @@ namespace EcommerceStarter.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("GoogleAnalyticsTag")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("HeadingFont")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1375,6 +1495,10 @@ namespace EcommerceStarter.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("InstagramUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("InternalServiceKeyEncrypted")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -1392,6 +1516,10 @@ namespace EcommerceStarter.Migrations
                     b.Property<string>("LogoUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("MeasurementPath")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("MetaDescription")
                         .IsRequired()
@@ -1508,6 +1636,11 @@ namespace EcommerceStarter.Migrations
                     b.Property<decimal>("TaxRate")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("TwitterUrl")
                         .HasMaxLength(500)
@@ -2165,6 +2298,17 @@ namespace EcommerceStarter.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("EcommerceStarter.Models.RefundHistory", b =>
+                {
+                    b.HasOne("EcommerceStarter.Models.Order", "Order")
+                        .WithMany("RefundHistories")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("EcommerceStarter.Models.SubCategory", b =>
                 {
                     b.HasOne("EcommerceStarter.Models.Category", "Category")
@@ -2304,6 +2448,8 @@ namespace EcommerceStarter.Migrations
             modelBuilder.Entity("EcommerceStarter.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
+
+                    b.Navigation("RefundHistories");
                 });
 
             modelBuilder.Entity("EcommerceStarter.Models.Product", b =>

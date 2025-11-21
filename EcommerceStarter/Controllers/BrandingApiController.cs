@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+using EcommerceStarter.Services;
 
 namespace EcommerceStarter.Controllers
 {
@@ -7,62 +7,83 @@ namespace EcommerceStarter.Controllers
     [Route("api/branding")]
     public class BrandingController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly ISiteSettingsService _siteSettingsService;
         private readonly ILogger<BrandingController> _logger;
 
         public BrandingController(
-            IConfiguration configuration,
+            ISiteSettingsService siteSettingsService,
             ILogger<BrandingController> logger)
         {
-            _configuration = configuration;
+            _siteSettingsService = siteSettingsService;
             _logger = logger;
         }
 
         [HttpGet]
-        public IActionResult GetBranding()
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> GetBranding()
         {
             try
             {
-                // Read branding configuration from appsettings.json or database
+                _logger.LogInformation("Fetching branding configuration from database");
+                
+                // Read branding configuration from database via SiteSettingsService
+                var siteSettings = await _siteSettingsService.GetSettingsAsync();
+
+                if (siteSettings == null)
+                {
+                    _logger.LogWarning("Site settings returned null from service");
+                    return Ok(GetDefaultBranding());
+                }
+
+                _logger.LogInformation("Retrieved site settings successfully: {Name}, Colors: {Primary}/{Secondary}/{Accent}", 
+                    siteSettings.CompanyName, siteSettings.PrimaryColor, siteSettings.SecondaryColor, siteSettings.AccentColor);
+
                 var branding = new BrandingResponse
                 {
-                    BusinessName = _configuration["Branding:BusinessName"] ?? "EcommerceStarter",
-                    LogoUrl = _configuration["Branding:LogoUrl"] ?? "",
-                    PrimaryColor = _configuration["Branding:PrimaryColor"] ?? "#6200EE",
-                    SecondaryColor = _configuration["Branding:SecondaryColor"] ?? "#03DAC6",
-                    AccentColor = _configuration["Branding:AccentColor"] ?? "#FF6B6B",
-                    BackgroundColor = _configuration["Branding:BackgroundColor"] ?? "#FFFFFF",
-                    SurfaceColor = _configuration["Branding:SurfaceColor"] ?? "#F5F5F5",
-                    TextPrimaryColor = _configuration["Branding:TextPrimaryColor"] ?? "#000000",
-                    TextSecondaryColor = _configuration["Branding:TextSecondaryColor"] ?? "#757575",
-                    FaviconUrl = _configuration["Branding:FaviconUrl"] ?? "",
-                    SupportEmail = _configuration["Branding:SupportEmail"] ?? "",
-                    SupportPhone = _configuration["Branding:SupportPhone"] ?? ""
+                    BusinessName = siteSettings.CompanyName ?? siteSettings.SiteName,
+                    LogoUrl = !string.IsNullOrEmpty(siteSettings.LogoUrl) 
+                        ? $"https://capandcollarsupplyco.com{siteSettings.LogoUrl}" 
+                        : "",
+                    PrimaryColor = siteSettings.PrimaryColor,
+                    SecondaryColor = siteSettings.SecondaryColor,
+                    AccentColor = siteSettings.AccentColor,
+                    BackgroundColor = "#FFFFFF",
+                    SurfaceColor = "#F8F9FA",
+                    TextPrimaryColor = "#212529",
+                    TextSecondaryColor = "#6C757D",
+                    FaviconUrl = !string.IsNullOrEmpty(siteSettings.FaviconUrl)
+                        ? $"https://capandcollarsupplyco.com{siteSettings.FaviconUrl}"
+                        : "",
+                    SupportEmail = siteSettings.SupportEmail,
+                    SupportPhone = siteSettings.Phone ?? ""
                 };
 
                 return Ok(branding);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving branding configuration");
-                
-                // Return default branding on error
-                return Ok(new BrandingResponse
-                {
-                    BusinessName = "EcommerceStarter",
-                    LogoUrl = "",
-                    PrimaryColor = "#6200EE",
-                    SecondaryColor = "#03DAC6",
-                    AccentColor = "#FF6B6B",
-                    BackgroundColor = "#FFFFFF",
-                    SurfaceColor = "#F5F5F5",
-                    TextPrimaryColor = "#000000",
-                    TextSecondaryColor = "#757575",
-                    FaviconUrl = "",
-                    SupportEmail = "",
-                    SupportPhone = ""
-                });
+                _logger.LogError(ex, "Error retrieving branding configuration from database");
+                return Ok(GetDefaultBranding());
             }
+        }
+
+        private BrandingResponse GetDefaultBranding()
+        {
+            return new BrandingResponse
+            {
+                BusinessName = "EcommerceStarter",
+                LogoUrl = "",
+                PrimaryColor = "#6200EE",
+                SecondaryColor = "#03DAC6",
+                AccentColor = "#FF6B6B",
+                BackgroundColor = "#FFFFFF",
+                SurfaceColor = "#F5F5F5",
+                TextPrimaryColor = "#000000",
+                TextSecondaryColor = "#757575",
+                FaviconUrl = "",
+                SupportEmail = "",
+                SupportPhone = ""
+            };
         }
     }
 

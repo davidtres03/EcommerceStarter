@@ -63,6 +63,11 @@
                     <i class="bi bi-envelope"></i> Email Settings
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="regional-tab" data-bs-toggle="tab" data-bs-target="#regional-panel" type="button" role="tab">
+                    <i class="bi bi-globe"></i> Regional Settings
+                </button>
+            </li>
         </ul>
 
         <div class="row">
@@ -622,6 +627,71 @@
                                     </button>
                                 </div>
                                 <div id="testEmailStatus" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Regional Settings Tab -->
+                    <div class="tab-pane fade" id="regional-panel" role="tabpanel" aria-labelledby="regional-tab">
+                        <!-- Timezone Configuration -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-globe me-2"></i>Timezone Configuration
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">
+                                    Configure your store's timezone for accurate date and time display. All dates and times are stored in UTC 
+                                    but will be displayed in your selected timezone throughout the website and admin panel.
+                                </p>
+
+                                <!-- Current Timezone Display -->
+                                <div class="alert alert-info mb-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold mb-1">
+                                                <i class="bi bi-clock me-2"></i>Current Timezone
+                                            </h6>
+                                            <p class="mb-0" id="current-timezone-display">Loading...</p>
+                                        </div>
+                                        <div class="col-md-6 text-md-end">
+                                            <h6 class="fw-bold mb-1">Local Time</h6>
+                                            <p class="mb-0 fs-5" id="current-time-display">--:--:--</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Timezone Selector -->
+                                <div class="mb-3">
+                                    <label for="timezoneSelect" class="form-label fw-bold">
+                                        <i class="bi bi-globe2 me-2"></i>Select Timezone
+                                    </label>
+                                    <select id="timezoneSelect" class="form-select" disabled>
+                                        <option value="">Loading timezones...</option>
+                                    </select>
+                                    <small class="text-muted">Choose the timezone for your business location or primary customer base</small>
+                                </div>
+
+                                <!-- Save Timezone Button -->
+                                <div class="d-flex justify-content-end">
+                                    <button type="button" class="btn btn-primary" id="saveTimezoneBtn" onclick="saveTimezone()" disabled>
+                                        <i class="bi bi-check-lg me-2"></i>Save Timezone
+                                    </button>
+                                </div>
+                                <div id="timezoneStatus" class="mt-3"></div>
+
+                                <!-- Information -->
+                                <hr class="my-4">
+                                <div class="alert alert-light">
+                                    <h6 class="fw-bold"><i class="bi bi-info-circle me-2"></i>How Timezone Conversion Works</h6>
+                                    <ul class="mb-0">
+                                        <li>All dates and times are stored in <strong>UTC (Coordinated Universal Time)</strong> in the database</li>
+                                        <li>When displayed, they are automatically converted to your configured timezone</li>
+                                        <li>This ensures accurate time tracking regardless of where your customers or admins are located</li>
+                                        <li>Changes take effect immediately for all new requests (with a 5-minute cache refresh)</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1566,6 +1636,156 @@
     </div>
 
     <script src="~/js/email-preview.js"></script>
+
+    <!-- Timezone Management JavaScript -->
+    <script>
+        let availableTimezones = [];
+        let currentTimezone = null;
+        let timeUpdateInterval = null;
+
+        // Load timezone data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTimezones();
+            startTimeClock();
+        });
+
+        // Load current timezone and available timezones from page handlers
+        async function loadTimezones() {
+            try {
+                // Get current timezone
+                const currentResponse = await fetch('?handler=Timezone');
+                if (currentResponse.ok) {
+                    const current = await currentResponse.json();
+                    currentTimezone = current;
+                    document.getElementById('current-timezone-display').textContent = 
+                        `${current.displayName} (${current.currentUtcOffset})`;
+                    updateLocalTime(current.currentDateTime);
+                }
+
+                // Get available timezones
+                const availableResponse = await fetch('?handler=AvailableTimezones');
+                if (availableResponse.ok) {
+                    availableTimezones = await availableResponse.json();
+                    populateTimezoneDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading timezones:', error);
+                document.getElementById('current-timezone-display').textContent = 'Error loading timezone';
+            }
+        }
+
+        // Populate dropdown with available timezones
+        function populateTimezoneDropdown() {
+            const select = document.getElementById('timezoneSelect');
+            select.innerHTML = '<option value="">-- Select a Timezone --</option>';
+            
+            availableTimezones.forEach(tz => {
+                const option = document.createElement('option');
+                option.value = tz.id;
+                option.textContent = `${tz.displayName}`;
+                if (currentTimezone && tz.id === currentTimezone.timeZoneId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            select.disabled = false;
+            document.getElementById('saveTimezoneBtn').disabled = false;
+        }
+
+        // Start live clock display
+        function startTimeClock() {
+            updateClock();
+            timeUpdateInterval = setInterval(updateClock, 1000);
+        }
+
+        // Update clock display every second
+        function updateClock() {
+            if (currentTimezone) {
+                // Parse the current datetime from API and add elapsed seconds
+                const now = new Date();
+                document.getElementById('current-time-display').textContent = 
+                    now.toLocaleTimeString('en-US', { hour12: true });
+            }
+        }
+
+        // Update local time display
+        function updateLocalTime(isoDateTime) {
+            try {
+                const date = new Date(isoDateTime);
+                document.getElementById('current-time-display').textContent = 
+                    date.toLocaleTimeString('en-US', { hour12: true });
+            } catch (error) {
+                console.error('Error parsing datetime:', error);
+            }
+        }
+
+        // Save timezone selection
+        async function saveTimezone() {
+            const select = document.getElementById('timezoneSelect');
+            const selectedTimezoneId = select.value;
+            const statusDiv = document.getElementById('timezoneStatus');
+            const saveBtn = document.getElementById('saveTimezoneBtn');
+
+            if (!selectedTimezoneId) {
+                showTimezoneStatus('Please select a timezone', 'danger');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+            showTimezoneStatus('Saving timezone...', 'info');
+
+            try {
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const headers = { 'Content-Type': 'application/json' };
+                if (tokenInput) headers['RequestVerificationToken'] = tokenInput.value;
+
+                const response = await fetch('?handler=UpdateTimezone', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ timeZoneId: selectedTimezoneId })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showTimezoneStatus('? Timezone saved successfully! Reloading...', 'success');
+                    
+                    // Reload timezone data
+                    setTimeout(async () => {
+                        await loadTimezones();
+                        showTimezoneStatus('? Timezone updated successfully!', 'success');
+                        setTimeout(() => { statusDiv.innerHTML = ''; }, 5000);
+                    }, 1000);
+                } else {
+                    showTimezoneStatus('? ' + (result.message || 'Failed to save timezone'), 'danger');
+                }
+            } catch (error) {
+                console.error('Error saving timezone:', error);
+                showTimezoneStatus('? Error: ' + error.message, 'danger');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Save Timezone';
+            }
+        }
+
+        // Show timezone status message
+        function showTimezoneStatus(message, type) {
+            const statusDiv = document.getElementById('timezoneStatus');
+            statusDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+
+        // Clean up interval on page unload
+        window.addEventListener('beforeunload', function() {
+            if (timeUpdateInterval) {
+                clearInterval(timeUpdateInterval);
+            }
+        });
+    </script>
 
 
 

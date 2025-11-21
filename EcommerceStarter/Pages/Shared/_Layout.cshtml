@@ -65,13 +65,15 @@
     }
 </head>
 <body>
-    @* Google Tag Manager (noscript fallback) - GTM only, GA4 doesn't need this *@
+    @* Google Tag Manager (noscript fallback via Cloudflare Gateway) - GTM only, GA4 doesn't need this *@
     @{
-        var tagId = (await SiteSettingsService.GetSettingsAsync()).GoogleAnalyticsMeasurementId;
+        var siteSettingsForGTM = await SiteSettingsService.GetSettingsAsync();
+        var tagId = siteSettingsForGTM.GoogleAnalyticsMeasurementId;
+        var measurementPath = siteSettingsForGTM.MeasurementPath ?? "/metrics";
         if (!string.IsNullOrEmpty(tagId) && tagId.StartsWith("GTM-"))
         {
-            <!-- Google Tag Manager (noscript) -->
-            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=@tagId"
+            <!-- Google Tag Manager (noscript via Cloudflare Gateway) -->
+            <noscript><iframe src="@measurementPath/ns.html?id=@tagId"
             height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <!-- End Google Tag Manager (noscript) -->
         }

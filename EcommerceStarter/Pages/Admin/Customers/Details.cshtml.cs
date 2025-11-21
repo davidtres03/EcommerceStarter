@@ -42,6 +42,9 @@ namespace EcommerceStarter.Pages.Admin.Customers
 
         [TempData]
         public string? SuccessMessage { get; set; }
+        
+        [TempData]
+        public string? ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync(string id)
         {
@@ -276,6 +279,112 @@ namespace EcommerceStarter.Pages.Admin.Customers
             {
                 _logger.LogError(ex, $"Error resending email confirmation to user {id}");
                 TempData["Error"] = "An error occurred while sending the email verification.";
+            }
+
+            return RedirectToPage(new { id });
+        }
+
+        public async Task<IActionResult> OnPostUpdateCustomerAsync(
+            string id,
+            string? phoneNumber,
+            string? address,
+            string? city,
+            string? state,
+            string? postalCode)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                ErrorMessage = "Invalid user ID.";
+                return RedirectToPage(new { id });
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                ErrorMessage = "User not found.";
+                return RedirectToPage();
+            }
+
+            try
+            {
+                // Track changes for audit log
+                var changes = new List<string>();
+
+                // Update phone number
+                if (user.PhoneNumber != phoneNumber)
+                {
+                    var oldPhone = user.PhoneNumber ?? "None";
+                    user.PhoneNumber = phoneNumber;
+                    changes.Add($"Phone: {oldPhone} → {phoneNumber ?? "None"}");
+                }
+
+                // Update address fields
+                if (user.Address != address)
+                {
+                    var oldAddress = user.Address ?? "None";
+                    user.Address = address;
+                    changes.Add($"Address: {oldAddress} → {address ?? "None"}");
+                }
+
+                if (user.City != city)
+                {
+                    var oldCity = user.City ?? "None";
+                    user.City = city;
+                    changes.Add($"City: {oldCity} → {city ?? "None"}");
+                }
+
+                if (user.State != state)
+                {
+                    var oldState = user.State ?? "None";
+                    user.State = state;
+                    changes.Add($"State: {oldState} → {state ?? "None"}");
+                }
+
+                if (user.PostalCode != postalCode)
+                {
+                    var oldPostalCode = user.PostalCode ?? "None";
+                    user.PostalCode = postalCode;
+                    changes.Add($"Postal Code: {oldPostalCode} → {postalCode ?? "None"}");
+                }
+
+                if (changes.Any())
+                {
+                    var result = await _userManager.UpdateAsync(user);
+
+                    if (result.Succeeded)
+                    {
+                        _logger.LogInformation(
+                            "Customer {UserId} ({Email}) updated by admin. Changes: {Changes}",
+                            id,
+                            user.Email,
+                            string.Join(", ", changes)
+                        );
+
+                        // Log admin action
+                        var adminEmail = User.Identity?.Name ?? "Unknown Admin";
+                        await _auditLogService.LogAdminActionAsync(
+                            id,
+                            adminEmail,
+                            "UpdateInfo",
+                            $"Customer information updated: {string.Join(", ", changes)}"
+                        );
+
+                        SuccessMessage = "Customer information updated successfully.";
+                    }
+                    else
+                    {
+                        ErrorMessage = $"Failed to update customer: {string.Join(", ", result.Errors.Select(e => e.Description))}";
+                    }
+                }
+                else
+                {
+                    ErrorMessage = "No changes detected.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating customer {UserId}", id);
+                ErrorMessage = "An error occurred while updating customer information.";
             }
 
             return RedirectToPage(new { id });

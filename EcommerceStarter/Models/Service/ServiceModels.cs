@@ -219,4 +219,46 @@ namespace EcommerceStarter.Models.Service
         public int UpdatesApplied30Days { get; set; }
         public DateTime? LastSuccessfulBackup { get; set; }
     }
+
+    /// <summary>
+    /// DTO for receiving service status logs from Windows Service
+    /// </summary>
+    public class ServiceStatusLogDto
+    {
+        public bool IsWebServiceOnline { get; set; }
+        public int ResponseTimeMs { get; set; }
+        public bool IsBackgroundServiceRunning { get; set; }
+        public int PendingOrdersCount { get; set; }
+        public int MemoryUsageMb { get; set; }
+        public decimal CpuUsagePercent { get; set; }
+        public bool DatabaseConnected { get; set; }
+        public int ActiveUserCount { get; set; }
+        public int QueueSize { get; set; }
+        public decimal UptimePercent { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for receiving service error logs from Windows Service
+    /// </summary>
+    public class ServiceErrorLogDto
+    {
+        public string Source { get; set; } = string.Empty;
+        public string Severity { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string? StackTrace { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for receiving update history logs from Windows Service
+    /// </summary>
+    public class UpdateHistoryLogDto
+    {
+        public string Version { get; set; } = string.Empty;
+        public DateTime AppliedAt { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string? ReleaseNotes { get; set; }
+        public string? ErrorMessage { get; set; }
+        public int ApplyDurationSeconds { get; set; }
+    }
 }

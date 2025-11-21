@@ -29,8 +29,7 @@ namespace EcommerceStarter.Pages.Admin.Settings
         {
             var settings = await _siteSettingsService.GetSettingsAsync();
             GoogleTagManagerId = settings.GoogleAnalyticsMeasurementId;
-            // Use GoogleAnalyticsTag field to store measurement path (repurposing unused field)
-            MeasurementPath = string.IsNullOrEmpty(settings.GoogleAnalyticsTag) ? "/metrics" : settings.GoogleAnalyticsTag;
+            MeasurementPath = string.IsNullOrEmpty(settings.MeasurementPath) ? "/metrics" : settings.MeasurementPath;
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -68,7 +67,7 @@ namespace EcommerceStarter.Pages.Admin.Settings
                 
                 // Store GTM ID and measurement path
                 settings.GoogleAnalyticsMeasurementId = GoogleTagManagerId?.Trim();
-                settings.GoogleAnalyticsTag = MeasurementPath?.Trim(); // Repurpose this field for measurement path
+                settings.MeasurementPath = MeasurementPath?.Trim();
                 
                 await _siteSettingsService.UpdateSettingsAsync(settings, User.Identity?.Name);
 

@@ -17,6 +17,7 @@ namespace EcommerceStarter.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<RefundHistory> RefundHistories { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<SubCategory> SubCategories { get; set; }
         public DbSet<StripeConfiguration> StripeConfigurations { get; set; }
@@ -55,6 +56,9 @@ namespace EcommerceStarter.Data
         public DbSet<ServiceStatusLog> ServiceStatusLogs { get; set; }
         public DbSet<UpdateHistory> UpdateHistories { get; set; }
         public DbSet<ServiceErrorLog> ServiceErrorLogs { get; set; }
+
+        // JWT Authentication Tables
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -126,9 +130,30 @@ namespace EcommerceStarter.Data
                 .HasPrecision(18, 2);
 
             builder.Entity<Order>()
+                .Property(o => o.RefundedAmount)
+                .HasPrecision(18, 2);
+
+            builder.Entity<Order>()
                 .HasOne(o => o.User)
                 .WithMany(u => u.Orders)
                 .HasForeignKey(o => o.UserId);
+
+            // Configure RefundHistory
+            builder.Entity<RefundHistory>()
+                .Property(rh => rh.RefundAmount)
+                .HasPrecision(18, 2);
+
+            builder.Entity<RefundHistory>()
+                .HasOne(rh => rh.Order)
+                .WithMany(o => o.RefundHistories)
+                .HasForeignKey(rh => rh.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<RefundHistory>()
+                .HasIndex(rh => rh.OrderId);
+
+            builder.Entity<RefundHistory>()
+                .HasIndex(rh => rh.ProcessedDate);
 
             // Configure OrderItem
             builder.Entity<OrderItem>()

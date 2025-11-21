@@ -3,11 +3,15 @@ using EcommerceStarter.Data;
 using EcommerceStarter.Models;
 using EcommerceStarter.Services;
 using EcommerceStarter.Services.AI;
+using EcommerceStarter.Services.Auth;
 using EcommerceStarter.Services.Tracking;
 using EcommerceStarter.Middleware;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -99,6 +103,68 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
+// Add JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings["SecretKey"];
+if (string.IsNullOrEmpty(secretKey))
+{
+    // Generate a secure random key if not configured
+    secretKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+    builder.Configuration["Jwt:SecretKey"] = secretKey;
+}
+
+// Configure dual authentication: JWT for API, Cookies for Web
+builder.Services.AddAuthentication(options =>
+{
+    // Use cookies as default for web pages
+    options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
+})
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"] ?? "EcommerceStarter",
+        ValidAudience = jwtSettings["Audience"] ?? "EcommerceStarter",
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ClockSkew = TimeSpan.Zero
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+            {
+                context.Response.Headers.Add("Token-Expired", "true");
+            }
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            // For API requests (not redirecting to login page)
+            context.HandleResponse();
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            var result = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                success = false,
+                message = "Unauthorized. Valid JWT token required."
+            });
+            return context.Response.WriteAsync(result);
+        }
+    };
+});
+
+// Register JWT Services
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
 // Add Response Caching for dynamic theme CSS
 builder.Services.AddResponseCaching();
 
@@ -159,6 +225,9 @@ builder.Services.AddScoped<ICourierService, CourierService>();
 
 // Register API Key Service (for carrier API credentials)
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+
+// Register Timezone Service
+builder.Services.AddScoped<ITimezoneService, TimezoneService>();
 
 // Register AI Services
 // NOTE: AIService is Singleton to preserve backend registrations across requests
@@ -223,7 +292,15 @@ builder.Services.AddScoped<IEmailService>(serviceProvider =>
 });
 
 builder.Services.AddRazorPages();
-builder.Services.AddControllers(); // Add support for API controllers
+
+// Add support for API controllers with global timezone-aware DateTime converter
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Register timezone-aware DateTime converters globally
+        // This automatically converts all DateTime properties in API responses to the configured timezone
+        options.JsonSerializerOptions.Converters.Add(new EcommerceStarter.Converters.TimezoneAwareDateTimeConverterFactory());
+    });
 
 // Add health checks
 builder.Services.AddHealthChecks()
@@ -325,13 +402,14 @@ app.Use(async (context, next) =>
     var csp = new System.Text.StringBuilder();
     csp.Append("default-src 'self'; ");
 
-    // Common allowed script/style/connect/image/font hosts (Stripe, CDNs, Google Pay, Google Analytics/Tag Manager, Cloudflare)
-    var scriptSrc = "'self' 'unsafe-inline' https://js.stripe.com https://cdn.jsdelivr.net https://pay.google.com https://wallet.google.com https://google.com https://gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://static.cloudflareinsights.com https://cloudflareinsights.com";
-    var styleSrc = "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://tagmanager.google.com https://www.googletagmanager.com";
-    var connectSrc = "'self' https://api.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://pay.google.com https://wallet.google.com https://google.com https://www.google.com https://google.com/pay https://www.google.com/pay https://gstatic.com https://cdn.jsdelivr.net https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://region1.google-analytics.com https://region1.analytics.google.com https://cloudflareinsights.com https://static.cloudflareinsights.com";
-    var imgSrc = "'self' data: https: https://gstatic.com https://www.google-analytics.com https://ssl.google-analytics.com https://www.googletagmanager.com https://www.google.com";
+    // Common allowed script/style/connect/image/font hosts (Stripe, CDNs, Google Pay, Cloudflare)
+    // CSP for Cloudflare Gateway: Google Analytics served from our domain via measurement path (blocked from external sources)
+    var scriptSrc = "'self' 'unsafe-inline' https://js.stripe.com https://cdn.jsdelivr.net https://pay.google.com https://wallet.google.com https://static.cloudflareinsights.com";
+    var styleSrc = "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com";
+    var connectSrc = "'self' https://api.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://pay.google.com https://wallet.google.com https://www.google.com/pay https://cdn.jsdelivr.net https://static.cloudflareinsights.com https://stats.g.doubleclick.net";
+    var imgSrc = "'self' data: https:";
     var fontSrc = "'self' https://cdn.jsdelivr.net https://fonts.gstatic.com https://fonts.googleapis.com";
-    var frameSrc = "https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://pay.google.com https://wallet.google.com https://google.com";
+    var frameSrc = "https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://pay.google.com https://wallet.google.com https://www.google.com";
 
     // In Development allow localhost and BrowserLink/websocket endpoints for tooling and testing
     if (app.Environment.IsDevelopment())
@@ -385,6 +463,13 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSession();
+
+// Set timezone service in async context for JSON converters
+app.UseTimezoneService();
+
+// IMPORTANT: Internal service authentication must come BEFORE regular authentication
+// This allows automated services to bypass JWT token requirements
+app.UseInternalServiceAuthentication();
 
 // IMPORTANT: Authentication must come BEFORE security middleware
 // so that User.Identity and User.IsInRole() are available

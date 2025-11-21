@@ -200,10 +200,9 @@ namespace EcommerceStarter.Services
                     existingSettings.CustomHeaderHtml = SanitizeHtml(settings.CustomHeaderHtml);
                     existingSettings.CustomFooterHtml = SanitizeHtml(settings.CustomFooterHtml);
 
-                    // Google Analytics
-                    existingSettings.EnableGoogleAnalytics = settings.EnableGoogleAnalytics;
-                    existingSettings.GoogleAnalyticsTag = settings.GoogleAnalyticsTag;
+                    // Google Analytics (Cloudflare Gateway)
                     existingSettings.GoogleAnalyticsMeasurementId = settings.GoogleAnalyticsMeasurementId;
+                    existingSettings.MeasurementPath = settings.MeasurementPath ?? "/metrics";
 
                     // Metadata
                     existingSettings.LastModified = DateTime.UtcNow;

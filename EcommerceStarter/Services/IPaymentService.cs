@@ -27,5 +27,6 @@ namespace EcommerceStarter.Services
         
         Task<bool> ConfirmPaymentAsync(string paymentIntentId);
         Task<string> GetPaymentStatusAsync(string paymentIntentId);
+        Task<(bool success, string? refundId, string? error)> RefundPaymentAsync(string paymentIntentId, long amountInCents, string reason = "requested_by_customer");
     }
 }

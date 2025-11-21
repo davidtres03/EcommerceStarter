@@ -192,13 +192,152 @@
                                         </button>
                                     </div>
                                 </form>
-                                <small class="text-muted mt-2 d-block">
-                                    <i class="bi bi-info-circle"></i> Note: This only updates the local status. For refunds, process them through Stripe Dashboard.
-                                </small>
                             </div>
                         </div>
+
+                        @* Refund Processing Section *@
+                        @if (!string.IsNullOrEmpty(Model.Order.PaymentIntentId) && Model.Order.PaymentStatus == EcommerceStarter.Models.PaymentStatus.Succeeded)
+                        {
+                            <div class="card bg-light mt-3">
+                                <div class="card-body">
+                                    <h6 class="text-danger"><i class="bi bi-arrow-counterclockwise"></i> Process Refund</h6>
+                                    <form method="post" asp-page-handler="ProcessRefund" id="refundForm">
+                                        <input type="hidden" name="id" value="@Model.Order.Id" />
+                                        
+                                        <!-- Refund Type -->
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Refund Type</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="refundType" id="refundTypeFull" value="full" checked onchange="togglePartialAmount()">
+                                                <label class="form-check-label" for="refundTypeFull">
+                                                    Full Refund ($@Model.Order.TotalAmount.ToString("F2"))
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="refundType" id="refundTypePartial" value="partial" onchange="togglePartialAmount()">
+                                                <label class="form-check-label" for="refundTypePartial">
+                                                    Partial Refund
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- Partial Amount -->
+                                        <div class="mb-3" id="partialAmountDiv" style="display:none;">
+                                            <label class="form-label small text-muted">Refund Amount</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" step="0.01" min="0.01" max="@Model.Order.TotalAmount" 
+                                                       name="refundAmount" id="refundAmount" class="form-control" placeholder="0.00">
+                                            </div>
+                                            <small class="text-muted">Order total: $@Model.Order.TotalAmount.ToString("F2")</small>
+                                        </div>
+
+                                        <!-- Refund Reason -->
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Refund Reason <span class="text-danger">*</span></label>
+                                            <select name="refundReason" class="form-select form-select-sm" required>
+                                                <option value="">Select reason...</option>
+                                                <option value="defective">Defective Product</option>
+                                                <option value="wrong_item">Wrong Item Received</option>
+                                                <option value="customer_request">Customer Request</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Restock Inventory -->
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" name="restockInventory" id="restockInventory" checked>
+                                            <label class="form-check-label small" for="restockInventory">
+                                                Restock inventory items
+                                            </label>
+                                        </div>
+
+                                        <!-- Additional Notes -->
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Notes (Optional)</label>
+                                            <textarea name="refundNotes" class="form-control form-control-sm" rows="2" placeholder="Add any additional notes about this refund..."></textarea>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-danger btn-sm w-100" onclick="return confirm('Are you sure you want to process this refund? This action cannot be undone.');">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Process Refund
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                        else if (Model.Order.PaymentStatus == EcommerceStarter.Models.PaymentStatus.Refunded)
+                        {
+                            <div class="alert alert-warning mt-3 mb-0">
+                                <i class="bi bi-check-circle"></i> This order has been refunded.
+                            </div>
+                        }
                     </div>
                 </div>
+
+                @* Refund History *@
+                @if (Model.Order.RefundHistories != null && Model.Order.RefundHistories.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning">
+                            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Refund History</h5>
+                        </div>
+                        <div class="card-body">
+                            @foreach (var refund in Model.Order.RefundHistories.OrderByDescending(r => r.ProcessedDate))
+                            {
+                                <div class="border-start border-warning border-4 ps-3 mb-3 pb-3 @(refund != Model.Order.RefundHistories.OrderByDescending(r => r.ProcessedDate).Last() ? "border-bottom" : "")">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <strong>$@refund.RefundAmount.ToString("F2")</strong>
+                                                <span class="badge bg-secondary ms-2">@(refund.RefundType == "full" ? "Full" : "Partial")</span>
+                                            </h6>
+                                            <p class="mb-1 small text-muted">
+                                                <i class="bi bi-calendar"></i> @refund.ProcessedDate.ToLocalTime().ToString("MMM dd, yyyy hh:mm tt")
+                                            </p>
+                                        </div>
+                                        <span class="badge @(refund.RefundStatus == "succeeded" ? "bg-success" : "bg-danger")">
+                                            @refund.RefundStatus
+                                        </span>
+                                    </div>
+                                    <div class="mt-2 small">
+                                        <p class="mb-1"><strong>Reason:</strong> @GetRefundReasonDisplay(refund.RefundReason)</p>
+                                        @if (!string.IsNullOrEmpty(refund.RefundNotes))
+                                        {
+                                            <p class="mb-1"><strong>Notes:</strong> <em>@refund.RefundNotes</em></p>
+                                        }
+                                        <p class="mb-1"><strong>Processed by:</strong> @refund.ProcessedBy</p>
+                                        <p class="mb-1">
+                                            <strong>Inventory:</strong> 
+                                            @(refund.InventoryRestocked ? 
+                                                "<span class='text-success'><i class='bi bi-check-circle'></i> Restocked</span>" : 
+                                                "<span class='text-muted'>Not restocked</span>")
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(refund.StripeRefundId))
+                                        {
+                                            <p class="mb-0 font-monospace text-muted" style="font-size: 0.75rem;">
+                                                <strong>Stripe ID:</strong> @refund.StripeRefundId
+                                            </p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @functions {
+                        string GetRefundReasonDisplay(string refundReason)
+                        {
+                            return refundReason switch
+                            {
+                                "defective" => "Defective Product",
+                                "wrong_item" => "Wrong Item Received",
+                                "customer_request" => "Customer Request",
+                                "other" => "Other",
+                                _ => refundReason
+                            };
+                        }
+                    }
+                }
 
                 <!-- Order Items -->
                 <div class="card">
@@ -470,6 +609,22 @@
                 }
             } catch (error) {
                 console.error('Error detecting courier:', error);
+            }
+        }
+
+        // Toggle partial refund amount field
+        function togglePartialAmount() {
+            const partialAmountDiv = document.getElementById('partialAmountDiv');
+            const refundTypePartial = document.getElementById('refundTypePartial');
+            const refundAmountInput = document.getElementById('refundAmount');
+            
+            if (refundTypePartial && refundTypePartial.checked) {
+                partialAmountDiv.style.display = 'block';
+                refundAmountInput.required = true;
+            } else {
+                partialAmountDiv.style.display = 'none';
+                refundAmountInput.required = false;
+                refundAmountInput.value = '';
             }
         }
     </script>

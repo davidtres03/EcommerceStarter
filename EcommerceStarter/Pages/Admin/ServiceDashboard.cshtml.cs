@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EcommerceStarter.Models.Service;
 using EcommerceStarter.Data;
+using EcommerceStarter.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceStarter.Pages.Admin
@@ -13,15 +14,17 @@ namespace EcommerceStarter.Pages.Admin
     public class ServiceDashboardModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITimezoneService _timezoneService;
 
         public ServiceStatusDto? CurrentStatus { get; set; }
         public List<UpdateHistoryDto>? RecentUpdates { get; set; }
         public List<ServiceErrorDto>? RecentErrors { get; set; }
         public PerformanceMetricsDto? Metrics { get; set; }
 
-        public ServiceDashboardModel(ApplicationDbContext context)
+        public ServiceDashboardModel(ApplicationDbContext context, ITimezoneService timezoneService)
         {
             _context = context;
+            _timezoneService = timezoneService;
         }
 
         public async Task OnGetAsync()
@@ -37,52 +40,54 @@ namespace EcommerceStarter.Pages.Admin
                 {
                     CurrentStatus = new ServiceStatusDto
                     {
-                        Timestamp = latestStatus.Timestamp,
+                        Timestamp = _timezoneService.ConvertUtcToLocalTime(latestStatus.Timestamp),
                         IsWebServiceOnline = latestStatus.IsWebServiceOnline,
                         ResponseTimeMs = latestStatus.ResponseTimeMs,
                         IsBackgroundServiceRunning = latestStatus.IsBackgroundServiceRunning,
                         PendingOrdersCount = latestStatus.PendingOrdersCount,
                         MemoryUsageMb = latestStatus.MemoryUsageMb,
-                        CpuUsagePercent = latestStatus.CpuUsagePercent,
+                        CpuUsagePercent = Math.Round(latestStatus.CpuUsagePercent, 2),
                         DatabaseConnected = latestStatus.DatabaseConnected,
                         ActiveUserCount = latestStatus.ActiveUserCount,
                         QueueSize = latestStatus.QueueSize,
-                        UptimePercent = latestStatus.UptimePercent,
+                        UptimePercent = Math.Round(latestStatus.UptimePercent, 2),
                         ErrorMessage = latestStatus.ErrorMessage
                     };
                 }
 
                 // Get recent updates
-                RecentUpdates = await _context.UpdateHistories
+                var updates = await _context.UpdateHistories
                     .OrderByDescending(u => u.AppliedAt)
                     .Take(10)
-                    .Select(u => new UpdateHistoryDto
-                    {
-                        Id = u.Id,
-                        Version = u.Version,
-                        AppliedAt = u.AppliedAt,
-                        Status = u.Status,
-                        ReleaseNotes = u.ReleaseNotes,
-                        ErrorMessage = u.ErrorMessage,
-                        ApplyDurationSeconds = u.ApplyDurationSeconds
-                    })
                     .ToListAsync();
 
+                RecentUpdates = updates.Select(u => new UpdateHistoryDto
+                {
+                    Id = u.Id,
+                    Version = u.Version,
+                    AppliedAt = _timezoneService.ConvertUtcToLocalTime(u.AppliedAt),
+                    Status = u.Status,
+                    ReleaseNotes = u.ReleaseNotes,
+                    ErrorMessage = u.ErrorMessage,
+                    ApplyDurationSeconds = u.ApplyDurationSeconds
+                }).ToList();
+
                 // Get recent errors
-                RecentErrors = await _context.ServiceErrorLogs
+                var errors = await _context.ServiceErrorLogs
                     .Where(e => !e.IsAcknowledged)
                     .OrderByDescending(e => e.Timestamp)
                     .Take(10)
-                    .Select(e => new ServiceErrorDto
-                    {
-                        Id = e.Id,
-                        Timestamp = e.Timestamp,
-                        Source = e.Source,
-                        Severity = e.Severity,
-                        Message = e.Message,
-                        IsAcknowledged = e.IsAcknowledged
-                    })
                     .ToListAsync();
+
+                RecentErrors = errors.Select(e => new ServiceErrorDto
+                {
+                    Id = e.Id,
+                    Timestamp = _timezoneService.ConvertUtcToLocalTime(e.Timestamp),
+                    Source = e.Source,
+                    Severity = e.Severity,
+                    Message = e.Message,
+                    IsAcknowledged = e.IsAcknowledged
+                }).ToList();
 
                 // Get performance metrics (last 24 hours)
                 var last24Hours = DateTime.UtcNow.AddHours(-24);
@@ -95,9 +100,9 @@ namespace EcommerceStarter.Pages.Admin
                     Metrics = new PerformanceMetricsDto
                     {
                         AverageResponseTimeMs = (int)statusLogs.Average(s => s.ResponseTimeMs),
-                        AverageCpuUsagePercent = (decimal)statusLogs.Average(s => (double)s.CpuUsagePercent),
+                        AverageCpuUsagePercent = Math.Round((decimal)statusLogs.Average(s => (double)s.CpuUsagePercent), 2),
                         AverageMemoryUsageMb = (int)statusLogs.Average(s => s.MemoryUsageMb),
-                        UptimePercent = (decimal)statusLogs.Average(s => s.UptimePercent)
+                        UptimePercent = Math.Round((decimal)statusLogs.Average(s => s.UptimePercent), 2)
                     };
                 }
             }

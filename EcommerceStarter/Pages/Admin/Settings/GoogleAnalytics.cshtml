@@ -148,14 +148,14 @@
                                     <ol class="small">
                                         <li class="mb-2">Log in to <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">Cloudflare Dashboard</a></li>
                                         <li class="mb-2">Select your website</li>
-                                        <li class="mb-2">Go to <strong>Zaraz</strong> ? <strong>Google Tag Gateway</strong></li>
+                                        <li class="mb-2">Go to <strong>Zaraz</strong> <i class="bi bi-arrow-right"></i> <strong>Google Tag Gateway</strong></li>
                                         <li class="mb-2">Click <strong>Turn on and configure Google tag gateway</strong></li>
                                         <li class="mb-2">Enter your Google Tag ID: <code class="bg-light px-2 py-1">@(Model.GoogleTagManagerId ?? "GTM-XXXXXXX or G-XXXXXXXXXX")</code></li>
                                         <li class="mb-2">
                                             <strong>Set the measurement path to:</strong> 
                                             <code class="bg-warning px-2 py-1">@(Model.MeasurementPath ?? "/metrics")</code>
                                             <br>
-                                            <small class="text-danger">?? This MUST match exactly what you entered on the left!</small>
+                                            <small class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> This MUST match exactly what you entered on the left!</small>
                                         </li>
                                         <li class="mb-2">Click <strong>Save</strong></li>
                                     </ol>
@@ -174,7 +174,7 @@
                                     <ol class="small">
                                         <li class="mb-2">Log in to <a href="https://tagmanager.google.com/" target="_blank" rel="noopener">Google Tag Manager</a></li>
                                         <li class="mb-2">Select your container</li>
-                                        <li class="mb-2">Go to <strong>Admin</strong> ? <strong>Google tag gateway</strong></li>
+                                        <li class="mb-2">Go to <strong>Admin</strong> <i class="bi bi-arrow-right"></i> <strong>Google tag gateway</strong></li>
                                         <li class="mb-2">Click <strong>Continue</strong> to start setup</li>
                                         <li class="mb-2">Accept the measurement path</li>
                                         <li class="mb-2">Click <strong>Sign in to Cloudflare</strong></li>
@@ -198,7 +198,7 @@
                         <li class="mb-2">
                             <strong>Clear Cloudflare Cache:</strong>
                             <ul class="mt-1">
-                                <li>Cloudflare ? <strong>Caching</strong> ? <strong>Purge Everything</strong></li>
+                                <li>Cloudflare <i class="bi bi-arrow-right"></i> <strong>Caching</strong> <i class="bi bi-arrow-right"></i> <strong>Purge Everything</strong></li>
                             </ul>
                         </li>
                         <li class="mb-2">
@@ -246,16 +246,16 @@
                     <div class="row">
                         <div class="col-md-6">
                             <ul class="small">
-                                <li>? First-party tracking (better data collection)</li>
-                                <li>? Bypasses most ad blockers</li>
-                                <li>? Faster page load (Cloudflare CDN)</li>
+                                <li><i class="bi bi-check-circle text-success"></i> First-party tracking (better data collection)</li>
+                                <li><i class="bi bi-shield-check text-success"></i> Bypasses most ad blockers</li>
+                                <li><i class="bi bi-speedometer2 text-success"></i> Faster page load (Cloudflare CDN)</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
                             <ul class="small">
-                                <li>? Improved privacy compliance</li>
-                                <li>? Automatic script updates</li>
-                                <li>? Better browser compatibility</li>
+                                <li><i class="bi bi-lock-fill text-success"></i> Improved privacy compliance</li>
+                                <li><i class="bi bi-arrow-repeat text-success"></i> Automatic script updates</li>
+                                <li><i class="bi bi-browser-chrome text-success"></i> Better browser compatibility</li>
                             </ul>
                         </div>
                     </div>
@@ -267,12 +267,18 @@
 
 @section Scripts {
     <script>
-        // Auto-format GTM ID input
+        // Auto-format Tag ID input - support both GTM and GA4 formats
         document.getElementById('GoogleTagManagerId')?.addEventListener('input', function(e) {
             let value = e.target.value.toUpperCase();
-            // Auto-add GTM- prefix if user starts typing without it
-            if (value.length > 0 && !value.startsWith('GTM-')) {
-                e.target.value = 'GTM-' + value;
+            // Only auto-add GTM- prefix if user starts typing without GTM- or G-
+            if (value.length > 0 && !value.startsWith('GTM-') && !value.startsWith('G-')) {
+                // If it looks like a GA4 ID (starts with just G), add the dash
+                if (value.startsWith('G') && value.length > 1) {
+                    e.target.value = 'G-' + value.substring(1);
+                } else {
+                    // Otherwise assume GTM
+                    e.target.value = 'GTM-' + value;
+                }
             }
         });
     </script>

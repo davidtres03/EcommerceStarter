@@ -5,6 +5,7 @@ using EcommerceStarter.Models.Mobile;
 using EcommerceStarter.Services;
 using EcommerceStarter.Data;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace EcommerceStarter.Controllers
 {
@@ -15,7 +16,7 @@ namespace EcommerceStarter.Controllers
     /// </summary>
     [ApiController]
     [Route("api/mobile")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class MobileApiController : ControllerBase
     {
         private readonly ILogger<MobileApiController> _logger;

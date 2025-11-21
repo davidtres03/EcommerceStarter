@@ -45,12 +45,17 @@ namespace EcommerceStarter.Models
         public string? PaymentIntentId { get; set; }
         public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
         
+        // Refund information
+        public decimal? RefundedAmount { get; set; }
+        public DateTime? RefundedDate { get; set; }
+        
         // Helper property to identify guest orders
         public bool IsGuestOrder => string.IsNullOrEmpty(UserId);
         
         // Navigation properties
         public virtual ApplicationUser? User { get; set; }
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public virtual ICollection<RefundHistory> RefundHistories { get; set; } = new List<RefundHistory>();
     }
     
     public enum OrderStatus

@@ -950,7 +950,7 @@
                 const statusSpan = toggleElement.closest('.config-actions').querySelector('.config-status:first-child');
                 if (statusSpan) {
                     statusSpan.className = 'config-status ' + (isActive ? 'status-active' : 'status-inactive');
-                    statusSpan.textContent = isActive ? '✓ Active' : '✗ Inactive';
+                    statusSpan.innerHTML = isActive ? '<i class="bi bi-check-circle-fill me-1"></i>Active' : '<i class="bi bi-x-circle-fill me-1"></i>Inactive';
                 }
                 
                 // Show success toast

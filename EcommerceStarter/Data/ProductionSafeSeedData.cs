@@ -43,7 +43,7 @@ namespace EcommerceStarter.Data
                     await SeedRolesAndAdminAsync(serviceProvider, logger);
                     
                     // Create default site settings for development
-                    await CreateDefaultSiteSettingsAsync(context, logger, isDevelopment: true);
+                    await CreateDefaultSiteSettingsAsync(context, logger, serviceProvider, isDevelopment: true);
                 }
                 else if (env.IsProduction())
                 {
@@ -53,7 +53,7 @@ namespace EcommerceStarter.Data
                     
                     // Don't seed anything in production - let installer handle it
                     // Just create minimal site settings so the app doesn't crash
-                    await CreateDefaultSiteSettingsAsync(context, logger, isDevelopment: false);
+                    await CreateDefaultSiteSettingsAsync(context, logger, serviceProvider, isDevelopment: false);
                 }
             }
             catch (Exception ex)
@@ -111,8 +111,15 @@ namespace EcommerceStarter.Data
         /// <summary>
         /// Create default site settings
         /// </summary>
-        private static async Task CreateDefaultSiteSettingsAsync(ApplicationDbContext context, ILogger logger, bool isDevelopment)
+        private static async Task CreateDefaultSiteSettingsAsync(ApplicationDbContext context, ILogger logger, IServiceProvider serviceProvider, bool isDevelopment)
         {
+            // Generate a unique internal service key for API testing automation
+            var serviceKey = Guid.NewGuid().ToString();
+            
+            // Get encryption service to encrypt the key before storing
+            var encryptionService = serviceProvider.GetService<Services.IEncryptionService>();
+            var encryptedServiceKey = encryptionService?.Encrypt(serviceKey);
+            
             var settings = new SiteSettings
             {
                 // Branding - will be customized by user
@@ -151,6 +158,10 @@ namespace EcommerceStarter.Data
                 EmailFromName = "My Store",
                 EmailFromAddress = "noreply@example.com",
                 
+                // Internal Service Authentication (for automated testing, scheduled tasks)
+                InternalServiceKeyEncrypted = encryptedServiceKey,
+                EnableInternalServiceAuth = true,
+                
                 // Metadata
                 LastModified = DateTime.UtcNow,
                 LastModifiedBy = isDevelopment ? "System (Development)" : "System (Production)"
@@ -158,7 +169,24 @@ namespace EcommerceStarter.Data
 
             context.SiteSettings.Add(settings);
             await context.SaveChangesAsync();
+            
             logger.LogInformation($"Created default site settings for {(isDevelopment ? "development" : "production")} environment");
+            
+            // Log the unencrypted service key ONLY in development
+            if (isDevelopment)
+            {
+                logger.LogWarning("=".PadRight(80, '='));
+                logger.LogWarning("INTERNAL SERVICE KEY (for automated testing):");
+                logger.LogWarning($"  {serviceKey}");
+                logger.LogWarning("Save this key to use with automated API testing (X-Internal-Service-Key header)");
+                logger.LogWarning("This key is stored encrypted in the SiteSettings table");
+                logger.LogWarning("=".PadRight(80, '='));
+            }
+            else
+            {
+                logger.LogInformation("Internal service key generated and stored encrypted");
+                logger.LogInformation("View key through Admin > Settings > API Configuration page");
+            }
         }
     }
 }

@@ -173,6 +173,14 @@ namespace EcommerceStarter.Models
         public string? MetaKeywords { get; set; } = "ecommerce, online store, sales, products, shopping";
 
         // ============================================================
+        // Regional Settings
+        // ============================================================
+
+        [StringLength(100)]
+        [Display(Name = "Timezone")]
+        public string TimeZoneId { get; set; } = "Central Standard Time";  // Auto-detected on first run
+
+        // ============================================================
         // Feature Toggles
         // ============================================================
 
@@ -323,20 +331,29 @@ namespace EcommerceStarter.Models
         public string? CustomFooterHtml { get; set; }
 
         // ============================================================
-        // Analytics & Tracking
+        // Analytics & Tracking (Cloudflare Google Tag Gateway)
         // ============================================================
 
-        [Display(Name = "Enable Google Analytics")]
-        public bool EnableGoogleAnalytics { get; set; } = false;
-
-        [Display(Name = "Google Analytics Tag (Full Script)")]
-        [DataType(DataType.MultilineText)]
-        public string? GoogleAnalyticsTag { get; set; }
-
         [StringLength(50)]
-        [Display(Name = "Google Analytics Measurement ID")]
-        [RegularExpression(@"^G-[A-Z0-9]+$|^$", ErrorMessage = "Measurement ID must be in format G-XXXXXXXXXX")]
+        [Display(Name = "Google Tag ID (GTM or GA4)")]
+        [RegularExpression(@"^(GTM-[A-Z0-9]+|G-[A-Z0-9]+)$|^$", ErrorMessage = "Must be GTM-XXXXXXX or G-XXXXXXXXXX format")]
         public string? GoogleAnalyticsMeasurementId { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "Cloudflare Gateway Measurement Path")]
+        [RegularExpression(@"^/[a-zA-Z0-9/]+$|^$", ErrorMessage = "Must start with / and contain only letters, numbers, and slashes")]
+        public string? MeasurementPath { get; set; } = "/metrics";
+
+        // ============================================================
+        // Internal Service Authentication (for automated testing, scheduled tasks)
+        // ============================================================
+
+        [StringLength(500)]
+        [Display(Name = "Internal Service Key (Encrypted)")]
+        public string? InternalServiceKeyEncrypted { get; set; }
+
+        [Display(Name = "Enable Internal Service Authentication")]
+        public bool EnableInternalServiceAuth { get; set; } = false;
 
         // ============================================================
         // Metadata

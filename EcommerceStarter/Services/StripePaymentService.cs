@@ -261,5 +261,38 @@ namespace EcommerceStarter.Services
                 return "error";
             }
         }
+
+        public async Task<(bool success, string? refundId, string? error)> RefundPaymentAsync(
+            string paymentIntentId, 
+            long amountInCents, 
+            string reason = "requested_by_customer")
+        {
+            await EnsureApiKeySetAsync();
+
+            try
+            {
+                var refundOptions = new RefundCreateOptions
+                {
+                    PaymentIntent = paymentIntentId,
+                    Amount = amountInCents,
+                    Reason = reason
+                };
+
+                var service = new RefundService();
+                var refund = await service.CreateAsync(refundOptions);
+
+                _logger.LogInformation(
+                    "Refund created: {RefundId} for PaymentIntent {PaymentIntentId}, Amount: ${Amount}, Status: {Status}",
+                    refund.Id, paymentIntentId, amountInCents / 100.0, refund.Status
+                );
+
+                return (true, refund.Id, null);
+            }
+            catch (StripeException ex)
+            {
+                _logger.LogError(ex, "Error refunding payment intent {PaymentIntentId}", paymentIntentId);
+                return (false, null, ex.Message);
+            }
+        }
     }
 }

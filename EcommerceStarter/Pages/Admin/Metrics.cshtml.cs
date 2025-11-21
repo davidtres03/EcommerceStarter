@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EcommerceStarter.Data;
 using EcommerceStarter.Models.Service;
+using EcommerceStarter.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceStarter.Pages.Admin
@@ -14,13 +15,15 @@ namespace EcommerceStarter.Pages.Admin
     public class MetricsModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITimezoneService _timezoneService;
 
         public PerformanceMetricsDto? Metrics { get; set; }
         public List<StatusLogDto>? StatusLogs { get; set; }
 
-        public MetricsModel(ApplicationDbContext context)
+        public MetricsModel(ApplicationDbContext context, ITimezoneService timezoneService)
         {
             _context = context;
+            _timezoneService = timezoneService;
         }
 
         public async Task OnGetAsync()
@@ -37,17 +40,17 @@ namespace EcommerceStarter.Pages.Admin
                 Metrics = new PerformanceMetricsDto
                 {
                     AverageResponseTimeMs = (int)statusLogs.Average(s => s.ResponseTimeMs),
-                    AverageCpuUsagePercent = (decimal)statusLogs.Average(s => (double)s.CpuUsagePercent),
+                    AverageCpuUsagePercent = Math.Round((decimal)statusLogs.Average(s => (double)s.CpuUsagePercent), 2),
                     AverageMemoryUsageMb = (int)statusLogs.Average(s => s.MemoryUsageMb),
-                    UptimePercent = (decimal)statusLogs.Average(s => s.UptimePercent)
+                    UptimePercent = Math.Round((decimal)statusLogs.Average(s => s.UptimePercent), 2)
                 };
 
                 StatusLogs = statusLogs
                     .Select(s => new StatusLogDto
                     {
-                        Timestamp = s.Timestamp,
+                        Timestamp = _timezoneService.ConvertUtcToLocalTime(s.Timestamp),
                         ResponseTimeMs = s.ResponseTimeMs,
-                        CpuUsagePercent = s.CpuUsagePercent,
+                        CpuUsagePercent = Math.Round(s.CpuUsagePercent, 2),
                         MemoryUsageMb = s.MemoryUsageMb,
                         IsWebServiceOnline = s.IsWebServiceOnline,
                         IsBackgroundServiceRunning = s.IsBackgroundServiceRunning,

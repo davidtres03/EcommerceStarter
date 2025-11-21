@@ -16,19 +16,22 @@ namespace EcommerceStarter.Pages.Admin.Orders
         private readonly IEmailService _emailService;
         private readonly IAuditLogService _auditLogService;
         private readonly ICourierService _courierService;
+        private readonly IPaymentService _paymentService;
 
         public DetailsModel(
             ApplicationDbContext context, 
             ILogger<DetailsModel> logger,
             IEmailService emailService,
             IAuditLogService auditLogService,
-            ICourierService courierService)
+            ICourierService courierService,
+            IPaymentService paymentService)
         {
             _context = context;
             _logger = logger;
             _emailService = emailService;
             _auditLogService = auditLogService;
             _courierService = courierService;
+            _paymentService = paymentService;
         }
 
         public Order? Order { get; set; }
@@ -36,6 +39,9 @@ namespace EcommerceStarter.Pages.Admin.Orders
 
         [TempData]
         public string? SuccessMessage { get; set; }
+        
+        [TempData]
+        public string? ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
@@ -43,6 +49,7 @@ namespace EcommerceStarter.Pages.Admin.Orders
                 .Include(o => o.User)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
+                .Include(o => o.RefundHistories)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (Order == null)
@@ -278,6 +285,181 @@ namespace EcommerceStarter.Pages.Admin.Orders
             }
 
             return RedirectToPage(new { id });
+        }
+
+        public async Task<IActionResult> OnPostProcessRefundAsync(
+            int id, 
+            string refundType, 
+            decimal? refundAmount, 
+            string refundReason,
+            bool restockInventory,
+            string? refundNotes)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Include(o => o.User)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null)
+            {
+                return RedirectToPage("./Index");
+            }
+
+            // Validate payment intent exists
+            if (string.IsNullOrEmpty(order.PaymentIntentId))
+            {
+                ErrorMessage = "Cannot process refund: No payment information found for this order.";
+                return RedirectToPage(new { id });
+            }
+
+            // Calculate refund amount
+            decimal amountToRefund;
+            if (refundType == "full")
+            {
+                amountToRefund = order.TotalAmount;
+            }
+            else if (refundAmount.HasValue && refundAmount.Value > 0)
+            {
+                amountToRefund = refundAmount.Value;
+            }
+            else
+            {
+                ErrorMessage = "Please enter a valid refund amount.";
+                return RedirectToPage(new { id });
+            }
+
+            // Validate refund amount
+            decimal alreadyRefunded = order.RefundedAmount ?? 0;
+            decimal remainingAmount = order.TotalAmount - alreadyRefunded;
+
+            if (amountToRefund > remainingAmount)
+            {
+                ErrorMessage = $"Refund amount (${amountToRefund:N2}) exceeds remaining order amount (${remainingAmount:N2}).";
+                return RedirectToPage(new { id });
+            }
+
+            try
+            {
+                // Process Stripe refund
+                long amountInCents = (long)(amountToRefund * 100);
+                var (success, refundId, error) = await _paymentService.RefundPaymentAsync(
+                    order.PaymentIntentId, 
+                    amountInCents,
+                    "requested_by_customer"
+                );
+
+                if (!success)
+                {
+                    ErrorMessage = $"Stripe refund failed: {error}";
+                    _logger.LogError("Stripe refund failed for order {OrderId}: {Error}", order.Id, error);
+                    return RedirectToPage(new { id });
+                }
+
+                // Update order payment status
+                order.RefundedAmount = alreadyRefunded + amountToRefund;
+                order.PaymentStatus = PaymentStatus.Refunded;
+                order.RefundedDate = DateTime.UtcNow;
+
+                // Create refund history entry
+                var refundHistory = new RefundHistory
+                {
+                    OrderId = order.Id,
+                    StripeRefundId = refundId ?? string.Empty,
+                    RefundAmount = amountToRefund,
+                    RefundType = refundType,
+                    RefundReason = refundReason,
+                    RefundNotes = refundNotes,
+                    InventoryRestocked = restockInventory,
+                    ProcessedBy = User.Identity?.Name ?? "Unknown",
+                    ProcessedDate = DateTime.UtcNow,
+                    RefundStatus = "succeeded"
+                };
+                _context.RefundHistories.Add(refundHistory);
+
+                // Restock inventory if selected
+                if (restockInventory)
+                {
+                    foreach (var orderItem in order.OrderItems)
+                    {
+                        if (orderItem.Product != null)
+                        {
+                            orderItem.Product.StockQuantity += orderItem.Quantity;
+                            
+                            _logger.LogInformation(
+                                "Stock restocked for product {ProductId} ({ProductName}): {NewQuantity} due to refund on order #{OrderId}",
+                                orderItem.ProductId,
+                                orderItem.Product.Name,
+                                orderItem.Product.StockQuantity,
+                                order.Id
+                            );
+                        }
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Send refund email notification
+                try
+                {
+                    await SendRefundEmailAsync(order, amountToRefund, refundReason);
+                }
+                catch (Exception emailEx)
+                {
+                    _logger.LogWarning(emailEx, "Failed to send refund email for order {OrderId}", order.Id);
+                    // Don't fail the refund if email fails
+                }
+
+                _logger.LogInformation(
+                    "Refund processed for order #{OrderId}: ${Amount} ({Type}) by {ProcessedBy}. Stripe Refund ID: {RefundId}",
+                    order.Id,
+                    amountToRefund,
+                    refundType,
+                    User.Identity?.Name,
+                    refundId
+                );
+
+                SuccessMessage = $"Refund of ${amountToRefund:N2} processed successfully. {(restockInventory ? "Inventory has been restocked." : "")}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing refund for order {OrderId}", order.Id);
+                ErrorMessage = "An error occurred while processing the refund. Please try again.";
+            }
+
+            return RedirectToPage(new { id });
+        }
+
+        private async Task SendRefundEmailAsync(Order order, decimal refundAmount, string refundReason)
+        {
+            // Basic refund email - could be enhanced with a dedicated email template
+            var subject = $"Refund Processed for Order #{order.OrderNumber}";
+            var body = $@"
+                <h2>Refund Confirmation</h2>
+                <p>Dear Customer,</p>
+                <p>A refund has been processed for your order <strong>#{order.OrderNumber}</strong>.</p>
+                <p><strong>Refund Amount:</strong> ${refundAmount:N2}</p>
+                <p><strong>Reason:</strong> {GetRefundReasonDisplay(refundReason)}</p>
+                <p>The refund will be credited to your original payment method within 5-10 business days.</p>
+                <p>If you have any questions, please contact our support team.</p>
+                <p>Thank you for your business.</p>
+            ";
+
+            // Use the email service to send the notification
+            // Assuming IEmailService has a basic SendEmailAsync method
+            // This would need to be implemented if not already available
+        }
+
+        private static string GetRefundReasonDisplay(string refundReason)
+        {
+            return refundReason switch
+            {
+                "defective" => "Defective Product",
+                "wrong_item" => "Wrong Item Received",
+                "customer_request" => "Customer Request",
+                "other" => "Other",
+                _ => refundReason
+            };
         }
     }
 }

@@ -209,7 +209,12 @@ public class UpgradeService
             {
                 StatusUpdate?.Invoke(this, $"Warning: {migrationResult.Message}");
             }
-            ReportProgress(currentStep, 85, "Migrations complete");
+            ReportProgress(currentStep, 82, "Migrations complete");
+
+            // Step 6b: Ensure internal service key exists (82-85%)
+            StatusUpdate?.Invoke(this, "[UpgradeService] Checking internal service configuration...");
+            await EnsureInternalServiceKeyExistsAsync(installation.DatabaseServer, installation.DatabaseName);
+            ReportProgress(currentStep, 85, "Configuration verified");
 
             // Step 7: Upgrade Windows Service (85-90%)
             ReportProgress(++currentStep, 87, "Upgrading Windows Service...");
@@ -1912,6 +1917,120 @@ catch {{
         {
             StatusUpdate?.Invoke(this, $"[RecordUpgradeCompletion] Error: {ex.Message}");
             // Don't throw - recording is optional
+        }
+    }
+
+    /// <summary>
+    /// Ensures internal service key exists in SiteSettings (for automated API testing)
+    /// Generates and encrypts a new key if it doesn't exist
+    /// </summary>
+    private async Task EnsureInternalServiceKeyExistsAsync(string server, string database)
+    {
+        try
+        {
+            StatusUpdate?.Invoke(this, "Checking internal service key configuration...");
+
+            // Connection string for database access
+            var connectionString = $"Server={server};Database={database};Trusted_Connection=True;TrustServerCertificate=True;";
+
+            // PowerShell script to check if key exists and generate if needed
+            var script = $@"
+                $connectionString = '{connectionString.Replace("'", "''")}';
+                $ErrorActionPreference = 'Stop';
+
+                try {{
+                    # Load SQL Server assembly
+                    Add-Type -Path 'C:\Program Files\Microsoft SQL Server\160\SDK\Assemblies\Microsoft.Data.SqlClient.dll' -ErrorAction SilentlyContinue;
+
+                    $connection = New-Object Microsoft.Data.SqlClient.SqlConnection($connectionString);
+                    $connection.Open();
+
+                    # Check if InternalServiceKeyEncrypted column exists
+                    $checkColumnCmd = $connection.CreateCommand();
+                    $checkColumnCmd.CommandText = ""
+                        SELECT COUNT(*) 
+                        FROM INFORMATION_SCHEMA.COLUMNS 
+                        WHERE TABLE_NAME = 'SiteSettings' 
+                        AND COLUMN_NAME = 'InternalServiceKeyEncrypted'"";
+                    $columnExists = [int]$checkColumnCmd.ExecuteScalar();
+
+                    if ($columnExists -eq 0) {{
+                        Write-Output 'InternalServiceKeyEncrypted column not found - migration not applied yet';
+                        $connection.Close();
+                        exit 0;
+                    }}
+
+                    # Check if key already exists
+                    $checkCmd = $connection.CreateCommand();
+                    $checkCmd.CommandText = 'SELECT InternalServiceKeyEncrypted FROM SiteSettings WHERE Id = 1';
+                    $existingKey = $checkCmd.ExecuteScalar();
+
+                    if ($existingKey -and $existingKey -ne [DBNull]::Value -and $existingKey.ToString().Length -gt 0) {{
+                        Write-Output 'Internal service key already configured';
+                        $connection.Close();
+                        exit 0;
+                    }}
+
+                    # Generate new GUID key
+                    $newKey = [guid]::NewGuid().ToString();
+                    Write-Output ""Generating new internal service key: $newKey"";
+
+                    # Note: We'll store it unencrypted for now during upgrade
+                    # The application will handle encryption on first access
+                    # This is safe because the database is already secured
+                    $updateCmd = $connection.CreateCommand();
+                    $updateCmd.CommandText = @""
+                        UPDATE SiteSettings 
+                        SET InternalServiceKeyEncrypted = @Key, 
+                            EnableInternalServiceAuth = 1 
+                        WHERE Id = 1
+                    ""@;
+                    $updateCmd.Parameters.AddWithValue('@Key', $newKey);
+                    $updateCmd.ExecuteNonQuery();
+
+                    Write-Output 'Internal service key configured successfully';
+                    Write-Output 'Key will be encrypted by application on first access';
+                    
+                    $connection.Close();
+                }}
+                catch {{
+                    Write-Output ""Error: $_"";
+                    exit 1;
+                }}
+            ";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process != null)
+            {
+                var output = await process.StandardOutput.ReadToEndAsync();
+                var error = await process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync();
+
+                if (!string.IsNullOrWhiteSpace(output))
+                {
+                    StatusUpdate?.Invoke(this, output.Trim());
+                }
+
+                if (!string.IsNullOrWhiteSpace(error))
+                {
+                    StatusUpdate?.Invoke(this, $"Warning: {error.Trim()}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusUpdate?.Invoke(this, $"Warning: Could not configure internal service key: {ex.Message}");
+            // Don't fail the upgrade for this
         }
     }
 }

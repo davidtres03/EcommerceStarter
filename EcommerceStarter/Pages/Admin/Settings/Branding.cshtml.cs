@@ -352,6 +352,112 @@ namespace EcommerceStarter.Pages.Admin.Settings
                 return RedirectToPage();
             }
         }
+
+        // Get current timezone settings
+        public async Task<IActionResult> OnGetTimezoneAsync()
+        {
+            try
+            {
+                var settings = await _siteSettingsService.GetSettingsAsync();
+                TimeZoneInfo? currentTimeZone = null;
+
+                try
+                {
+                    currentTimeZone = TimeZoneInfo.FindSystemTimeZoneById(settings.TimeZoneId);
+                }
+                catch
+                {
+                    // Fall back to system local time if configured timezone is invalid
+                    currentTimeZone = TimeZoneInfo.Local;
+                }
+
+                var currentDateTime = TimeZoneInfo.ConvertTime(DateTime.UtcNow, currentTimeZone);
+                var utcOffset = currentTimeZone.GetUtcOffset(DateTime.UtcNow);
+                var offsetString = $"UTC{(utcOffset >= TimeSpan.Zero ? "+" : "")}{utcOffset.Hours:D2}:{utcOffset.Minutes:D2}";
+
+                return new JsonResult(new
+                {
+                    timeZoneId = settings.TimeZoneId,
+                    displayName = currentTimeZone.DisplayName,
+                    currentUtcOffset = offsetString,
+                    currentDateTime = currentDateTime.ToString("o")
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting timezone settings");
+                return new JsonResult(new { success = false, message = "Error retrieving timezone settings" });
+            }
+        }
+
+        // Get available timezones
+        public IActionResult OnGetAvailableTimezonesAsync()
+        {
+            try
+            {
+                var timezones = TimeZoneInfo.GetSystemTimeZones()
+                    .Select(tz => new
+                    {
+                        id = tz.Id,
+                        displayName = tz.DisplayName,
+                        baseUtcOffset = tz.BaseUtcOffset.ToString(@"hh\:mm"),
+                        supportsDaylightSavingTime = tz.SupportsDaylightSavingTime
+                    })
+                    .OrderBy(tz => TimeZoneInfo.FindSystemTimeZoneById(tz.id).BaseUtcOffset)
+                    .ThenBy(tz => tz.displayName)
+                    .ToList();
+
+                return new JsonResult(timezones);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving available timezones");
+                return new JsonResult(new { success = false, message = "Error retrieving timezones" });
+            }
+        }
+
+        // Update timezone
+        public async Task<IActionResult> OnPostUpdateTimezoneAsync([FromBody] UpdateTimezoneRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request?.TimeZoneId))
+                {
+                    return new JsonResult(new { success = false, message = "Timezone ID is required" });
+                }
+
+                // Validate timezone ID
+                TimeZoneInfo timeZone;
+                try
+                {
+                    timeZone = TimeZoneInfo.FindSystemTimeZoneById(request.TimeZoneId);
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    return new JsonResult(new { success = false, message = "Invalid timezone ID" });
+                }
+
+                // Update settings
+                var settings = await _siteSettingsService.GetSettingsAsync();
+                settings.TimeZoneId = request.TimeZoneId;
+                await _siteSettingsService.UpdateSettingsAsync(settings, User.Identity?.Name);
+
+                _logger.LogInformation("Timezone updated to {TimeZoneId} by {User}", request.TimeZoneId, User.Identity?.Name);
+
+                return new JsonResult(new
+                {
+                    success = true,
+                    message = "Timezone updated successfully",
+                    timeZoneId = settings.TimeZoneId,
+                    displayName = timeZone.DisplayName
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating timezone");
+                return new JsonResult(new { success = false, message = "Error updating timezone" });
+            }
+        }
     }
 
     public class TestEmailRequest
@@ -363,7 +469,15 @@ namespace EcommerceStarter.Pages.Admin.Settings
     {
         public string? EmailType { get; set; } // "order", "shipping", "welcome", "test"
     }
+
+    public class UpdateTimezoneRequest
+    {
+        public string? TimeZoneId { get; set; }
+    }
 }
+
+
+
 
 
 
