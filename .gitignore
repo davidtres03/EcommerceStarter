@@ -384,3 +384,32 @@ debug.log
 
 # User-specific project files (ADDED - though already partially covered)
 *.csproj.user
+
+# SECURITY: Test files and credentials (DO NOT COMMIT)
+*.env
+test-data.env
+jwt_token.txt
+jwt_refresh.txt
+setup-admin-user.sql
+hash-password.csx
+Get-PasswordHash.ps1
+
+# SECURITY: Test output and API testing files
+api_auth_test_*.html
+api_test_output.txt
+full_test_output.txt
+test-output.txt
+
+# SECURITY: Test scripts
+test-api-authentication.sh
+run-tests-with-real-data.sh
+setup-test-data.sh
+generate-html-report.sh
+generate-test-report.sh
+get-token.sh
+check-errors.ps1
+
+# Deployment scripts (review before committing)
+Deploy-*.ps1
+deploy-*.sh
+Scripts/Deploy-*.ps1
