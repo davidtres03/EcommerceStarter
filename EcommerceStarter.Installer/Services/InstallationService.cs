@@ -1867,38 +1867,9 @@ ALTER ROLE [db_owner] ADD MEMBER [{appPoolUser}];
             var escapedSiteName = config.SiteName.Replace("'", "''");
 
             var script = $@"
-                # Create/update ONE global uninstall entry for the installer
-                $uninstallPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\EcommerceStarter';
-
-                # Create registry key
-                New-Item -Path $uninstallPath -Force | Out-Null;
-
-                # Set values for the single installer entry
-                Set-ItemProperty -Path $uninstallPath -Name 'DisplayName' -Value 'EcommerceStarter';
-                # Normalize to 3-part format (Windows standard for DisplayVersion)
-                $versionParts = '{installerVersion}'.Split('.');
-                $normalizedVersion = if ($versionParts.Count -ge 3) {{ $versionParts[0] + '.' + $versionParts[1] + '.' + $versionParts[2] }} else {{ '{installerVersion}' }};
-                Set-ItemProperty -Path $uninstallPath -Name 'DisplayVersion' -Value $normalizedVersion;
-                Set-ItemProperty -Path $uninstallPath -Name 'Publisher' -Value 'EcommerceStarter';
-                Set-ItemProperty -Path $uninstallPath -Name 'InstallLocation' -Value '{escapedInstallPath}';
-                Set-ItemProperty -Path $uninstallPath -Name 'InstallSource' -Value '{escapedInstallPath}\EcommerceStarter';
-                Set-ItemProperty -Path $uninstallPath -Name 'URLInfoAbout' -Value 'https://github.com/davidtres03/EcommerceStarter';
-                Set-ItemProperty -Path $uninstallPath -Name 'SystemComponent' -Value 0 -Type DWord;
-                Set-ItemProperty -Path $uninstallPath -Name 'UninstallString' -Value '\""{escapedUninstallerPath}\"" --uninstall-installer';
-
-                # Enable Change button to open maintenance mode (manage all instances)
-                Set-ItemProperty -Path $uninstallPath -Name 'ModifyPath' -Value '\""{escapedUninstallerPath}\"" --maintenance';
-
-                Set-ItemProperty -Path $uninstallPath -Name 'DisplayIcon' -Value '{escapedUninstallerPath},0';
-
-                # NoModify = 0: Show Change button
-                # NoRepair = 1: Hide Repair button (we use Change for everything)
-                Set-ItemProperty -Path $uninstallPath -Name 'NoModify' -Value 0 -Type DWord;
-                Set-ItemProperty -Path $uninstallPath -Name 'NoRepair' -Value 1 -Type DWord;
-
-                Set-ItemProperty -Path $uninstallPath -Name 'InstallDate' -Value (Get-Date -Format 'yyyyMMdd');
-
-                Write-Output 'Registered global installer entry in Windows';
+                # NOTE: Instance-specific registry entry is created by EnsureRegistryIntegrityAsync()
+                # This method only copies installer to Program Files - no global registry entry
+                Write-Output 'Installer copied to Program Files - instance registry will be created separately';
             ";
 
             var psi = new ProcessStartInfo
