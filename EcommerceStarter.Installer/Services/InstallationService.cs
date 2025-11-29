@@ -1931,8 +1931,9 @@ ALTER ROLE [db_owner] ADD MEMBER [{appPoolUser}];
                 Set-ItemProperty -Path '{uninstallKeyPath}' -Name 'Publisher' -Value 'EcommerceStarter' -Type String
                 Set-ItemProperty -Path '{uninstallKeyPath}' -Name 'InstallLocation' -Value '{config.InstallationPath.Replace("'", "''")}' -Type String
                 Set-ItemProperty -Path '{uninstallKeyPath}' -Name 'DisplayIcon' -Value '{uninstaller},0' -Type String
+                Set-ItemProperty -Path '{uninstallKeyPath}' -Name 'NoModify' -Value 1 -Type DWord
+                Set-ItemProperty -Path '{uninstallKeyPath}' -Name 'NoRepair' -Value 1 -Type DWord
                 if (-not (Get-ItemProperty '{uninstallKeyPath}' -Name 'DisplayVersion' -ErrorAction SilentlyContinue)) {{ Set-ItemProperty -Path '{uninstallKeyPath}' -Name 'DisplayVersion' -Value '{VersionService.CURRENT_VERSION}' -Type String }}
-                if (-not (Get-ItemProperty '{uninstallKeyPath}' -Name 'ModifyPath' -ErrorAction SilentlyContinue)) {{ Set-ItemProperty -Path '{uninstallKeyPath}' -Name 'ModifyPath' -Value '""{uninstaller}"" --reconfigure --sitename=""{config.SiteName}""' -Type String }}
                 if (-not (Get-ItemProperty '{uninstallKeyPath}' -Name 'UninstallString' -ErrorAction SilentlyContinue)) {{ Set-ItemProperty -Path '{uninstallKeyPath}' -Name 'UninstallString' -Value '""{uninstaller}"" --uninstall --sitename=""{config.SiteName}""' -Type String }}
 
                 if (-not (Test-Path '{siteKeyPath}')) {{ New-Item -Path '{siteKeyPath}' -Force | Out-Null }}
