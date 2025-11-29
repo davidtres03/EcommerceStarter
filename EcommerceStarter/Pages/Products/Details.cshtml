@@ -1,0 +1,780 @@
+@page "{id:int}"
+@model DetailsModel
+@{
+    ViewData["Title"] = Model.Product?.Name ?? "Product Details";
+}
+
+<style>
+    .product-details-page {
+        max-width: 1200px;
+    }
+    .product-details-page {
+        padding: 1rem;
+    }
+    .product-details-page .breadcrumb {
+        padding: 0.5rem 0;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+    }
+
+    /* Responsive Typography */
+    .product-details-page h1 {
+        font-size: clamp(1.25rem, 4vw, 1.75rem);
+        margin-bottom: 0.75rem;
+        line-height: 1.2;
+    }
+    .product-details-page h2 {
+        font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+        margin-bottom: 0.5rem;
+    }
+    .product-details-page h4 {
+        font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    .product-details-page .badge {
+        font-size: clamp(0.75rem, 2vw, 0.875rem);
+        padding: 0.35rem 0.65rem;
+    }
+    .product-details-page .product-description {
+        font-size: clamp(0.875rem, 2.2vw, 1rem);
+        line-height: 1.6;
+    }
+
+    /* Cards and Spacing */
+    .product-details-page .card {
+        margin-bottom: 1rem;
+        border-radius: 8px;
+    }
+    .product-details-page .card-body {
+        padding: clamp(0.75rem, 2vw, 1.25rem);
+    }
+    .product-details-page .mb-2 {
+        margin-bottom: 0.75rem !important;
+    }
+    .product-details-page .row {
+        row-gap: 1rem;
+    }
+
+    /* Responsive Image Container */
+    .product-image-container {
+        position: relative;
+        width: 100%;
+        max-width: min(450px, 90vw);
+        margin: 0 auto;
+    }
+    .product-image-container img {
+        width: 100%;
+        height: auto;
+        max-height: min(450px, 60vh);
+        object-fit: contain;
+        display: block;
+    }
+
+    /* Mobile Optimizations */
+    @@media (max-width: 768px) {
+        .product-details-page {
+            padding: 0.75rem;
+        }
+        .product-image-container {
+            max-width: 100%;
+        }
+        .product-details-page h1 {
+            font-size: 1.35rem;
+        }
+        .product-details-page h2 {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* Tablet Optimizations */
+    @@media (min-width: 769px) and (max-width: 1024px) {
+        .product-details-page {
+            max-width: 960px;
+        }
+        .product-image-container {
+            max-width: 400px;
+        }
+    }
+</style>
+
+@if (Model.Product == null)
+{
+    <div>
+        <div class="alert alert-danger">
+            <h4>Product Not Found</h4>
+            <p>The product you're looking for doesn't exist or has been removed.</p>
+            <a asp-page="/Products/Index" class="btn btn-primary">Browse All Products</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="product-details-page">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-page="/Index">Home</a></li>
+                <li class="breadcrumb-item"><a asp-page="/Products/Index">Products</a></li>
+                <li class="breadcrumb-item"><a asp-page="/Products/Index" asp-route-category="@Model.Product.Category">@Model.Product.Category</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@Model.Product.Name</li>
+            </ol>
+        </nav>
+
+        @if (Model.SuccessMessage != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row">
+            <!-- Product Image -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="product-image-container">
+                        <img id="mainProductImage" src="@Model.GetProductImageUrl()" class="card-img-top" alt="@Model.Product.Name">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Information -->
+            <div class="col-md-6">
+                <h1 class="mb-2">@Model.Product.Name</h1>
+
+                <div class="mb-2">
+                    <span class="badge bg-secondary me-2">@Model.Product.Category</span>
+                    <span class="badge bg-secondary">@Model.Product.SubCategory</span>
+                </div>
+
+                <h2 class="text-primary mb-2">$@Model.Product.Price.ToString("F2")</h2>
+
+                <div class="mb-2">
+                    <h4>Description</h4>
+                    <div class="product-description">
+                        @Html.Raw(Model.Product.Description)
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <h4>Availability</h4>
+                    @if (Model.Product.Variants != null && Model.Product.Variants.Count > 0)
+                    {
+                        <p id="availabilityDisplay" style="display: none;">
+                            <span class="badge bg-success" id="availabilityBadge">
+                                <i class="bi bi-check-circle"></i> In Stock (<span id="availableStock">0</span> available)
+                            </span>
+                        </p>
+                        <p id="selectVariantPrompt">
+                            <small class="text-muted">Select a variant above to see availability</small>
+                        </p>
+                    }
+                    else if (Model.Product.IsAvailable)
+                    {
+                        <p>
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> In Stock (@Model.Product.TotalAvailableStock available)
+                            </span>
+                        </p>
+                    }
+                    else if (Model.Product.IsComingSoon)
+                    {
+                        <p>
+                            <span class="badge bg-info">
+                                <i class="bi bi-clock-history"></i> Coming Soon
+                            </span>
+                        </p>
+                    }
+                    else
+                    {
+                        <p>
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle"></i> Out of Stock
+                            </span>
+                        </p>
+                    }
+                </div>
+
+                <!-- Variant Selector -->
+                @if (Model.Product.Variants != null && Model.Product.Variants.Count > 0)
+                {
+                    <div class="mb-4">
+                        <h4><i class="bi bi-palette2"></i> Choose Your Variant</h4>
+                        <div id="variantAttributesContainer"></div>
+                        <div id="availableVariantsContainer" class="variant-selector d-flex gap-2 flex-wrap mt-3"></div>
+                        <input type="hidden" id="selectedVariantId" name="selectedVariantId" value="" />
+                        <input type="hidden" id="selectedVariantPrice" value="" />
+                    </div>
+                }
+
+                @if (Model.Product.IsAvailable)
+                {
+                    <div class="card mb-3 p-3 border-0 bg-light" id="quantityCard" style="display: none;">
+                        <form method="post" asp-page-handler="AddToCart">
+                            <input type="hidden" name="variantId" id="variantId" value="" />
+                            <label for="quantity" class="form-label fw-bold mb-2">Quantity</label>
+                            <div class="row g-2">
+                                <div class="col-12 col-sm-5">
+                                    <select name="quantity" id="quantity" class="form-select form-select-lg">
+                                        <option value="">Select a variant first</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-sm-7">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100" style="font-weight: 600;" id="addToCartBtn" disabled>
+                                        <i class="bi bi-cart-plus"></i> Add to Cart
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else if (Model.Product.IsComingSoon)
+                {
+                    <div class="card mb-3 p-3 border-0 bg-info bg-opacity-10 border border-info">
+                        <p class="mb-0 text-info">
+                            <i class="bi bi-exclamation-circle me-2"></i> <strong>This product is coming soon!</strong> Check back shortly or browse our other products.
+                        </p>
+                    </div>
+                }
+
+                <div class="d-grid gap-2 d-md-flex">
+                    <a asp-page="/Products/Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Products
+                    </a>
+                    <a asp-page="/Products/Index" asp-route-category="@Model.Product.Category" class="btn btn-outline-secondary">
+                        View Similar Products
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Product Information -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">
+                            Product Details
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="shipping-tab" data-bs-toggle="tab" data-bs-target="#shipping" type="button" role="tab">
+                            Shipping Info
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content p-4 border border-top-0" id="productTabsContent">
+                    <div class="tab-pane fade show active" id="details" role="tabpanel">
+                        <h5>Product Information</h5>
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 200px;">Product ID</th>
+                                    <td>@Model.Product.Id</td>
+                                </tr>
+                                <tr>
+                                    <th>Name</th>
+                                    <td>@Model.Product.Name</td>
+                                </tr>
+                                <tr>
+                                    <th>Category</th>
+                                    <td>@Model.Product.Category</td>
+                                </tr>
+                                <tr>
+                                    <th>Sub-Category</th>
+                                    <td>@Model.Product.SubCategory</td>
+                                </tr>
+                                <tr>
+                                    <th>Price</th>
+                                    <td>$@Model.Product.Price.ToString("F2")</td>
+                                </tr>
+                                <tr>
+                                    <th>Availability</th>
+                                    <td>
+                                        @if (Model.Product.IsAvailable)
+                                        {
+                                            <span>In Stock</span>
+                                        }
+                                        else if (Model.Product.IsComingSoon)
+                                        {
+                                            <span>Coming Soon</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Out of Stock</span>
+                                        }
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="tab-pane fade" id="shipping" role="tabpanel">
+                        <h5>Shipping Information</h5>
+                        <ul>
+                            <li><strong>Free Shipping</strong> on all orders</li>
+                            <li>Standard delivery: 5-7 business days</li>
+                            <li>Express delivery available at checkout</li>
+                            <li>Ships to all 50 states</li>
+                            <li>30-day return policy</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .product-description {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        line-height: 1.6;
+    }
+
+    .variant-selector {
+        margin-bottom: 1rem;
+    }
+
+    .variant-option {
+        min-width: 100px;
+        padding: 12px 8px !important;
+        border: 2px solid #dee2e6 !important;
+        transition: all 0.3s ease;
+    }
+
+    .variant-option:hover:not(:disabled) {
+        border-color: #0d6efd !important;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2);
+    }
+
+    .variant-option.active {
+        border-color: #0d6efd !important;
+        background-color: #e7f1ff !important;
+        color: #0d6efd !important;
+    }
+
+    .variant-option:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .variant-option small {
+        display: block;
+        word-wrap: break-word;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        let productId = @(Model.Product?.Id ?? 0);
+        let allVariants = [];
+        let selectedAttributes = {};
+
+        // Initialize the variant filtering system
+        document.addEventListener('DOMContentLoaded', async function() {
+
+            if (productId === 0) {
+                return;
+            }
+
+            // Load variant data from server
+            await loadVariantData();
+
+            // Build attribute filters
+            buildAttributeFilters();
+
+            // Display available variants
+            filterAndDisplayVariants();
+        });
+
+        // Fetch variant data from server
+        async function loadVariantData() {
+            try {
+                const url = `?handler=VariantData&productId=${productId}`;
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    return;
+                }
+
+                const contentType = response.headers.get('content-type');
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    return;
+                }
+
+                allVariants = result.data || [];
+
+            } catch (error) {
+                // Error loading variant data
+            }
+        }
+
+        // Build attribute filter UI (Color, Size, etc.)
+        function buildAttributeFilters() {
+            const container = document.getElementById('variantAttributesContainer');
+            if (!container) {
+                return;
+            }
+
+            // Get all unique attribute names
+            const attributeNames = new Set();
+            allVariants.forEach(v => {
+                if (v.attributes && v.attributes.length > 0) {
+                    v.attributes.forEach(a => {
+                        if (a.attributeName) {
+                            attributeNames.add(a.attributeName);
+                        }
+                    });
+                }
+            });
+
+            // If no attributes found, show simple variant list
+            if (attributeNames.size === 0) {
+                showSimpleVariantList();
+                return;
+            }
+
+            // Create filter UI for each attribute
+            let html = '';
+            const sortedAttributes = Array.from(attributeNames).sort();
+
+            sortedAttributes.forEach((attrName) => {
+                const values = getUniqueAttributeValues(attrName);
+                html += `
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">${attrName}</label>
+                        <div class="attribute-buttons d-flex gap-2 flex-wrap">
+                `;
+
+                values.forEach(value => {
+                    const isAvailable = canSelectAttributeValue(attrName, value);
+                    const isSelected = selectedAttributes[attrName] === value;
+                    const buttonClass = isSelected ? 'btn-primary active' : (isAvailable ? 'btn-outline-secondary' : 'btn-outline-secondary disabled');
+
+                    html += `
+                        <button type="button"
+                                class="btn btn-sm ${buttonClass} attribute-btn"
+                                data-attr-name="${attrName}"
+                                data-attr-value="${value}"
+                                ${!isAvailable && !isSelected ? 'disabled' : ''}
+                                title="${value}">
+                            ${value}
+                        </button>
+                    `;
+                });
+
+                html += '</div></div>';
+            });
+
+            container.innerHTML = html;
+
+            // Add event listeners to attribute buttons
+            container.querySelectorAll('.attribute-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const attrName = this.getAttribute('data-attr-name');
+                    const attrValue = this.getAttribute('data-attr-value');
+                    selectAttribute(attrName, attrValue);
+                });
+            });
+        }
+
+        // Show simple variant list when no attributes are defined
+        function showSimpleVariantList() {
+
+            const container = document.getElementById('variantAttributesContainer');
+            const variantContainer = document.getElementById('availableVariantsContainer');
+
+            if (!container) {
+                return;
+            }
+            if (!variantContainer) {
+                return;
+            }
+
+            container.innerHTML = '<p class="text-muted">Select a variant:</p>';
+
+            const basePrice = @Model.Product.Price;
+
+            // Clear existing content
+            variantContainer.innerHTML = '';
+
+            // Create variant buttons using DOM manipulation
+            allVariants.forEach(v => {
+                const isInStock = v.stock > 0 && v.isAvailable;
+                const effectivePrice = v.priceOverride || basePrice;
+                const showPriceDiff = effectivePrice !== basePrice;
+                const buttonClass = isInStock ? 'btn-outline-primary' : 'btn-outline-danger disabled';
+
+                // Create button element
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `btn variant-option ${buttonClass} variant-btn`;
+                button.setAttribute('data-variant-id', v.id);
+                button.setAttribute('data-variant-name', v.name);
+                button.setAttribute('data-variant-price', effectivePrice);
+                button.setAttribute('data-variant-stock', v.stock);
+                button.setAttribute('data-variant-image', v.imageUrl || '');
+
+                if (!isInStock) {
+                    button.disabled = true;
+                }
+
+                // Build button content
+                let buttonHTML = '<div>';
+                if (v.imageUrl) {
+                    buttonHTML += `<div style="width: 40px; height: 40px; overflow: hidden; margin: 0 auto 5px; border-radius: 4px;">`;
+                    buttonHTML += `<img src="${v.imageUrl}" alt="${v.name}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+                    buttonHTML += `</div>`;
+                }
+                buttonHTML += `<small>${v.name}</small>`;
+                if (showPriceDiff) {
+                    buttonHTML += `<br /><small class="text-primary">$${effectivePrice.toFixed(2)}</small>`;
+                }
+                if (!isInStock) {
+                    buttonHTML += `<br /><small class="text-danger"><i class="bi bi-x-circle"></i> Out of Stock</small>`;
+                } else {
+                    buttonHTML += `<br /><small class="text-success">${v.stock} in stock</small>`;
+                }
+                buttonHTML += '</div>';
+
+                button.innerHTML = buttonHTML;
+
+                // Add click event listener
+                button.addEventListener('click', function() {
+                    if (!this.disabled) {
+                        const variantId = parseInt(this.getAttribute('data-variant-id'));
+                        const variantName = this.getAttribute('data-variant-name');
+                        const variantPrice = parseFloat(this.getAttribute('data-variant-price'));
+                        const variantStock = parseInt(this.getAttribute('data-variant-stock'));
+                        selectVariant(variantId, variantName, variantPrice, variantStock);
+                    }
+                });
+
+                variantContainer.appendChild(button);
+            });
+        }
+
+        // Get all unique values for an attribute
+        function getUniqueAttributeValues(attributeName) {
+            const values = new Set();
+            allVariants.forEach(v => {
+                const foundAttr = v.attributes.find(a => a.attributeName === attributeName);
+                if (foundAttr) values.add(foundAttr.value);
+            });
+            return Array.from(values).sort();
+        }
+
+        // Check if an attribute value can be selected (has available variants)
+        function canSelectAttributeValue(attributeName, value) {
+            return allVariants.some(v => {
+                const foundAttr = v.attributes.find(a => a.attributeName === attributeName && a.value === value);
+                if (!foundAttr) return false;
+
+                // Check if other selected attributes match
+                return Object.entries(selectedAttributes).every(([name, selectedValue]) => {
+                    if (name === attributeName) return true;
+                    const otherAttr = v.attributes.find(a => a.attributeName === name);
+                    return otherAttr && otherAttr.value === selectedValue;
+                });
+            });
+        }
+
+        // Handle attribute selection
+        function selectAttribute(attributeName, value) {
+
+            if (selectedAttributes[attributeName] === value) {
+                delete selectedAttributes[attributeName];
+            } else {
+                selectedAttributes[attributeName] = value;
+            }
+
+            buildAttributeFilters();
+            filterAndDisplayVariants();
+        }
+
+        // Filter variants based on selected attributes and display them
+        function filterAndDisplayVariants() {
+
+            const container = document.getElementById('availableVariantsContainer');
+            const basePrice = @Model.Product.Price;
+
+            if (!container) {
+                return;
+            }
+
+            // Filter variants based on selected attributes
+            const filteredVariants = allVariants.filter(v => {
+                const matches = Object.entries(selectedAttributes).every(([attrName, attrValue]) => {
+                    return v.attributes.some(a => a.attributeName === attrName && a.value === attrValue);
+                });
+                return matches;
+            });
+
+            // If no attributes selected or no complete variant selected, hide quantity
+            if (Object.keys(selectedAttributes).length === 0 || !isCompleteVariantSelected()) {
+                const quantityCard = document.getElementById('quantityCard');
+                if (quantityCard) {
+                    quantityCard.style.display = 'none';
+                }
+                document.getElementById('selectedVariantId').value = '';
+                document.getElementById('variantId').value = '';
+                const addToCartBtn = document.getElementById('addToCartBtn');
+                if (addToCartBtn) {
+                    addToCartBtn.disabled = true;
+                }
+            }
+
+            // Clear existing variant buttons
+            container.innerHTML = '';
+
+            // Create variant buttons for filtered variants using DOM manipulation
+            filteredVariants.forEach(v => {
+
+                const isInStock = v.stock > 0 && v.isAvailable;
+                const effectivePrice = v.priceOverride || basePrice;
+                const showPriceDiff = Math.abs(effectivePrice - basePrice) > 0.01;
+                const buttonClass = isInStock ? 'btn-outline-primary' : 'btn-outline-danger disabled';
+
+                // Create button element
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `btn variant-option ${buttonClass} variant-btn`;
+                button.setAttribute('data-variant-id', v.id);
+                button.setAttribute('data-variant-name', v.name);
+                button.setAttribute('data-variant-price', effectivePrice);
+                button.setAttribute('data-variant-stock', v.stock);
+                button.setAttribute('data-variant-image', v.imageUrl || '');
+
+                if (!isInStock) {
+                    button.disabled = true;
+                }
+
+                // Build button content
+                let buttonHTML = '<div>';
+                if (v.imageUrl) {
+                    buttonHTML += `<div style="width: 40px; height: 40px; overflow: hidden; margin: 0 auto 5px; border-radius: 4px;">`;
+                    buttonHTML += `<img src="${v.imageUrl}" alt="${v.name}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+                    buttonHTML += `</div>`;
+                }
+                buttonHTML += `<small>${v.name}</small>`;
+                if (showPriceDiff) {
+                    buttonHTML += `<br /><small class="text-primary">$${effectivePrice.toFixed(2)}</small>`;
+                }
+                if (!isInStock) {
+                    buttonHTML += `<br /><small class="text-danger"><i class="bi bi-x-circle"></i></small>`;
+                }
+                buttonHTML += '</div>';
+
+                button.innerHTML = buttonHTML;
+
+                // Add click event listener
+                button.addEventListener('click', function() {
+                    if (!this.disabled) {
+                        const variantId = parseInt(this.getAttribute('data-variant-id'));
+                        const variantName = this.getAttribute('data-variant-name');
+                        const variantPrice = parseFloat(this.getAttribute('data-variant-price'));
+                        const variantStock = parseInt(this.getAttribute('data-variant-stock'));
+                        selectVariant(variantId, variantName, variantPrice, variantStock);
+                    }
+                });
+
+                container.appendChild(button);
+            });
+        }
+
+        // Check if a complete variant is selected
+        function isCompleteVariantSelected() {
+            return document.getElementById('selectedVariantId').value !== '';
+        }
+
+        // Select a specific variant
+        function selectVariant(variantId, variantName, effectivePrice, stockQuantity) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.variant-option').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Add active class to clicked button
+            const selectedButton = document.querySelector(`[data-variant-id="${variantId}"]`);
+            selectedButton?.classList.add('active');
+
+            // Update hidden inputs
+            document.getElementById('selectedVariantId').value = variantId;
+            document.getElementById('selectedVariantPrice').value = effectivePrice;
+            document.getElementById('variantId').value = variantId;
+
+            // Update main product image if variant has its own image
+            const variantImageUrl = selectedButton?.getAttribute('data-variant-image');
+            if (variantImageUrl) {
+                const mainImage = document.querySelector('.card-img-top');
+                if (mainImage) {
+                    mainImage.src = variantImageUrl;
+                    mainImage.alt = variantName;
+                }
+            }
+
+            // Enable the Add to Cart button
+            const addToCartBtn = document.getElementById('addToCartBtn');
+            if (addToCartBtn) {
+                addToCartBtn.disabled = false;
+            }
+
+            // Update price display
+            const priceDisplay = document.querySelector('h2.text-primary');
+            if (priceDisplay) {
+                priceDisplay.textContent = '$' + effectivePrice.toFixed(2);
+            }
+
+            // Update availability display
+            const availableStockElement = document.getElementById('availableStock');
+            if (availableStockElement) {
+                availableStockElement.textContent = stockQuantity;
+            }
+
+            const availabilityDisplay = document.getElementById('availabilityDisplay');
+            const selectVariantPrompt = document.getElementById('selectVariantPrompt');
+            if (availabilityDisplay) {
+                availabilityDisplay.style.display = 'block';
+            }
+            if (selectVariantPrompt) {
+                selectVariantPrompt.style.display = 'none';
+            }
+
+            // Show quantity selector
+            const quantityCard = document.getElementById('quantityCard');
+            if (quantityCard) {
+                quantityCard.style.display = 'block';
+            }
+
+            // Update quantity dropdown
+            const quantitySelect = document.getElementById('quantity');
+            if (quantitySelect) {
+                quantitySelect.innerHTML = '';
+                for (let i = 1; i <= Math.min(stockQuantity, 20); i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    quantitySelect.appendChild(option);
+                }
+                if (stockQuantity > 20) {
+                    const option = document.createElement('option');
+                    option.value = stockQuantity;
+                    option.textContent = 'All ' + stockQuantity;
+                    quantitySelect.appendChild(option);
+                }
+                quantitySelect.selectedIndex = 0;
+            }
+        }
+    </script>
+}

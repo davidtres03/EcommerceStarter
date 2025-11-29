@@ -1,0 +1,207 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Manage Customers";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Manage Customers</h1>
+    </div>
+
+    <!-- Status Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Customers.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Created Date</th>
+                        <th>Email Confirmed</th>
+                        <th>Status</th>
+                        <th>Total Orders</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var customer in Model.Customers.OrderByDescending(c => c.CreatedAt))
+                    {
+                        var isDeactivated = customer.LockoutEnd.HasValue && customer.LockoutEnd > DateTime.UtcNow;
+                        var emailConfirmed = customer.EmailConfirmed;
+                        
+                        <tr class="@(isDeactivated ? "table-secondary" : "")">
+                            <td>
+                                <strong>@customer.Email</strong>
+                                @if (!emailConfirmed)
+                                {
+                                    <br />
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-exclamation-circle me-1"></i>Email Not Verified
+                                    </span>
+                                }
+                            </td>
+                            <td>@(customer.PhoneNumber ?? "N/A")</td>
+                            <td>@customer.CreatedAt.ToShortDateString()</td>
+                            <td>
+                                @if (emailConfirmed)
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>Verified
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-clock me-1"></i>Pending
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @if (isDeactivated)
+                                {
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-lock-fill me-1"></i>Deactivated
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Active
+                                    </span>
+                                }
+                            </td>
+                            <td>@customer.Orders.Count</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a asp-page="Details" asp-route-id="@customer.Id" class="btn btn-sm btn-info" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    @if (!customer.EmailConfirmed)
+                                    {
+                                        <!-- Resend Email Verification Button -->
+                                        <form method="post" asp-page-handler="ResendEmailVerification" style="display: inline;">
+                                            <input type="hidden" name="userId" value="@customer.Id" />
+                                            <button type="submit" class="btn btn-sm btn-info" title="Resend Email Verification" 
+                                                    onclick="return confirm('Resend email verification to this user?');">
+                                                <i class="bi bi-envelope"></i>
+                                            </button>
+                                        </form>
+                                    }
+
+                                    @if (isDeactivated)
+                                    {
+                                        <!-- Activate Button -->
+                                        <form method="post" asp-page-handler="Activate" style="display: inline;">
+                                            <input type="hidden" name="userId" value="@customer.Id" />
+                                            <button type="submit" class="btn btn-sm btn-success" title="Activate User" 
+                                                    onclick="return confirm('Are you sure you want to activate this user?');">
+                                                <i class="bi bi-unlock"></i>
+                                            </form>
+                                    }
+                                    else
+                                    {
+                                        <!-- Deactivate Button -->
+                                        <form method="post" asp-page-handler="Deactivate" style="display: inline;">
+                                            <input type="hidden" name="userId" value="@customer.Id" />
+                                            <button type="submit" class="btn btn-sm btn-warning" title="Deactivate User" 
+                                                    onclick="return confirm('Are you sure you want to deactivate this user? They will not be able to sign in.');">
+                                                <i class="bi bi-lock"></i>
+                                            </button>
+                                        </form>
+                                    }
+
+                                    <!-- Delete Button -->
+                                    <form method="post" asp-page-handler="Delete" style="display: inline;">
+                                        <input type="hidden" name="userId" value="@customer.Id" />
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete User" 
+                                                onclick="return confirm('PERMANENT DELETE - Are you absolutely sure? This will delete the user and all associated data. This CANNOT be undone!');">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Customers</h6>
+                        <h3>@Model.Customers.Count</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Active Users</h6>
+                        <h3>@Model.Customers.Count(c => !c.LockoutEnd.HasValue || c.LockoutEnd <= DateTime.UtcNow)</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h6 class="card-title">Deactivated Users</h6>
+                        <h3>@Model.Customers.Count(c => c.LockoutEnd.HasValue && c.LockoutEnd > DateTime.UtcNow)</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Email Not Verified</h6>
+                        <h3>@Model.Customers.Count(c => !c.EmailConfirmed)</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>No customers found.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Add fade animation to alerts
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    if (!alert.classList.contains('alert-danger')) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        setTimeout(() => bsAlert.close(), 5000);
+                    }
+                }, 100);
+            });
+        });
+    </script>
+}

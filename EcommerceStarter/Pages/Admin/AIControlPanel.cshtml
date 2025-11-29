@@ -1,0 +1,318 @@
+@page
+@model AIControlPanelModel
+@{
+    ViewData["Title"] = "AI Control Panel";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-robot"></i> AI Control Panel</h1>
+        <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Error Messages -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i>
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Interactions</h5>
+                    <h2>@Model.TotalInteractions</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Total Cost</h5>
+                    <h2>$@Model.TotalCost.ToString("N2")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Total Tokens Used</h5>
+                    <h2>@Model.TotalTokensUsed.ToString("N0")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Last Backend</h5>
+                    <h3>@(Model.LastBackendUsed ?? "None")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Chat Interface -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Chat with AI</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Chat History -->
+                    <div class="chat-history"
+                        style="height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin-bottom: 15px; background-color: #f8f9fa;">
+                        @if (Model.ChatHistory.Any())
+                        {
+                            @foreach (var message in Model.ChatHistory.OrderBy(h => h.CreatedAt))
+                            {
+                                <div class="mb-3">
+                                    <div class="user-message mb-2">
+                                        <strong class="text-primary">You:</strong> <span>@message.UserMessage</span>
+                                        <br />
+                                        <small class="text-muted">@message.CreatedAt.ToString("g")</small>
+                                    </div>
+                                    <div class="ai-message ps-3 mb-2"
+                                        style="border-left: 3px solid #28a745; padding-left: 12px;">
+                                        <strong class="text-success">@message.BackendUsed:</strong>
+                                        <span>@message.AIResponse</span>
+                                        @if (message.EstimatedCost.HasValue)
+                                        {
+                                            <br />
+                                            <small class="text-muted">
+                                                Cost: $@message.EstimatedCost.Value.ToString("N4")
+                                                @if (message.TokensUsed.HasValue)
+                                                {
+                                                    <span>• Tokens: @message.TokensUsed</span>
+                                                }
+                                            </small>
+                                        }
+                                    </div>
+                                </div>
+                                <hr />
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-chat-left-dots" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-3">No messages yet. Start a conversation!</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Last Response (if any) -->
+                    @if (!string.IsNullOrEmpty(Model.LastResponse))
+                    {
+                        <div class="alert alert-info mb-3">
+                            <strong>Latest Response:</strong><br />
+                            <div style="max-height: 150px; overflow-y: auto;">
+                                @Html.Raw(Model.LastResponse)
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.ResponseTime))
+                            {
+                                <small class="d-block mt-2 text-muted">
+                                    Response time: @Model.ResponseTime
+                                </small>
+                            }
+                        </div>
+                    }
+
+                    <!-- Message Input Form -->
+                    <form method="post" class="mt-4">
+                        <div class="input-group">
+                            <textarea asp-for="UserMessage" class="form-control"
+                                placeholder="Ask the AI anything... (press Tab+Enter or click Send)" rows="3"
+                                style="border-radius: 4px 0 0 4px;"></textarea>
+                            <button type="submit" class="btn btn-primary" style="border-radius: 0 4px 4px 0;">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle"></i>
+                            Messages are logged for audit and history purposes.
+                        </small>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="col-lg-4">
+            <!-- Available Backends -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-cpu"></i> Available Backends</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        @foreach (var backend in Model.AvailableBackends)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>
+                                        @if (backend == "Claude")
+                                        {
+                                            <i class="bi bi-cloud" style="color: #9f7aea;"></i>
+                                            <strong>Claude API</strong>
+                                            <br />
+                                            <small class="text-muted">Cloud-based, powerful</small>
+                                        }
+                                        else if (backend == "Ollama")
+                                        {
+                                            <i class="bi bi-pc" style="color: #ed8936;"></i>
+                                            <strong>Ollama</strong>
+                                            <br />
+                                            <small class="text-muted">Local, free</small>
+                                        }
+                                    </span>
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Ready</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-speedometer2"></i> System Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="status-item mb-3 pb-3" style="border-bottom: 1px solid #dee2e6;">
+                        <small class="text-muted">Database Connections</small>
+                        <br />
+                        <strong class="text-success"><i class="bi bi-check-circle"></i> Connected</strong>
+                    </div>
+                    <div class="status-item mb-3 pb-3" style="border-bottom: 1px solid #dee2e6;">
+                        <small class="text-muted">Chat History Records</small>
+                        <br />
+                        <strong>@Model.ChatHistory.Count()</strong>
+                    </div>
+                    <div class="status-item">
+                        <small class="text-muted">Average Cost per Query</small>
+                        <br />
+                        <strong>
+                            @if (Model.TotalInteractions > 0)
+                            {
+                                <text>$@((Model.TotalCost / Model.TotalInteractions).ToString("N4"))</text>
+                            }
+                            else
+                            {
+                                <text>$0.00</text>
+                            }
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="clearChat()">
+                        <i class="bi bi-trash"></i> Clear Chat History
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary w-100 mb-2" onclick="exportChat()">
+                        <i class="bi bi-download"></i> Export Chat
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info w-100" onclick="testConnection()">
+                        <i class="bi bi-arrow-repeat"></i> Test Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-history {
+        scroll-behavior: smooth;
+    }
+
+    .user-message {
+        background-color: #e3f2fd;
+        padding: 10px;
+        border-radius: 4px;
+        margin-left: 10%;
+    }
+
+    .ai-message {
+        background-color: #f1f8e9;
+        padding: 10px;
+        border-radius: 4px;
+        margin-right: 10%;
+    }
+
+    .status-item strong {
+        font-size: 1.1rem;
+    }
+
+    textarea.form-control {
+        resize: none;
+    }
+
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .card-header {
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script>
+    function clearChat() {
+        if (confirm('Are you sure you want to clear the chat history? This action cannot be undone.')) {
+            // TODO: Implement clear chat functionality
+            alert('Clear chat functionality will be implemented in the next phase.');
+        }
+    }
+
+    function exportChat() {
+        // TODO: Implement export chat functionality
+        alert('Export chat functionality will be implemented in the next phase.');
+    }
+
+    function testConnection() {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Testing...';
+
+        fetch('/api/ai/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.healthy) {
+                    alert('Connection test passed! All AI backends are ready.');
+                } else {
+                    alert('Connection test failed: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Connection test failed: ' + error.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Test Connection';
+            });
+    }
+
+    // Auto-scroll chat history to bottom
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatHistory = document.querySelector('.chat-history');
+        if (chatHistory) {
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+    });
+</script>

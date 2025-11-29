@@ -1,0 +1,201 @@
+<Page x:Class="EcommerceStarter.Installer.Views.UninstallPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.modernwpf.com/2019"
+      Title="Uninstall EcommerceStarter">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="600" Margin="0,0,0,20">
+            <!-- Instance Selection -->
+            <Border x:Name="InstancePickerPanel"
+                   Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}"
+                   BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                   BorderThickness="1"
+                   CornerRadius="8"
+                   Padding="16"
+                   Margin="0,0,0,16"
+                   Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="Select Instance to Uninstall"
+                               FontWeight="SemiBold"
+                               FontSize="14"
+                               Margin="0,0,0,8"/>
+                    <ComboBox x:Name="InstanceCombo"
+                              Width="380"
+                              MinWidth="260"
+                              SelectionChanged="InstanceCombo_SelectionChanged"/>
+                </StackPanel>
+            </Border>
+            <!-- Header -->
+            <TextBlock Text="Uninstall EcommerceStarter"
+                      FontSize="28"
+                      FontWeight="Bold"
+                      Margin="0,0,0,10"/>
+            
+            <TextBlock Text="Remove EcommerceStarter from your system"
+                      Style="{StaticResource PageSubtitleStyle}"
+                      Margin="0,0,0,30"/>
+            
+            <!-- Installation Info -->
+            <Border Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}"
+                   BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                   BorderThickness="1"
+                   CornerRadius="8"
+                   Padding="20"
+                   Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Current Installation" 
+                              FontWeight="SemiBold"
+                              FontSize="16"
+                              Margin="0,0,0,15"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Site:" FontWeight="SemiBold" Margin="0,0,15,8"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="SiteNameText" Text="(auto)" Margin="0,0,0,8"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Version:" FontWeight="SemiBold" Margin="0,0,15,8"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="VersionText" Text="1.0.0" Margin="0,0,0,8"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Location:" FontWeight="SemiBold" Margin="0,0,15,8"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="LocationText" Text="C:\inetpub\EcommerceStarter" 
+                                  TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Installed:" FontWeight="SemiBold" Margin="0,0,15,0"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="InstallDateText" Text="2025-01-12"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            
+            <!-- Uninstall Options -->
+            <Border Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}"
+                   BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                   BorderThickness="1"
+                   CornerRadius="8"
+                   Padding="20"
+                   Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Uninstall Options" 
+                              FontWeight="SemiBold"
+                              FontSize="16"
+                              Margin="0,0,0,15"/>
+                    
+                    <CheckBox x:Name="RemoveDatabaseCheckBox"
+                             Content="Remove Database (WARNING: All data will be lost!)"
+                             Margin="0,0,0,15"
+                             Checked="RemoveDatabase_Checked"
+                             Unchecked="RemoveDatabase_Unchecked"/>
+                    
+                    <Border x:Name="DatabaseWarning"
+                           Background="#FFF3CD"
+                           BorderBrush="#FFC107"
+                           BorderThickness="1"
+                           CornerRadius="6"
+                           Padding="12"
+                           Margin="0,0,0,15"
+                           Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Foreground="#856404">
+                                <Run Text="&#x26A0;"/> Warning: Database Removal
+                            </TextBlock>
+                            <TextBlock Text="This will permanently delete all your store data including products, orders, and customers. This action cannot be undone!"
+                                      TextWrapping="Wrap"
+                                      Foreground="#856404"
+                                      Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <CheckBox x:Name="KeepUserDataCheckBox"
+                             Content="Keep user-uploaded files (product images, etc.)"
+                             IsChecked="True"
+                             Checked="KeepUserData_Checked"
+                             Unchecked="KeepUserData_Unchecked"
+                             Margin="0,0,0,10"/>
+                    
+                    <TextBlock Text="Unchecking this will remove all uploaded files and user data."
+                              FontSize="11"
+                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                              TextWrapping="Wrap"
+                              Margin="20,0,0,0"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- What will be removed -->
+            <Border Background="{DynamicResource SystemControlPageBackgroundAltHighBrush}"
+                   BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                   BorderThickness="1"
+                   CornerRadius="8"
+                   Padding="20"
+                   Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="What will be removed?" 
+                              FontWeight="SemiBold"
+                              FontSize="16"
+                              Margin="0,0,0,10"/>
+                    
+                    <StackPanel>
+                        <TextBlock Margin="0,5,0,0">
+                            <Run Text="&#x2713;"/>
+                            <Run Text="IIS Website and Application Pool"/>
+                        </TextBlock>
+                        <TextBlock Margin="0,5,0,0">
+                            <Run Text="&#x2713;"/>
+                            <Run Text="Application files and binaries"/>
+                        </TextBlock>
+                        <TextBlock Margin="0,5,0,0">
+                            <Run Text="&#x2713;"/>
+                            <Run Text="Registry entries"/>
+                        </TextBlock>
+                        <TextBlock Margin="0,5,0,0">
+                            <Run Text="&#x2713;"/>
+                            <Run Text="Programs &amp; Features entry"/>
+                        </TextBlock>
+                        <TextBlock x:Name="DatabaseRemovalText" 
+                                  Margin="0,5,0,0"
+                                  Visibility="Collapsed">
+                            <Run Text="&#x2713;"/>
+                            <Run Text="SQL Server Database" FontWeight="Bold"/>
+                        </TextBlock>
+                        <TextBlock x:Name="UserDataRemovalText"
+                                  Margin="0,5,0,0"
+                                  Visibility="Collapsed">
+                            <Run Text="&#x2713;"/>
+                            <Run Text="User-uploaded files and data"/>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <!-- Action Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <Button x:Name="CancelButton"
+                       Content="Cancel"
+                       Style="{StaticResource SecondaryButtonStyle}"
+                       Click="Cancel_Click"
+                       MinWidth="140"/>
+                
+                <Button x:Name="UninstallButton"
+                       Content="Uninstall"
+                       Click="Uninstall_Click"
+                       MinWidth="140"
+                       MinHeight="36"
+                       Margin="5"
+                       Cursor="Hand"
+                       Background="{StaticResource BrandDangerBrush}"
+                       Foreground="White"
+                       FontWeight="SemiBold"
+                       BorderThickness="0"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

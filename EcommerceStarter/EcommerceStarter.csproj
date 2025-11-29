@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Version - Single source of truth, used for all version properties -->
+    <Version>1.0.5</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Products\**" />
+    <Content Remove="Products\**" />
+    <EmbeddedResource Remove="Products\**" />
+    <None Remove="Products\**" />
+  </ItemGroup>
+
+  <!-- Exclude junk directories from publish -->
+  <ItemGroup>
+    <Content Remove="inetpubwwwrootCapAndCollarSupplyCo_temp\**" />
+    <Content Remove="publish\**" />
+    <Content Remove="publish-selfcontained\**" />
+    <None Remove="inetpubwwwrootCapAndCollarSupplyCo_temp\**" />
+    <None Remove="publish\**" />
+    <None Remove="publish-selfcontained\**" />
+  </ItemGroup>
+
+  <!-- Exclude appsettings.json from publish - all config is in Windows Registry and Database -->
+  <ItemGroup>
+    <Content Remove="appsettings.Production.json" />
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
+    <PackageReference Include="Azure.Identity" Version="1.17.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.26.0" />
+    <PackageReference Include="HtmlSanitizer" Version="9.0.886" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Resend" Version="0.1.6" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageReference Include="Stripe.net" Version="49.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
+    <PackageReference Include="UAParser" Version="3.1.47" />
+  </ItemGroup>
+
+</Project>

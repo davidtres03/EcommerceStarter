@@ -1,0 +1,504 @@
+@page
+@model ApiKeysModel
+@{
+    ViewData["Title"] = "API Keys & Credentials";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-key-fill"></i> API Keys & Credentials</h1>
+        <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    @if (Model.SuccessMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.ErrorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-shield-lock"></i> API Keys & Credentials</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">
+                Configure API credentials for payment processing and real-time package tracking.
+                All sensitive data is encrypted before storage.
+            </p>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs" id="apiKeyTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(Model.ActiveTab == "stripe" ? "active" : "")" id="stripe-tab" data-bs-toggle="tab" data-bs-target="#stripe" type="button" role="tab">
+                        <i class="bi bi-credit-card"></i> Stripe
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(Model.ActiveTab == "usps" ? "active" : "")" id="usps-tab" data-bs-toggle="tab" data-bs-target="#usps" type="button" role="tab">
+                        <i class="bi bi-envelope"></i> USPS
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(Model.ActiveTab == "ups" ? "active" : "")" id="ups-tab" data-bs-toggle="tab" data-bs-target="#ups" type="button" role="tab">
+                        <i class="bi bi-box-seam"></i> UPS
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(Model.ActiveTab == "fedex" ? "active" : "")" id="fedex-tab" data-bs-toggle="tab" data-bs-target="#fedex" type="button" role="tab">
+                        <i class="bi bi-truck"></i> FedEx
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(Model.ActiveTab == "ai" ? "active" : "")" id="ai-tab" data-bs-toggle="tab" data-bs-target="#ai" type="button" role="tab">
+                        <i class="bi bi-robot"></i> AI Services
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content mt-4" id="apiKeyTabsContent">
+                <!-- Stripe Tab -->
+                <div class="tab-pane fade @(Model.ActiveTab == "stripe" ? "show active" : "")" id="stripe" role="tabpanel">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Stripe Payment Gateway</strong><br>
+                        Register at: <a href="https://dashboard.stripe.com/register" target="_blank">https://dashboard.stripe.com/register</a>
+                    </div>
+
+                    <form method="post" asp-page-handler="SaveStripe">
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="StripeInput.IsTestMode" type="checkbox" class="form-check-input" id="stripeTestMode" />
+                            <label class="form-check-label" for="stripeTestMode">
+                                <strong>Test Mode</strong> (Use test keys for development)
+                            </label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="StripeInput.PublishableKey" class="form-label">Publishable Key</label>
+                            @if (!string.IsNullOrEmpty(Model.CurrentStripeConfig?.EncryptedPublishableKey))
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control font-monospace" value="••••••••••••••••••••••••••••" readonly disabled style="background-color: #f8f9fa;">
+                                    <span class="input-group-text bg-success text-white">
+                                        <i class="bi bi-shield-check"></i> Stored
+                                    </span>
+                                </div>
+                                <input asp-for="StripeInput.PublishableKey" type="password" class="form-control font-monospace" placeholder="Leave blank to keep existing (starts with pk_test_ or pk_live_)" />
+                            }
+                            else
+                            {
+                                <input asp-for="StripeInput.PublishableKey" type="password" class="form-control font-monospace" placeholder="pk_test_..." />
+                            }
+                            <small class="form-text text-muted">Public key for client-side Stripe integration</small>
+                            <span asp-validation-for="StripeInput.PublishableKey" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="StripeInput.SecretKey" class="form-label">Secret Key</label>
+                            @if (!string.IsNullOrEmpty(Model.CurrentStripeConfig?.EncryptedSecretKey))
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control font-monospace" value="••••••••••••••••••••••••••••" readonly disabled style="background-color: #f8f9fa;">
+                                    <span class="input-group-text bg-success text-white">
+                                        <i class="bi bi-shield-check"></i> Stored
+                                    </span>
+                                </div>
+                                <input asp-for="StripeInput.SecretKey" type="password" class="form-control font-monospace" placeholder="Leave blank to keep existing (starts with sk_test_ or sk_live_)" />
+                            }
+                            else
+                            {
+                                <input asp-for="StripeInput.SecretKey" type="password" class="form-control font-monospace" placeholder="sk_test_..." />
+                            }
+                            <small class="form-text text-muted">Server-side secret key (never expose publicly)</small>
+                            <span asp-validation-for="StripeInput.SecretKey" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="StripeInput.WebhookSecret" class="form-label">Webhook Secret (Optional)</label>
+                            @if (!string.IsNullOrEmpty(Model.CurrentStripeConfig?.EncryptedWebhookSecret))
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control font-monospace" value="••••••••••••••••••••••••••••" readonly disabled style="background-color: #f8f9fa;">
+                                    <span class="input-group-text bg-success text-white">
+                                        <i class="bi bi-shield-check"></i> Stored
+                                    </span>
+                                </div>
+                                <input asp-for="StripeInput.WebhookSecret" type="password" class="form-control font-monospace" placeholder="Leave blank to keep existing (starts with whsec_)" />
+                            }
+                            else
+                            {
+                                <input asp-for="StripeInput.WebhookSecret" type="password" class="form-control font-monospace" placeholder="whsec_..." />
+                            }
+                            <small class="form-text text-muted">For webhook signature verification</small>
+                            <span asp-validation-for="StripeInput.WebhookSecret" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Important:</strong> Keys are validated based on test/live mode. Ensure the checkbox matches your key type.
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Stripe Settings
+                        </button>
+                    </form>
+
+                    @if (Model.RecentStripeAudits.Any())
+                    {
+                        <hr class="my-4">
+                        <h6>Recent Changes</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>User</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var audit in Model.RecentStripeAudits.Take(5))
+                                    {
+                                        <tr>
+                                            <td>@audit.Timestamp.ToLocalTime().ToString("g")</td>
+                                            <td>@audit.UserEmail</td>
+                                            <td>@audit.Action</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+
+                <!-- USPS Tab -->
+                <div class="tab-pane fade @(Model.ActiveTab == "usps" ? "show active" : "")" id="usps" role="tabpanel">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>USPS Developer API</strong><br>
+                        Register at: <a href="https://developer.usps.com/" target="_blank">https://developer.usps.com/</a>
+                    </div>
+
+                    <form method="post" asp-page-handler="SaveUsps">
+                        <div class="mb-3">
+                            <label asp-for="Input.UspsConsumerKey" class="form-label">Consumer Key (Client ID)</label>
+                            <input asp-for="Input.UspsConsumerKey" class="form-control" placeholder="Your USPS API Consumer Key" />
+                            <small class="form-text text-muted">From USPS Developer Portal - App Credentials</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.UspsConsumerSecret" class="form-label">Consumer Secret (Client Secret)</label>
+                            @if (!string.IsNullOrEmpty(Model.CurrentUspsSecret))
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control font-monospace" value="••••••••••••••••••••••••••••" readonly disabled style="background-color: #f8f9fa;">
+                                    <span class="input-group-text bg-success text-white">
+                                        <i class="bi bi-shield-check"></i> Stored
+                                    </span>
+                                </div>
+                                <input asp-for="Input.UspsConsumerSecret" type="password" class="form-control font-monospace" placeholder="Leave blank to keep existing" />
+                            }
+                            else
+                            {
+                                <input asp-for="Input.UspsConsumerSecret" type="password" class="form-control font-monospace" placeholder="Your USPS API Consumer Secret" />
+                            }
+                            <small class="form-text text-muted">Only enter if changing secret. Stored encrypted.</small>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>USPS API Authentication:</strong> The new USPS API uses OAuth 2.0 with Consumer Key and Consumer Secret.
+                            Register at <a href="https://developer.usps.com/" target="_blank">developer.usps.com</a> to get your credentials.
+                        </div>
+
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="Input.UspsUseSandbox" type="checkbox" class="form-check-input" id="uspsSandbox" />
+                            <label class="form-check-label" for="uspsSandbox">
+                                <strong>Use Sandbox Environment</strong> (For testing with sandbox credentials)
+                            </label>
+                            <small class="form-text text-muted d-block">
+                                <i class="bi bi-info-circle"></i>
+                                Toggle this ON if you're using test/sandbox credentials from USPS Developer Portal.
+                                Production credentials require this OFF.
+                            </small>
+                        </div>
+
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="Input.UspsEnabled" type="checkbox" class="form-check-input" id="uspsEnabled" />
+                            <label class="form-check-label" for="uspsEnabled">
+                                Enable USPS Tracking
+                            </label>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save USPS Settings
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="card bg-light">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-shield-check"></i> Test USPS Connection</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">
+                                Test your USPS API credentials by making real API calls. This will verify your Consumer Key and Secret are correct by:
+                                <br><small>1. Obtaining an OAuth 2.0 access token</small>
+                                <br><small>2. Using the token to call the Address/ZipCode API</small>
+                            </p>
+                            <form method="post" asp-page-handler="TestUsps">
+                                <button type="submit" class="btn btn-outline-primary" id="testUspsBtn">
+                                    <i class="bi bi-lightning"></i> Test USPS API Connection
+                                </button>
+                            </form>
+                            <small class="text-muted d-block mt-2">
+                                <i class="bi bi-info-circle"></i> Tests OAuth token retrieval and ZipCode API. Make sure to save your settings first.
+                            </small>
+
+                            @if (!string.IsNullOrEmpty(Model.TestResponseJson))
+                            {
+                                <hr class="my-3">
+                                <h6 class="mb-2"><i class="bi bi-code-square"></i> API Response (JSON)</h6>
+                                <div class="border rounded bg-white p-3" style="max-height: 500px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85rem;">
+                                    <pre class="mb-0" style="white-space: pre-wrap; word-break: break-word;">@Html.Raw(Model.TestResponseJson)</pre>
+                                </div>
+                                <small class="form-text text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle"></i> Response shows OAuth token status and ZipCode API results.
+                                </small>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UPS Tab -->
+                <div class="tab-pane fade @(Model.ActiveTab == "ups" ? "show active" : "")" id="ups" role="tabpanel">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>UPS Developer API</strong><br>
+                        Register at: <a href="https://developer.ups.com/" target="_blank">https://developer.ups.com/</a>
+                    </div>
+
+                    <form method="post" asp-page-handler="SaveUps">
+                        <div class="mb-3">
+                            <label asp-for="Input.UpsClientId" class="form-label">Client ID</label>
+                            <input asp-for="Input.UpsClientId" class="form-control" placeholder="Your UPS API Client ID" />
+                            <small class="form-text text-muted">From UPS Developer Portal</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.UpsClientSecret" class="form-label">Client Secret</label>
+                            <input asp-for="Input.UpsClientSecret" type="password" class="form-control" placeholder="Leave blank to keep existing" />
+                            <small class="form-text text-muted">Only enter if changing secret. Stored encrypted.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.UpsAccountNumber" class="form-label">UPS Account Number</label>
+                            <input asp-for="Input.UpsAccountNumber" class="form-control" placeholder="Your UPS Account Number" />
+                            <small class="form-text text-muted">Your 6-character UPS account number</small>
+                        </div>
+
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="Input.UpsEnabled" type="checkbox" class="form-check-input" id="upsEnabled" />
+                            <label class="form-check-label" for="upsEnabled">
+                                Enable UPS Tracking
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save UPS Settings
+                        </button>
+                    </form>
+                </div>
+
+                <!-- FedEx Tab -->
+                <div class="tab-pane fade @(Model.ActiveTab == "fedex" ? "show active" : "")" id="fedex" role="tabpanel">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>FedEx Web Services</strong><br>
+                        Register at: <a href="https://developer.fedex.com/" target="_blank">https://developer.fedex.com/</a>
+                    </div>
+
+                    <form method="post" asp-page-handler="SaveFedEx">
+                        <div class="mb-3">
+                            <label asp-for="Input.FedExAccountNumber" class="form-label">Account Number</label>
+                            <input asp-for="Input.FedExAccountNumber" class="form-control" placeholder="Your FedEx Account Number" />
+                            <small class="form-text text-muted">9-digit FedEx account number</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.FedExMeterNumber" class="form-label">Meter Number</label>
+                            <input asp-for="Input.FedExMeterNumber" class="form-control" placeholder="Your FedEx Meter Number" />
+                            <small class="form-text text-muted">Provided by FedEx Developer Portal</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.FedExKey" class="form-label">API Key</label>
+                            <input asp-for="Input.FedExKey" type="password" class="form-control" placeholder="Leave blank to keep existing" />
+                            <small class="form-text text-muted">Only enter if changing key. Stored encrypted.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.FedExPassword" class="form-label">API Password</label>
+                            <input asp-for="Input.FedExPassword" type="password" class="form-control" placeholder="Leave blank to keep existing" />
+                            <small class="form-text text-muted">Only enter if changing password. Stored encrypted.</small>
+                        </div>
+
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="Input.FedExEnabled" type="checkbox" class="form-check-input" id="fedexEnabled" />
+                            <label class="form-check-label" for="fedexEnabled">
+                                Enable FedEx Tracking
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save FedEx Settings
+                        </button>
+                    </form>
+                </div>
+
+                <!-- AI Services Tab -->
+                <div class="tab-pane fade @(Model.ActiveTab == "ai" ? "show active" : "")" id="ai" role="tabpanel">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>AI Services Configuration</strong><br>
+                        Configure API credentials for AI backends (Claude, etc.) and enable/disable local AI (Ollama).
+                    </div>
+
+                    <form method="post" asp-page-handler="SaveAI">
+                        <h5 class="mb-3"><i class="bi bi-cloud"></i> Claude (Anthropic API)</h5>
+
+                        <div class="mb-3 form-check form-switch">
+                            <input type="hidden" value="false" />
+                            <input asp-for="AIInput.ClaudeEnabled" type="checkbox" class="form-check-input" id="claudeEnabled" />
+                            <label class="form-check-label" for="claudeEnabled">
+                                <strong>Enable Claude</strong> (Cloud-based, powerful AI - costs per request)
+                            </label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AIInput.ClaudeApiKey" class="form-label">Claude API Key</label>
+                            <input asp-for="AIInput.ClaudeApiKey" type="password" class="form-control" placeholder="sk-ant-..." />
+                            <small class="form-text text-muted">
+                                Get your API key from <a href="https://console.anthropic.com/" target="_blank">Anthropic Console</a>.
+                                Leave blank to keep existing key.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AIInput.ClaudeModel" class="form-label">Model</label>
+                            <select asp-for="AIInput.ClaudeModel" class="form-select">
+                                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Recommended)</option>
+                                <option value="claude-3-opus-20240229">Claude 3 Opus (Most Capable)</option>
+                                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                                <option value="claude-3-haiku-20240307">Claude 3 Haiku (Fastest)</option>
+                            </select>
+                            <small class="form-text text-muted">Different models have different costs and capabilities.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AIInput.ClaudeMaxTokens" class="form-label">Max Tokens per Request</label>
+                            <input asp-for="AIInput.ClaudeMaxTokens" type="number" class="form-control" min="100" max="4096" />
+                            <small class="form-text text-muted">Maximum number of tokens (words) in responses. Higher = more cost.</small>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <h5 class="mb-3"><i class="bi bi-pc"></i> Ollama (Local AI)</h5>
+
+                        <div class="mb-3 form-check form-switch">
+                            <input type="hidden" value="false" />
+                            <input asp-for="AIInput.OllamaEnabled" type="checkbox" class="form-check-input" id="ollamaEnabled" />
+                            <label class="form-check-label" for="ollamaEnabled">
+                                <strong>Enable Ollama</strong> (Free, runs locally on your server)
+                            </label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AIInput.OllamaEndpoint" class="form-label">Ollama Endpoint</label>
+                            <input asp-for="AIInput.OllamaEndpoint" type="text" class="form-control" placeholder="http://localhost:11434" />
+                            <small class="form-text text-muted">
+                                URL where Ollama is running. Install from <a href="https://ollama.ai/" target="_blank">ollama.ai</a>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AIInput.OllamaModel" class="form-label">Model</label>
+                            <input asp-for="AIInput.OllamaModel" type="text" class="form-control" placeholder="neural-chat" />
+                            <small class="form-text text-muted">
+                                Model name (must be pulled via `ollama pull <model>`). Examples: neural-chat, llama2, mistral
+                            </small>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <h5 class="mb-3"><i class="bi bi-gear"></i> Routing & Fallback</h5>
+
+                        <div class="mb-3">
+                            <label asp-for="AIInput.PreferredBackend" class="form-label">Preferred Backend</label>
+                            <select asp-for="AIInput.PreferredBackend" class="form-select">
+                                <option value="Auto">Auto (Smart Routing)</option>
+                                <option value="Claude">Always Claude</option>
+                                <option value="Ollama">Always Ollama</option>
+                            </select>
+                            <small class="form-text text-muted">Auto will use Claude for complex queries, Ollama for simple ones.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AIInput.MaxCostPerRequest" class="form-label">Max Cost per Request ($)</label>
+                            <input asp-for="AIInput.MaxCostPerRequest" type="number" class="form-control" step="0.01" min="0" />
+                            <small class="form-text text-muted">If a request would cost more than this, it will be rejected or use fallback.</small>
+                        </div>
+
+                        <div class="mb-3 form-check form-switch">
+                            <input type="hidden" value="false" />
+                            <input asp-for="AIInput.EnableFallback" type="checkbox" class="form-check-input" id="enableFallback" />
+                            <label class="form-check-label" for="enableFallback">
+                                <strong>Enable Fallback</strong> (Use Ollama if Claude fails or is disabled)
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save AI Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-shield-exclamation"></i> Security Notice</h5>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>All API passwords and secrets are encrypted using AES-256 encryption before storage</li>
+                <li>Only admin users can view and modify API credentials</li>
+                <li>API keys are never exposed in logs or error messages</li>
+                <li>Changes to API keys are logged in the audit trail</li>
+                <li>Keep your API credentials secure and never share them publicly</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Alerts now stay visible until user manually closes them or navigates away
+        // No auto-dismiss so admin can read full message and test response
+    </script>
+}

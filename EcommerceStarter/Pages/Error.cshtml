@@ -1,0 +1,101 @@
+@page "{statusCode:int?}"
+@model ErrorModel
+@{
+    ViewData["Title"] = Model.ErrorTitle;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <!-- Error Icon -->
+            <div class="mb-4">
+                @switch (Model.ErrorStatusCode)
+                {
+                    case 401:
+                        <i class="bi bi-shield-lock text-warning" style="font-size: 6rem;"></i>
+                        break;
+                    case 403:
+                        <i class="bi bi-shield-x text-danger" style="font-size: 6rem;"></i>
+                        break;
+                    case 404:
+                        <i class="bi bi-search text-muted" style="font-size: 6rem;"></i>
+                        break;
+                    case 500:
+                    case 503:
+                        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 6rem;"></i>
+                        break;
+                    default:
+                        <i class="bi bi-exclamation-circle text-warning" style="font-size: 6rem;"></i>
+                        break;
+                }
+            </div>
+
+            <!-- Error Title -->
+            <h1 class="display-4 fw-bold mb-3">@Model.ErrorTitle</h1>
+            
+            <!-- Error Message -->
+            <p class="lead text-muted mb-4">@Model.ErrorMessage</p>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-3 justify-content-center mb-4">
+                @if (Model.ErrorStatusCode == 401)
+                {
+                    <a href="/Account/Login" class="btn btn-primary btn-lg">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    </a>
+                }
+                <a href="/" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-house me-2"></i>Go Home
+                </a>
+                <button onclick="history.back()" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Go Back
+                </button>
+            </div>
+
+            <!-- Request ID (for support) -->
+            @if (Model.ShowRequestId)
+            {
+                <div class="alert alert-light border mt-4">
+                    <small class="text-muted">
+                        <strong>Request ID:</strong> <code>@Model.RequestId</code>
+                        <br>
+                        <span class="text-muted">Please include this ID when contacting support.</span>
+                    </small>
+                </div>
+            }
+
+            <!-- Additional Help -->
+            @if (Model.ErrorStatusCode == 404)
+            {
+                <div class="mt-5">
+                    <h5 class="mb-3">Popular Pages</h5>
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        <a href="/Products" class="btn btn-sm btn-outline-secondary">Shop</a>
+                        <a href="/About" class="btn btn-sm btn-outline-secondary">About</a>
+                        <a href="/Contact" class="btn btn-sm btn-outline-secondary">Contact</a>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a href="/Orders" class="btn btn-sm btn-outline-secondary">My Orders</a>
+                            <a href="/Account/Settings" class="btn btn-sm btn-outline-secondary">Account</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-hide request ID after copying
+        if (document.querySelector('code')) {
+            document.querySelector('code').addEventListener('click', function() {
+                navigator.clipboard.writeText(this.textContent);
+                const alert = this.closest('.alert');
+                const originalHTML = alert.innerHTML;
+                alert.innerHTML = '<small class="text-success"><i class="bi bi-check-circle me-2"></i>Request ID copied to clipboard!</small>';
+                setTimeout(() => alert.innerHTML = originalHTML, 2000);
+            });
+        }
+    </script>
+}

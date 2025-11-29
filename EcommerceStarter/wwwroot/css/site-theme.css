@@ -1,0 +1,1525 @@
+/* Theme Thread Design System - Extended Styles */
+/* Compact footer */
+.site-footer {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    min-height: 48px;
+}
+
+/* Compact header consistency */
+.site-header, .navbar {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+}
+
+/* Product Card Styles */
+.product-card-theme {
+    background: var(--theme-white, #ffffff);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.product-card-theme:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.product-image-theme {
+    width: 100%;
+    height: 240px;
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-image-theme img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+}
+
+.product-badge-theme {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--theme-accent);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.product-info-theme {
+    padding: 1rem;
+}
+
+.product-title-theme {
+    font-size: 1.0rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--theme-primary);
+}
+
+.product-price-theme {
+    font-size: 1.0rem;
+    font-weight: 700;
+    color: var(--theme-accent);
+    margin-bottom: 1rem;
+}
+
+/* Hero Section */
+.hero-theme {
+    background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary) 100%);
+    min-height: 70vh;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.hero-bg-pattern {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0.15;
+    background-size: 200px;
+    animation: floatBg 20s infinite linear;
+}
+
+@keyframes floatBg {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(-50px) translateY(-30px); }
+}
+
+.hero-content-theme {
+    text-align: center;
+    color: white;
+    z-index: 2;
+    max-width: 800px;
+    padding: 2rem;
+}
+
+.hero-content-theme h1 {
+    font-size: 4rem;
+    font-weight: 300;
+    letter-spacing: 8px;
+    margin-bottom: 1rem;
+}
+
+.hero-content-theme p {
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+/* Category Tabs */
+.category-tabs-theme {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    background: var(--theme-white, #ffffff);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
+}
+
+.tab-theme {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid rgba(0,0,0,0.1);
+    background: var(--theme-white, #ffffff);
+    cursor: pointer;
+    border-radius: 25px;
+    transition: all 0.3s;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--theme-text);
+}
+
+.tab-theme:hover, .tab-theme.active {
+    background: var(--theme-primary);
+    color: white;
+    border-color: var(--theme-primary);
+}
+
+/* Sidebar Filter */
+.sidebar-theme {
+    background: var(--theme-primary-dark);
+    color: white;
+    width: 280px;
+    padding: 2rem;
+    border-radius: 12px;
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+}
+
+.sidebar-theme h3 {
+    margin-bottom: 1.5rem;
+    letter-spacing: 2px;
+    font-weight: 300;
+}
+
+.filter-group-theme {
+    margin-bottom: 2rem;
+}
+
+.filter-item-theme {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.3s;
+    margin-bottom: 0.5rem;
+}
+
+.filter-item-theme:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.filter-icon-theme {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+/* Product Grid */
+.product-grid-theme {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+/* Shopping Cart Modal */
+.cart-modal-theme {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100vh;
+    background: var(--theme-white, #ffffff);
+    box-shadow: -4px 0 20px rgba(0,0,0,0.2);
+    transition: right 0.3s;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.cart-modal-theme.open {
+    right: 0;
+}
+
+.cart-header-theme {
+    padding: 2rem;
+    background: var(--theme-primary-dark);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cart-item-theme {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.cart-item-image {
+    width: 80px;
+    height: 80px;
+    background: var(--theme-bg-alt);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Feature Highlights */
+.feature-highlight-theme {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.feature-highlight-theme i {
+    font-size: 2.5rem;
+    color: var(--theme-accent);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.feature-highlight-theme h6 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--theme-primary);
+}
+
+.feature-highlight-theme p {
+    color: var(--theme-text-muted);
+    font-size: 0.875rem;
+}
+
+/* Privacy Callout */
+.privacy-callout-theme {
+    background: linear-gradient(135deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.12) 100%);
+    border: 2px solid rgba(45, 90, 61, 0.3);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 3rem 0;
+}
+
+.privacy-callout-theme h4 {
+    color: var(--theme-primary);
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.privacy-callout-theme p {
+    color: var(--theme-primary-dark);
+    line-height: 1.6;
+}
+
+/* Trust Indicators */
+.trust-section-theme {
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-bg-alt) 100%);
+    border-radius: 20px;
+    padding: 4rem 3rem;
+    text-align: center;
+    margin-top: 4rem;
+}
+
+.trust-section-theme h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+    color: var(--theme-primary);
+}
+
+.trust-section-theme i {
+    font-size: 3rem;
+    color: var(--theme-accent);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .hero-content-theme h1 {
+        font-size: 3rem;
+        letter-spacing: 4px;
+    }
+    
+    .sidebar-theme {
+        width: 100%;
+        position: relative;
+        top: 0;
+        margin-bottom: 2rem;
+    }
+    
+    .product-grid-theme {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-content-theme h1 {
+        font-size: 2.5rem;
+        letter-spacing: 2px;
+    }
+    
+    .hero-content-theme p {
+        font-size: 1.0rem;
+    }
+    
+    .cart-modal-theme {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .product-grid-theme {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Additional Utility Classes */
+.text-theme-forest {
+    color: var(--theme-primary);
+}
+
+.text-theme-accent {
+    color: var(--theme-accent);
+}
+
+.bg-theme-forest {
+    background-color: var(--theme-primary);
+}
+
+.bg-theme-accent {
+    background-color: var(--theme-accent);
+}
+
+.bg-theme-light {
+    background-color: var(--theme-bg);
+}
+/* Modern Hero Section with Nature Photography */
+.hero-theme-v2 {
+    position: relative;
+    height: 85vh;
+    min-height: 550px;
+    max-height: 750px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary) 100%);
+}
+
+.hero-background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    filter: brightness(0.6) contrast(1.05);
+    opacity: 0.9;
+}
+
+.hero-image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.2) 50%,
+        rgba(0, 0, 0, 0.3) 100%
+    );
+    z-index: 1;
+}
+
+.hero-content-v2 {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: white;
+    max-width: 800px;
+    padding: 0 2rem 4rem 2rem;
+    animation: heroFadeIn 0.8s ease-out;
+}
+
+@keyframes heroFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
+    padding: 0.4rem 1.25rem;
+    border-radius: 50px;
+    margin-bottom: 1.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.8rem;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.hero-icon {
+    font-size: 1.2rem;
+}
+
+.hero-logo-icon {
+    height: 32px;
+    width: auto;
+    max-width: 120px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    opacity: 1;
+}
+
+.hero-tagline {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 1.25rem;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    line-height: 1.15;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.hero-subtitle {
+    font-size: 1.15rem;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    margin-bottom: 2.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.7;
+}
+
+.hero-cta-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-theme-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--theme-white, #ffffff);
+    color: var(--theme-primary);
+    padding: 0.875rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: none;
+}
+
+.btn-theme-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+    color: var(--theme-primary-dark);
+}
+
+.btn-theme-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 0.875rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-theme-secondary:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.hero-features {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 3rem;
+}
+
+.hero-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.hero-feature-item i {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.hero-scroll-indicator {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+    animation: scrollBounce 2s infinite;
+}
+
+@keyframes scrollBounce {
+    0%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    50% {
+        transform: translateX(-50%) translateY(10px);
+    }
+}
+
+.hero-scroll-indicator i {
+    font-size: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .hero-title {
+        font-size: 3.5rem;
+        letter-spacing: 6px;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.15rem;
+    }
+    
+    .hero-features {
+        gap: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-theme-v2 {
+        height: 100vh;
+        min-height: 500px;
+    }
+    
+    .hero-title {
+        font-size: 2.5rem;
+        letter-spacing: 3px;
+    }
+    
+    .hero-subtitle {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .hero-cta-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn-theme-primary,
+    .btn-theme-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .hero-features {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .hero-scroll-indicator {
+        display: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-title {
+        font-size: 2rem;
+        letter-spacing: 2px;
+    }
+    
+    .btn-theme-primary,
+    .btn-theme-secondary {
+        padding: 0.875rem 2rem;
+        font-size: 1rem;
+    }
+}
+
+/* Community Callout */
+.community-callout-theme {
+    text-align: center;
+    padding: 4rem 3rem;
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-bg-alt) 100%);
+    border-radius: 20px;
+    border: 2px solid rgba(45, 90, 61, 0.1);
+}
+
+.community-callout-theme h3 {
+    font-family: 'Georgia', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: 3px;
+    color: var(--theme-primary);
+    margin-bottom: 1rem;
+}
+
+.community-callout-theme p {
+    color: var(--theme-text-muted);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.community-callout-theme strong {
+    color: var(--theme-accent);
+    font-weight: 600;
+}
+
+/* Enhanced Color Utilities */
+.text-theme-mushroom {
+    color: var(--theme-secondary) !important;
+}
+
+.text-theme-earth {
+    color: var(--theme-primary-dark) !important;
+}
+
+.text-theme-moss {
+    color: #97b69f !important;
+}
+
+.bg-theme-mushroom {
+    background-color: var(--theme-secondary) !important;
+}
+
+.bg-theme-earth {
+    background-color: var(--theme-primary-dark) !important;
+}
+
+.bg-theme-moss {
+    background-color: var(--theme-secondary) !important;
+}
+
+.bg-theme-alt {
+    background-color: var(--theme-bg-alt) !important;
+}
+
+/* Enhanced Product Cards with New Colors */
+.product-card-theme:hover {
+    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+}
+
+.product-image-theme {
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+}
+
+/* Enhanced Category Tabs */
+.tab-theme {
+    border: 2px solid rgba(0,0,0,0.1);
+    color: var(--theme-text);
+}
+
+.tab-theme:hover, .tab-theme.active {
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-light) 100%);
+    border-color: var(--theme-primary);
+}
+
+/* Enhanced Sidebar */
+.sidebar-theme {
+    background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-primary) 100%);
+}
+
+/* Refined Feature Highlights */
+.feature-highlight-theme i {
+    color: var(--theme-accent);
+}
+
+.feature-highlight-theme h6 {
+    color: var(--theme-primary);
+}
+
+.feature-highlight-theme p {
+    color: var(--theme-text-muted);
+}
+
+/* Enhanced Community Callout */
+.community-callout-theme {
+    background: linear-gradient(135deg, var(--theme-bg) 0%, #f0ede7 100%);
+    border: 2px solid rgba(0,0,0,0.15);
+}
+
+.community-callout-theme h3 {
+    color: var(--theme-primary);
+}
+
+.community-callout-theme p {
+    color: var(--theme-text-muted);
+}
+
+.community-callout-theme strong {
+    color: var(--theme-accent);
+}
+
+/* Enhanced Button Shadows */
+.btn-theme-primary {
+    box-shadow: 0 8px 24px rgba(217, 120, 69, 0.35);
+}
+
+.btn-theme-primary:hover {
+    box-shadow: 0 12px 32px rgba(217, 120, 69, 0.45);
+}
+
+/* Product Title Enhanced */
+.product-title-theme {
+    color: var(--theme-primary);
+}
+
+/* Product Price Enhanced */
+.product-price-theme {
+    color: var(--theme-accent);
+}
+
+/* Product Badge Enhanced */
+.product-badge-theme {
+    background: var(--theme-accent);
+}
+
+/* Enhanced Hero Features */
+.hero-feature-item i {
+    color: var(--theme-accent);
+}
+
+/* Warm Shadow Utilities */
+.shadow-theme-sm {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+
+.shadow-theme-md {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+}
+
+.shadow-theme-lg {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+}
+
+/* Featured Section Styling */
+.featured-section {
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-bg-alt) 100%);
+    padding: 3rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.featured-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -10%;
+    width: 40%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(199, 125, 58, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.featured-section::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 40%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(139, 154, 122, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.featured-section .container {
+    position: relative;
+    z-index: 1;
+}
+
+.featured-section h2 {
+    color: var(--theme-primary);
+}
+/* Product Details Page - Professional Revamp */
+/* ========================================
+   COMPREHENSIVE COMPACT DESIGN SYSTEM
+   Applied to all customer-facing pages
+   ======================================== */
+
+/* Global Container Constraints */
+.container,
+.container-fluid {
+    max-width: 1200px !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Reduce Top/Bottom Margins Site-Wide */
+.mt-4, .my-4 { margin-top: 1.5rem !important; }
+.mt-5, .my-5 { margin-top: 2rem !important; }
+.mb-4, .my-4 { margin-bottom: 1.5rem !important; }
+.mb-5, .my-5 { margin-bottom: 2rem !important; }
+.py-3 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+.py-4 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
+.py-5 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+
+/* Compact Headings Site-Wide */
+h1, .h1 {
+    font-size: 1.5rem !important;
+    margin-bottom: 1rem !important;
+    margin-top: 0 !important;
+    line-height: 1.3 !important;
+}
+
+h2, .h2 {
+    font-size: 1.25rem !important;
+    margin-bottom: 0.75rem !important;
+    margin-top: 0 !important;
+    line-height: 1.3 !important;
+}
+
+h3, .h3 {
+    font-size: 1.125rem !important;
+    margin-bottom: 0.5rem !important;
+    margin-top: 0 !important;
+}
+
+h4, .h4 {
+    font-size: 1rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+h5, .h5 {
+    font-size: 0.9375rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+h6, .h6 {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Compact Cards */
+.card {
+    margin-bottom: 1rem !important;
+}
+
+.card-body {
+    padding: 1rem !important;
+}
+
+.card-header {
+    padding: 0.75rem 1rem !important;
+}
+
+.card-footer {
+    padding: 0.75rem 1rem !important;
+}
+
+/* Compact Forms */
+.form-group,
+.mb-3 {
+    margin-bottom: 0.75rem !important;
+}
+
+.form-label {
+    margin-bottom: 0.375rem !important;
+    font-size: 0.9375rem !important;
+}
+
+.form-control {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.9375rem !important;
+}
+
+.form-select {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.9375rem !important;
+}
+
+/* Compact Buttons */
+.btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9375rem !important;
+}
+
+.btn-lg {
+    padding: 0.625rem 1.25rem !important;
+    font-size: 1rem !important;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.875rem !important;
+}
+
+/* Compact Alerts */
+.alert {
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 1rem !important;
+    font-size: 0.9375rem !important;
+}
+
+/* Compact Tables */
+.table td,
+.table th {
+    padding: 0.5rem !important;
+    font-size: 0.9375rem !important;
+}
+
+/* Compact Lists */
+ul, ol {
+    margin-bottom: 0.75rem !important;
+}
+
+li {
+    margin-bottom: 0.25rem !important;
+}
+
+/* Compact Paragraphs */
+p {
+    margin-bottom: 0.75rem !important;
+    line-height: 1.5 !important;
+}
+
+.lead {
+    font-size: 1.125rem !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Page-Specific Compact Styles */
+
+/* Cart Page */
+.cart-item-row {
+    padding: 1rem 0 !important;
+}
+
+.cart-item-row .col-md-2 img {
+    max-height: 80px !important;
+}
+
+/* Checkout Pages */
+.checkout-summary {
+    padding: 1rem !important;
+}
+
+.checkout-summary h5 {
+    margin-bottom: 0.75rem !important;
+}
+
+/* Order Details */
+.order-details-section {
+    margin-bottom: 1rem !important;
+}
+
+.order-item {
+    padding: 0.75rem !important;
+}
+
+/* Account/Login/Register Pages */
+.account-page-wrapper .card {
+    margin-top: 2rem !important;
+}
+
+.account-page-wrapper .card-body {
+    padding: 1.5rem !important;
+}
+
+/* Contact Page */
+.contact-info {
+    padding: 1rem !important;
+}
+
+/* Terms/Privacy Pages */
+.legal-page-content {
+    padding: 1rem !important;
+}
+
+.legal-page-content .card {
+    margin-bottom: 1rem !important;
+}
+
+.legal-page-content .card-body {
+    padding: 1rem !important;
+}
+
+/* Order Tracking */
+.tracking-form {
+    padding: 1.5rem !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+    
+    h1, .h1 {
+        font-size: 1.375rem !important;
+    }
+    
+    .card-body {
+        padding: 0.875rem !important;
+    }
+}
+
+/* Image Constraints */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.product-image,
+.cart-image {
+    max-height: 120px !important;
+    object-fit: cover;
+}
+
+/* Icon Sizing */
+.bi {
+    font-size: 1em !important;
+}
+
+i[style*="font-size: 5rem"] {
+    font-size: 3rem !important;
+}
+
+i[style*="font-size: 3rem"] {
+    font-size: 2rem !important;
+}
+
+/* Compact Navigation/Tabs */
+.nav-tabs .nav-link {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9375rem !important;
+}
+
+.tab-content {
+    padding: 1rem !important;
+}
+
+/* Badge Sizing */
+.badge {
+    font-size: 0.8125rem !important;
+    padding: 0.35rem 0.65rem !important;
+}
+
+/* Modal Compact */
+.modal-body {
+    padding: 1rem !important;
+}
+
+.modal-header {
+    padding: 0.75rem 1rem !important;
+}
+
+.modal-footer {
+    padding: 0.75rem 1rem !important;
+}
+
+/* Compact Progress Bars */
+.progress {
+    height: 20px !important;
+}
+
+.progress-bar {
+    font-size: 0.8125rem !important;
+    line-height: 20px !important;
+}
+
+/* Checkout Progress Specifically */
+.checkout-progress .progress {
+    height: 20px !important;
+}
+
+.checkout-progress .progress-bar {
+    padding: 0 0.5rem !important;
+}
+
+/* Compact Hero Section */
+.hero-theme {
+    min-height: 50vh !important;
+    max-height: 60vh !important;
+}
+
+.hero-theme-v2 {
+    height: 55vh !important;
+    min-height: 400px !important;
+    max-height: 500px !important;
+}
+
+@media (max-width: 768px) {
+    .hero-theme,
+    .hero-theme-v2 {
+        height: 45vh !important;
+        min-height: 350px !important;
+    }
+}
+
+/* ========================================
+   PAGE-SPECIFIC OVERRIDES
+   These must come AFTER comprehensive compact styles
+   to properly override with more specific rules
+   ======================================== */
+
+/* Product Details Page - Professional Compact Design */
+.product-details-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.product-details-page .container {
+    max-width: 100%;
+    padding: 0.75rem;
+}
+
+.product-details-page .breadcrumb {
+    font-size: 0.8125rem !important;
+    padding: 0.375rem 0 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.product-details-page #mainProductImage {
+    height: 220px !important;
+    max-height: 220px !important;
+    object-fit: cover !important;
+    border-radius: 8px !important;
+}
+
+.product-details-page .card {
+    border-radius: 8px !important;
+}
+
+.product-details-page h1 {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+    line-height: 1.3 !important;
+}
+
+.product-details-page h2 {
+    font-size: 1rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.product-details-page h5 {
+    font-size: 0.9375rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: var(--theme-primary) !important;
+    margin-bottom: 0.375rem !important;
+    padding-bottom: 0.25rem !important;
+    border-bottom: 2px solid var(--theme-primary) !important;
+}
+
+.product-details-page .badge {
+    font-size: 0.75rem !important;
+    padding: 0.35rem 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+.product-details-page .product-description {
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    color: var(--theme-text-muted) !important;
+}
+
+.product-details-page .product-description.lead {
+    font-size: 0.9375rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.product-details-page .mb-3 {
+    margin-bottom: 0.75rem !important;
+}
+
+.product-details-page .mb-4 {
+    margin-bottom: 1rem !important;
+}
+
+.product-details-page .variant-selector {
+    margin-bottom: 0.75rem !important;
+}
+
+.product-details-page .variant-option {
+    margin-bottom: 0.5rem !important;
+}
+
+.product-details-page #quantityCard {
+    padding: 1rem !important;
+}
+
+.product-details-page .form-label {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.375rem !important;
+}
+
+.product-details-page .form-select {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.9375rem !important;
+}
+
+.product-details-page .btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9375rem !important;
+}
+
+.product-details-page .btn-lg {
+    padding: 0.625rem 1.25rem !important;
+    font-size: 1rem !important;
+}
+
+.product-details-page .card.p-4 {
+    padding: 1rem !important;
+}
+
+.product-details-page .nav-tabs {
+    margin-top: 1rem !important;
+}
+
+.product-details-page .tab-content {
+    padding: 1rem !important;
+    font-size: 0.9375rem !important;
+}
+
+.product-details-page .related-products h3 {
+    font-size: 1.125rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+/* Products Page - ULTRA Compact Design */
+.products-page-wrapper {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0.75rem !important;
+}
+
+.products-page-wrapper h1 {
+    font-size: 1.25rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* ULTRA COMPACT product cards - much smaller */
+.products-page-wrapper .product-image-wrapper {
+    height: 140px !important;
+    max-height: 140px !important;
+    min-height: 140px !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+.products-page-wrapper .product-card-img,
+.products-page-wrapper .card-img-top {
+    height: 140px !important;
+    max-height: 140px !important;
+    min-height: 140px !important;
+    width: 100% !important;
+    object-fit: cover !important;
+}
+
+.products-page-wrapper .card {
+    max-height: 340px !important;
+    height: auto !important;
+}
+
+.products-page-wrapper .card-body {
+    padding: 0.5rem !important;
+}
+
+.products-page-wrapper .product-title,
+.products-page-wrapper .card-title {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.25rem !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+}
+
+.products-page-wrapper .product-price {
+    font-size: 1rem !important;
+    margin-bottom: 0.25rem !important;
+    font-weight: 700 !important;
+}
+
+.products-page-wrapper .badge {
+    font-size: 0.625rem !important;
+    padding: 0.15rem 0.35rem !important;
+}
+
+.products-page-wrapper .btn {
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.75rem !important;
+}
+
+.products-page-wrapper p,
+.products-page-wrapper .card-text {
+    font-size: 0.75rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 0.375rem !important;
+}
+
+.products-page-wrapper .product-overlay {
+    opacity: 0 !important;
+    transition: opacity 0.3s !important;
+}
+
+.products-page-wrapper .card:hover .product-overlay {
+    opacity: 1 !important;
+}
+
+/* Responsive adjustments for product pages */
+@media (max-width: 768px) {
+    .products-page-wrapper {
+        padding: 1rem 0.75rem !important;
+    }
+    
+    .products-page-wrapper .card-body {
+        padding: 0.875rem !important;
+    }
+    
+    .products-page-wrapper .product-image-wrapper,
+    .products-page-wrapper .product-card-img {
+        height: 200px !important;
+        max-height: 200px !important;
+    }
+    
+    .product-details-page #mainProductImage {
+        height: 240px !important;
+        max-height: 240px !important;
+    }
+}
+/* CSS UPDATED: 1764038871 */
+
+/* Products Grid Optimization */
+.products-page-wrapper .row.g-4 {
+    gap: 1rem !important;
+    row-gap: 1rem !important;
+}
+
+.products-page-wrapper .col-lg-4,
+.products-page-wrapper .col-md-6 {
+    padding: 0.5rem !important;
+}
+
+/* Remove aspect ratio that might be interfering */
+.products-page-wrapper .product-image-wrapper {
+    aspect-ratio: unset !important;
+}
+
+/* Ensure badges don't take up too much space */
+.products-page-wrapper .position-absolute {
+    font-size: 0.75rem !important;
+}
+
+/* Category badge compact */
+.products-page-wrapper .text-uppercase.small {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.25rem !important;
+}
+
+/* CRITICAL: Force hard height limit on entire card */
+.products-page-wrapper .product-card-modern {
+    max-height: 440px !important;
+    overflow: hidden !important;
+}
+
+/* Increase Logo Size */
+.navbar-brand img,
+.navbar-brand {
+    max-height: 80px !important;
+    height: 80px !important;
+}
+
+.navbar {
+    padding: 0.5rem 1rem !important;
+}
+
+/* Make product cards even more compact */
+.products-page-wrapper .product-card-modern {
+    max-height: 340px !important;
+    overflow: hidden !important;
+}
+
+.products-page-wrapper .row.g-4 {
+    gap: 0.75rem !important;
+    row-gap: 0.75rem !important;
+}
+
+.products-page-wrapper .col-lg-4,
+.products-page-wrapper .col-md-6 {
+    padding: 0.375rem !important;
+}
+
+/* Product Details page additional compacting */
+.product-details-page .content,
+.product-details-page .container {
+    max-width: 1080px !important;
+}
+.product-details-page .card-body,
+.product-details-page .card-header,
+.product-details-page .card-footer {
+    padding: 0.75rem !important;
+}
+.product-details-page #mainProductImage {
+    max-height: 220px !important;
+}
+
+/* Track Order page compact */
+.track-order,
+.track-order .container,
+.track-order .content {
+    max-width: 1000px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+.track-order .card-body {
+    padding: 0.75rem !important;
+}
+.track-order .list-group-item {
+    padding: 0.5rem 0.75rem !important;
+}
+
+/* Admin themed buttons */
+.admin-panel .btn,
+.admin-card .btn {
+    border-radius: 6px !important;
+}
+.admin-panel .btn-primary,
+.admin-card .btn-primary {
+    background-color: var(--theme-accent) !important;
+    border-color: var(--theme-accent) !important;
+    color: #fff !important;
+}
+.admin-panel .btn-outline-primary,
+.admin-card .btn-outline-primary {
+    color: var(--theme-accent) !important;
+    border-color: var(--theme-accent) !important;
+}
+
+
+

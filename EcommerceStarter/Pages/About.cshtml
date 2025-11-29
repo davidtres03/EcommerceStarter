@@ -1,0 +1,46 @@
+﻿@page
+@model EcommerceStarter.Pages.AboutModel
+@{
+    ViewData["Title"] = "About Us";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="mb-4">About @Model.BusinessName</h1>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3>Our Story</h3>
+                    <p class="lead">Welcome to @Model.BusinessName!</p>
+                    <p>We are dedicated to providing high-quality products and exceptional customer service. Our mission is to make online shopping easy, secure, and enjoyable for everyone.</p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3>What We Offer</h3>
+                    <ul>
+                        <li>Wide selection of quality products</li>
+                        <li>Secure online shopping experience</li>
+                        <li>Fast and reliable shipping</li>
+                        <li>Exceptional customer support</li>
+                        <li>Easy returns and exchanges</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3>Contact Us</h3>
+                    <p>Have questions? We'd love to hear from you!</p>
+                    @if (!string.IsNullOrEmpty(Model.SupportEmail))
+                    {
+                        <p><strong>Email:</strong> <a href="mailto:@Model.SupportEmail">@Model.SupportEmail</a></p>
+                    }
+                    <p><a asp-page="/Contact" class="btn btn-primary">Contact Form</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

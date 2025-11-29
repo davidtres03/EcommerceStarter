@@ -1,0 +1,15 @@
+## Patch Release - Auto-Update Fix
+
+This patch release fixes the auto-update system failing to find installer packages in GitHub releases.
+
+### Fixed
+- Auto-Update Package Detection - Fixed upgrader failing to find installer package
+  - Updated asset filename pattern matching to support EcommerceStarter-v*.zip format
+  - Added fallback patterns for legacy naming conventions
+  - Resolves Package Not Found error when attempting in-place upgrades from maintenance mode
+
+### Technical Details
+The maintenance mode upgrader was looking for EcommerceStarter-Installer-*.zip but releases use EcommerceStarter-v*.zip naming. Updated pattern matching with multiple fallback patterns for compatibility.
+
+### Upgrade from v1.0.0 or v1.0.1
+Download and install v1.0.2, or use the auto-update system which now works correctly.

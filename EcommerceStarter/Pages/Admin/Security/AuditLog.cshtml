@@ -1,0 +1,226 @@
+@page
+@model EcommerceStarter.Pages.Admin.Security.AuditLogModel
+@{
+    ViewData["Title"] = "Security Audit Log";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-0">
+                        <i class="bi bi-shield-lock me-2"></i>Security Audit Log
+                    </h1>
+                    <p class="text-muted">Monitor and manage security events</p>
+                </div>
+                <div>
+                    <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <a asp-page="/Admin/Settings/Security" class="btn btn-outline-primary">
+                        <i class="bi bi-gear"></i> Security Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Blocked IPs Section -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-ban me-2"></i>Blocked IP Addresses (@Model.BlockedIps.Count)
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.BlockedIps.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Blocked At</th>
+                                <th>Expires At</th>
+                                <th>Reason</th>
+                                <th>Offense Count</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var blockedIp in Model.BlockedIps)
+                            {
+                                <tr>
+                                    <td><code>@blockedIp.IpAddress</code></td>
+                                    <td>@blockedIp.BlockedAt.ToLocalTime().ToString("g")</td>
+                                    <td>
+                                        @if (blockedIp.IsPermanent)
+                                        {
+                                            <span class="badge bg-danger">Permanent</span>
+                                        }
+                                        else if (blockedIp.ExpiresAt.HasValue)
+                                        {
+                                            @blockedIp.ExpiresAt.Value.ToLocalTime().ToString("g")
+                                        }
+                                    </td>
+                                    <td>@blockedIp.Reason</td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">@blockedIp.OffenseCount</span>
+                                    </td>
+                                    <td>
+                                        @if (blockedIp.IsPermanent)
+                                        {
+                                            <span class="badge bg-danger">Permanent</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Temporary</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <form method="post" class="d-inline" asp-page-handler="UnblockIp">
+                                            <input type="hidden" asp-for="IpToUnblock" value="@blockedIp.IpAddress" />
+                                            <button type="submit" class="btn btn-sm btn-success" 
+                                                    onclick="return confirm('Are you sure you want to unblock @blockedIp.IpAddress?')">
+                                                <i class="bi bi-unlock"></i> Unblock
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle me-2"></i>No IP addresses are currently blocked.
+                </p>
+            }
+        </div>
+    </div>
+
+    <!-- Security Events Section -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history me-2"></i>Recent Security Events (@Model.RecentEvents.Count)
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.RecentEvents.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Event Type</th>
+                                <th>Severity</th>
+                                <th>IP Address</th>
+                                <th>User</th>
+                                <th>Details</th>
+                                <th>Endpoint</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var evt in Model.RecentEvents)
+                            {
+                                <tr class="@GetRowClass(evt.Severity)">
+                                    <td class="text-nowrap">
+                                        <small>@evt.Timestamp.ToLocalTime().ToString("g")</small>
+                                    </td>
+                                    <td>
+                                        <i class="@GetEventIcon(evt.EventType)"></i>
+                                        <small>@evt.EventType</small>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(evt.Severity))
+                                        {
+                                            <span class="badge @GetSeverityBadgeClass(evt.Severity)">
+                                                @evt.Severity
+                                            </span>
+                                        }
+                                    </td>
+                                    <td><code><small>@evt.IpAddress</small></code></td>
+                                    <td><small>@(evt.UserEmail ?? "N/A")</small></td>
+                                    <td><small>@(evt.Details ?? "")</small></td>
+                                    <td><small>@(evt.Endpoint ?? "")</small></td>
+                                    <td>
+                                        @if (evt.IsBlocked)
+                                        {
+                                            <span class="badge bg-danger">Blocked</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Allowed</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle me-2"></i>No security events recorded yet.
+                </p>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetSeverityBadgeClass(string? severity)
+    {
+        return severity switch
+        {
+            "Critical" => "bg-danger",
+            "High" => "bg-warning text-dark",
+            "Medium" => "bg-info text-dark",
+            "Low" => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetRowClass(string? severity)
+    {
+        return severity switch
+        {
+            "Critical" => "table-danger",
+            "High" => "table-warning",
+            _ => ""
+        };
+    }
+
+    private string GetEventIcon(string eventType)
+    {
+        return eventType switch
+        {
+            "SuccessfulLogin" => "bi bi-check-circle text-success",
+            "FailedLogin" => "bi bi-x-circle text-danger",
+            "IpBlocked" => "bi bi-ban text-danger",
+            "BlockedIpAttempt" => "bi bi-shield-x text-danger",
+            "LoginLockedOut" => "bi bi-lock text-warning",
+            "BlacklistedIpAttempt" => "bi bi-shield-exclamation text-danger",
+            "IpUnblocked" => "bi bi-unlock text-success",
+            "LoginBlockedExcessiveAttempts" => "bi bi-shield-slash text-danger",
+            _ => "bi bi-info-circle"
+        };
+    }
+}

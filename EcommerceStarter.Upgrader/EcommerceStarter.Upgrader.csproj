@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- Self-contained executable -->
+    <PublishSelfContained>true</PublishSelfContained>
+    <SelfContainedRuntimeIdentifier>win-x64</SelfContainedRuntimeIdentifier>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- Version -->
+    <Version>1.0.5</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+
+    <Product>EcommerceStarter Upgrader</Product>
+    <Company>EcommerceStarter</Company>
+    <Description>Upgrade utility for EcommerceStarter installations</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WPF Modern UI -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
+    <PackageReference Include="ModernWpfUI" Version="0.9.6" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+
+    <!-- System Integration -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="System.IO.FileSystem.DriveInfo" Version="4.3.1" />
+
+    <!-- Database -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
+
+    <!-- JSON Configuration -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+</Project>

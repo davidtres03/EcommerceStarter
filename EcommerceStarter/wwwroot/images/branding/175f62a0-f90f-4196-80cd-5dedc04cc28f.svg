@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="8" fill="#3d6b4a"/>
+  
+  <!-- Simple mushroom icon -->
+  <!-- Cap -->
+  <ellipse cx="32" cy="28" rx="18" ry="13" fill="#faf8f5"/>
+  <ellipse cx="32" cy="28" rx="15" ry="11" fill="#5a8a68"/>
+  
+  <!-- Spots -->
+  <circle cx="26" cy="26" r="2" fill="#c9a87c" opacity="0.9"/>
+  <circle cx="35" cy="25" r="1.5" fill="#c9a87c" opacity="0.9"/>
+  <circle cx="30" cy="30" r="1.5" fill="#c9a87c" opacity="0.9"/>
+  <circle cx="38" cy="28" r="1.5" fill="#c9a87c" opacity="0.9"/>
+  
+  <!-- Stem -->
+  <rect x="27" y="30" width="10" height="18" rx="5" fill="#e0d3b8"/>
+  <rect x="28" y="30" width="8" height="18" rx="4" fill="#faf8f5"/>
+  
+  <!-- Small mycelium at bottom -->
+  <path d="M 24 48 Q 18 52, 16 54" stroke="#97b69f" stroke-width="1.5" fill="none" opacity="0.7"/>
+  <path d="M 40 48 Q 46 52, 48 54" stroke="#97b69f" stroke-width="1.5" fill="none" opacity="0.7"/>
+  
+  <!-- Accent border -->
+  <rect width="64" height="64" rx="8" fill="none" stroke="#d97845" stroke-width="2" opacity="0.4"/>
+</svg>

@@ -1,0 +1,666 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Manage Products";
+    var activeTab = Model.ActiveTab ?? "products";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-box-seam me-2"></i>Products Management</h1>
+        @if (activeTab == "products")
+        {
+            <a asp-page="Create" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add New Product
+            </a>
+        }
+        else if (activeTab == "categories")
+        {
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                <i class="bi bi-plus-circle me-1"></i>Add Category
+            </button>
+        }
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link @(activeTab == "products" ? "active" : "")" 
+               href="?tab=products" 
+               role="tab">
+                <i class="bi bi-box-seam me-1"></i>Products
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link @(activeTab == "categories" ? "active" : "")" 
+               href="?tab=categories" 
+               role="tab">
+                <i class="bi bi-tags me-1"></i>Categories
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Products Tab -->
+        <div class="tab-pane fade @(activeTab == "products" ? "show active" : "")" 
+             id="products-tab" 
+             role="tabpanel">
+            @if (Model.Products.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Featured</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var product in Model.Products)
+                            {
+                                <tr>
+                                    <td><img src="@product.ImageUrl" alt="@product.Name" style="width: 50px; height: 50px; object-fit: cover;"></td>
+                                    <td>@product.Name</td>
+                                    <td>
+                                        @if (product.CategoryNavigation != null && product.SubCategoryNavigation != null)
+                                        {
+                                            <span><i class="@product.CategoryNavigation.IconClass me-1"></i>@product.CategoryNavigation.Name</span>
+                                            <span class="text-muted">/ @product.SubCategoryNavigation.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@product.Category / @product.SubCategory</span>
+                                        }
+                                    </td>
+                                    <td>$@product.Price.ToString("F2")</td>
+                                    <td>@product.TotalAvailableStock</td>
+                                    <td>
+                                        @if (product.IsFeatured)
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-star-fill"></i> Featured
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Not Featured</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (product.InventoryStatus == InventoryStatus.OutOfStock)
+                                        {
+                                            <span class="badge bg-danger">Out of Stock</span>
+                                        }
+                                        else if (product.InventoryStatus == InventoryStatus.ComingSoon)
+                                        {
+                                            <span class="badge bg-info">Coming Soon</span>
+                                        }
+                                        else if (product.IsAvailable)
+                                        {
+                                            <span class="badge bg-success">Available</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">Limited Stock</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-page="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-primary">Edit</a>
+                                        <a asp-page="Delete" asp-route-id="@product.Id" class="btn btn-sm btn-danger">Delete</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    No products found. <a asp-page="Create">Create your first product</a>
+                </div>
+            }
+        </div>
+
+        <!-- Categories Tab -->
+        <div class="tab-pane fade @(activeTab == "categories" ? "show active" : "")" 
+             id="categories-tab" 
+             role="tabpanel">
+            
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (Model.Categories.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover categories-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 30px;"></th>
+                                <th style="width: 50px;">Icon</th>
+                                <th style="width: 200px;">Name</th>
+                                <th>Description</th>
+                                <th style="width: 80px;">Order</th>
+                                <th style="width: 100px;">Status</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var category in Model.Categories.OrderBy(c => c.DisplayOrder))
+                            {
+                                <tr class="category-row" 
+                                    style="cursor: pointer;" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse-@category.Id">
+                                    <td style="width: 30px; text-align: center; vertical-align: middle;">
+                                        <i class="bi bi-chevron-right collapse-chevron" id="chevron-@category.Id" 
+                                           style="transition: transform 0.3s ease; font-size: 0.85rem; color: #6c757d;"></i>
+                                    </td>
+                                    <td style="width: 50px; text-align: center; vertical-align: middle;">
+                                        <i class="@category.IconClass fs-5 text-primary"></i>
+                                    </td>
+                                    <td style="width: 200px; vertical-align: middle;"><strong>@category.Name</strong></td>
+                                    <td style="vertical-align: middle;">@category.Description</td>
+                                    <td style="width: 80px; vertical-align: middle;">@category.DisplayOrder</td>
+                                    <td style="width: 100px; vertical-align: middle;">
+                                        @if (category.IsEnabled)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Disabled</span>
+                                        }
+                                    </td>
+                                    <td style="width: 180px; white-space: nowrap; vertical-align: middle;" onclick="event.stopPropagation();">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                title="Edit"
+                                                onclick="editCategory(@category.Id, '@Html.Raw(category.Name.Replace("'", "\\'"))', '@Html.Raw((category.Description ?? "").Replace("'", "\\'"))', '@category.IconClass', @category.DisplayOrder, @category.IsEnabled.ToString().ToLower())">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-success" 
+                                                title="Add Subcategory"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#addSubCategoryModal"
+                                                onclick="event.stopPropagation(); setParentCategory(@category.Id, '@Html.Raw(category.Name.Replace("'", "\\'"))')">
+                                            <i class="bi bi-plus-circle"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                title="Delete"
+                                                onclick="deleteCategory(@category.Id, '@Html.Raw(category.Name.Replace("'", "\\'"))')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Subcategories Collapse Row -->
+                                @if (Model.SubCategories.Any(sc => sc.CategoryId == category.Id))
+                                {
+                                    <tr id="collapse-@category.Id" class="collapse">
+                                        <td colspan="7" style="padding: 0; background-color: #f8f9fa; border: none;">
+                                            <table class="table table-sm mb-0" style="background-color: transparent;">
+                                                <tbody>
+                                                    @foreach (var subCat in Model.SubCategories.Where(sc => sc.CategoryId == category.Id).OrderBy(sc => sc.DisplayOrder))
+                                                    {
+                                                        <tr class="subcategory-row">
+                                                            <td style="width: 30px;"></td>
+                                                            <td style="width: 50px; text-align: center; vertical-align: middle; padding-left: 20px;">
+                                                                <i class="bi bi-arrow-return-right text-muted" style="font-size: 0.85rem;"></i>
+                                                            </td>
+                                                            <td style="width: 200px; vertical-align: middle;">
+                                                                <strong style="font-size: 0.95rem;">@subCat.Name</strong>
+                                                            </td>
+                                                            <td style="vertical-align: middle;">
+                                                                <span class="text-muted" style="font-size: 0.9rem;">@subCat.Description</span>
+                                                            </td>
+                                                            <td style="width: 80px; vertical-align: middle;">
+                                                                @subCat.DisplayOrder
+                                                            </td>
+                                                            <td style="width: 100px; vertical-align: middle;">
+                                                                @if (subCat.IsEnabled)
+                                                                {
+                                                                    <span class="badge bg-success">Active</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="badge bg-secondary">Disabled</span>
+                                                                }
+                                                            </td>
+                                                            <td style="width: 180px; white-space: nowrap; vertical-align: middle;">
+                                                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                                        title="Edit"
+                                                                        onclick="editSubCategory(@subCat.Id, '@Html.Raw(subCat.Name.Replace("'", "\\'"))', '@Html.Raw((subCat.Description ?? "").Replace("'", "\\'"))', @subCat.DisplayOrder, @subCat.CategoryId, @subCat.IsEnabled.ToString().ToLower())">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                        title="Delete"
+                                                                        onclick="deleteSubCategory(@subCat.Id, '@Html.Raw(subCat.Name.Replace("'", "\\'"))')">
+                                                                    <i class="bi bi-trash"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    No categories found. <a href="?tab=categories">Create your first category</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Category Modals -->
+@if (activeTab == "categories")
+{
+    <!-- Add Category Modal -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="AddCategory">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="categoryName" class="form-label">Category Name</label>
+                            <input type="text" class="form-control" id="categoryName" name="CategoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoryDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="categoryDescription" name="CategoryDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoryIcon" class="form-label">Bootstrap Icon</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="categoryIcon" name="CategoryIcon" value="bi-tag" required readonly>
+                                <button type="button" class="btn btn-outline-secondary" onclick="openIconPicker('categoryIcon', 'iconPreview')">
+                                    <i class="bi bi-search me-1"></i>Browse Icons
+                                </button>
+                            </div>
+                            <div class="mt-2 p-3 bg-light rounded text-center">
+                                <i id="iconPreview" class="bi-tag" style="font-size: 3rem;"></i>
+                                <div class="mt-2"><small class="text-muted">Icon Preview</small></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoryOrder" class="form-label">Display Order</label>
+                            <input type="number" class="form-control" id="categoryOrder" name="CategoryOrder" value="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="categoryIsEnabled" name="categoryIsEnabledCheckbox" checked>
+                                <label class="form-check-label" for="categoryIsEnabled">
+                                    <i class="bi bi-check-circle-fill text-success"></i> Active Category
+                                </label>
+                                <small class="d-block text-muted mt-1">Disable to hide this category from customers</small>
+                            </div>
+                            <input type="hidden" id="categoryIsEnabledHidden" name="CategoryIsEnabled" value="true">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Category</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Category Modal -->
+    <div class="modal fade" id="editCategoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="EditCategory" data-handler="EditCategory">
+                    <input type="hidden" id="editCategoryId" name="CategoryId">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editCategoryName" class="form-label">Category Name</label>
+                            <input type="text" class="form-control" id="editCategoryName" name="CategoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCategoryDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editCategoryDescription" name="CategoryDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCategoryIcon" class="form-label">Bootstrap Icon</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="editCategoryIcon" name="CategoryIcon" required readonly>
+                                <button type="button" class="btn btn-outline-secondary" onclick="openIconPicker('editCategoryIcon', 'editIconPreview')">
+                                    <i class="bi bi-search me-1"></i>Browse Icons
+                                </button>
+                            </div>
+                            <div class="mt-2 p-3 bg-light rounded text-center">
+                                <i id="editIconPreview" class="bi-tag" style="font-size: 3rem;"></i>
+                                <div class="mt-2"><small class="text-muted">Icon Preview</small></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCategoryOrder" class="form-label">Display Order</label>
+                            <input type="number" class="form-control" id="editCategoryOrder" name="CategoryOrder" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" id="editCategoryIsEnabled" name="editCategoryIsEnabledCheckbox">
+                                <label class="form-check-label" for="editCategoryIsEnabled">
+                                    <i class="bi bi-check-circle-fill text-success"></i> Active Category
+                                </label>
+                                <small class="d-block text-muted mt-1">Disable to hide this category from customers</small>
+                            </div>
+                            <input type="hidden" id="editCategoryIsEnabledHidden" name="CategoryIsEnabled" value="false">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add SubCategory Modal -->
+    <div class="modal fade" id="addSubCategoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="AddSubCategory">
+                    <input type="hidden" id="parentCategoryId" name="ParentCategoryId">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add Subcategory to <span id="parentCategoryName"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="subCategoryName" class="form-label">Subcategory Name</label>
+                            <input type="text" class="form-control" id="subCategoryName" name="SubCategoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="subCategoryDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="subCategoryDescription" name="SubCategoryDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="subCategoryOrder" class="form-label">Display Order</label>
+                            <input type="number" class="form-control" id="subCategoryOrder" name="SubCategoryOrder" value="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="subCategoryIsEnabled" name="subCategoryIsEnabledCheckbox" checked>
+                                <label class="form-check-label" for="subCategoryIsEnabled">
+                                    <i class="bi bi-check-circle-fill text-success"></i> Active Subcategory
+                                </label>
+                                <small class="d-block text-muted mt-1">Disable to hide this subcategory from customers</small>
+                            </div>
+                            <input type="hidden" id="subCategoryIsEnabledHidden" name="SubCategoryIsEnabled" value="true">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Subcategory</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit SubCategory Modal -->
+    <div class="modal fade" id="editSubCategoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="EditSubCategory" data-handler="EditSubCategory">
+                    <input type="hidden" id="editSubCategoryId" name="SubCategoryId">
+                    <input type="hidden" id="editSubCategoryParentId" name="ParentCategoryId">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Subcategory</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editSubCategoryName" class="form-label">Subcategory Name</label>
+                            <input type="text" class="form-control" id="editSubCategoryName" name="SubCategoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSubCategoryDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editSubCategoryDescription" name="SubCategoryDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSubCategoryOrder" class="form-label">Display Order</label>
+                            <input type="number" class="form-control" id="editSubCategoryOrder" name="SubCategoryOrder" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" id="editSubCategoryIsEnabled" name="editSubCategoryIsEnabledCheckbox">
+                                <label class="form-check-label" for="editSubCategoryIsEnabled">
+                                    <i class="bi bi-check-circle-fill text-success"></i> Active Subcategory
+                                </label>
+                                <small class="d-block text-muted mt-1">Disable to hide this subcategory from customers</small>
+                            </div>
+                            <input type="hidden" id="editSubCategoryIsEnabledHidden" name="SubCategoryIsEnabled" value="false">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Icon Picker -->
+    <partial name="_IconPicker" />
+
+    @section Scripts {
+        <script>
+            function setParentCategory(id, name) {
+                document.getElementById('parentCategoryId').value = id;
+                document.getElementById('parentCategoryName').textContent = name;
+            }
+
+            function editCategory(id, name, description, icon, order, isEnabled) {
+                document.getElementById('editCategoryId').value = id;
+                document.getElementById('editCategoryName').value = name;
+                document.getElementById('editCategoryDescription').value = description || '';
+                document.getElementById('editCategoryIcon').value = icon;
+                document.getElementById('editIconPreview').className = icon;
+                document.getElementById('editCategoryOrder').value = order;
+                
+                // Set checkbox state based on isEnabled parameter
+                const checkbox = document.getElementById('editCategoryIsEnabled');
+                const isEnabledBool = (isEnabled === 'true' || isEnabled === true);
+                checkbox.checked = isEnabledBool;
+                // Update hidden field to match the checkbox state
+                document.getElementById('editCategoryIsEnabledHidden').value = isEnabledBool;
+                
+                new bootstrap.Modal(document.getElementById('editCategoryModal')).show();
+            }
+
+            function editSubCategory(id, name, description, order, parentId, isEnabled) {
+                document.getElementById('editSubCategoryId').value = id;
+                document.getElementById('editSubCategoryParentId').value = parentId;
+                document.getElementById('editSubCategoryName').value = name;
+                document.getElementById('editSubCategoryDescription').value = description || '';
+                document.getElementById('editSubCategoryOrder').value = order;
+                
+                // Set checkbox state based on isEnabled parameter
+                const checkbox = document.getElementById('editSubCategoryIsEnabled');
+                const isEnabledBool = (isEnabled === 'true' || isEnabled === true);
+                checkbox.checked = isEnabledBool;
+                // Update hidden field to match the checkbox state
+                document.getElementById('editSubCategoryIsEnabledHidden').value = isEnabledBool;
+                
+                new bootstrap.Modal(document.getElementById('editSubCategoryModal')).show();
+            }
+
+            function deleteCategory(id, name) {
+                if (confirm(`Are you sure you want to delete the category "${name}"? This will also delete all its subcategories.`)) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '?handler=DeleteCategory&tab=categories';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'CategoryId';
+                    input.value = id;
+                    form.appendChild(input);
+                    
+                    const token = document.createElement('input');
+                    token.type = 'hidden';
+                    token.name = '__RequestVerificationToken';
+                    token.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    form.appendChild(token);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+
+            function deleteSubCategory(id, name) {
+                if (confirm(`Are you sure you want to delete the subcategory "${name}"?`)) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '?handler=DeleteSubCategory&tab=categories';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'SubCategoryId';
+                    input.value = id;
+                    form.appendChild(input);
+                    
+                    const token = document.createElement('input');
+                    token.type = 'hidden';
+                    token.name = '__RequestVerificationToken';
+                    token.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    form.appendChild(token);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+
+            // Handle checkbox state changes for Add Category modal
+            document.addEventListener('DOMContentLoaded', function() {
+                const addCategoryCheckbox = document.getElementById('categoryIsEnabled');
+                if (addCategoryCheckbox) {
+                    addCategoryCheckbox.addEventListener('change', function() {
+                        document.getElementById('categoryIsEnabledHidden').value = this.checked;
+                    });
+                }
+
+                const editCategoryCheckbox = document.getElementById('editCategoryIsEnabled');
+                if (editCategoryCheckbox) {
+                    editCategoryCheckbox.addEventListener('change', function() {
+                        document.getElementById('editCategoryIsEnabledHidden').value = this.checked;
+                    });
+                }
+
+                const addSubCategoryCheckbox = document.getElementById('subCategoryIsEnabled');
+                if (addSubCategoryCheckbox) {
+                    addSubCategoryCheckbox.addEventListener('change', function() {
+                        document.getElementById('subCategoryIsEnabledHidden').value = this.checked;
+                    });
+                }
+
+                const editSubCategoryCheckbox = document.getElementById('editSubCategoryIsEnabled');
+                if (editSubCategoryCheckbox) {
+                    editSubCategoryCheckbox.addEventListener('change', function() {
+                        document.getElementById('editSubCategoryIsEnabledHidden').value = this.checked;
+                    });
+                }
+            });
+        </script>
+    }
+}
+
+<style>
+    .categories-table thead th {
+        font-weight: 600;
+        padding: 12px;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .category-row {
+        background-color: white;
+    }
+    
+    .category-row:hover {
+        background-color: #f8f9fa !important;
+    }
+    
+    .category-row td {
+        padding: 12px;
+    }
+
+    .subcategory-row {
+        background-color: #f8f9fa;
+    }
+
+    .subcategory-row:hover {
+        background-color: #e9ecef !important;
+    }
+
+    .subcategory-row td {
+        padding: 12px;
+    }
+    
+    .collapse-chevron {
+        display: inline-block;
+        transition: transform 0.3s ease;
+    }
+</style>
+
+<script>
+    // Update chevron rotation on collapse events
+    document.addEventListener('DOMContentLoaded', function() {
+        const collapseElements = document.querySelectorAll('[id^="collapse-"]');
+        collapseElements.forEach(el => {
+            const targetId = el.id;
+            const categoryId = targetId.replace('collapse-', '');
+            const chevron = document.getElementById('chevron-' + categoryId);
+            
+            if (chevron) {
+                el.addEventListener('show.bs.collapse', function() {
+                    chevron.style.transform = 'rotate(90deg)';
+                });
+                
+                el.addEventListener('hide.bs.collapse', function() {
+                    chevron.style.transform = 'rotate(0deg)';
+                });
+            }
+        });
+    });
+</script>

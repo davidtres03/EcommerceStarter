@@ -1,0 +1,305 @@
+﻿<Window x:Class="EcommerceStarter.Installer.Views.DemoLauncherWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="EcommerceStarter Installer - Demo Launcher" 
+        Height="600" 
+        Width="900"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        Background="#F5F5F5"
+        WindowStyle="SingleBorderWindow">
+
+    <Window.Resources>
+        <!-- Card Style -->
+        <Style x:Key="ScenarioCard" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.2" Color="#000000"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect BlurRadius="20" ShadowDepth="5" Opacity="0.3" Color="#2196F3"/>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Button Style -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1976D2"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Header -->
+        <Grid Height="100" VerticalAlignment="Top">
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#2196F3" Offset="0"/>
+                    <GradientStop Color="#1976D2" Offset="1"/>
+                </LinearGradientBrush>
+            </Grid.Background>
+
+            <Grid Margin="30,0">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="🎬 DEMO LAUNCHER" 
+                               FontSize="28" 
+                               FontWeight="Bold" 
+                               Foreground="White"/>
+                    <TextBlock Text="Safe Demonstrations - No Real Changes" 
+                               FontSize="14" 
+                               Foreground="#E3F2FD" 
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+
+                <!-- Safe Mode Badge -->
+                <StackPanel Orientation="Horizontal" 
+                            HorizontalAlignment="Right" 
+                            VerticalAlignment="Center">
+                    <Border Background="#4CAF50" 
+                            CornerRadius="20" 
+                            Padding="15,8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🛡️" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock Text="SAFE MODE" 
+                                       FontSize="14" 
+                                       FontWeight="Bold" 
+                                       Foreground="White"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Content Area -->
+        <ScrollViewer Margin="0,100,0,80" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="30,20">
+                
+                <!-- Build Configuration - HIDDEN IN PRODUCTION -->
+                <Border x:Name="BuildConfigCard" 
+                        Style="{StaticResource ScenarioCard}" 
+                        Background="#FFF3E0"
+                        Visibility="Collapsed">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="⚙️" FontSize="32" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Build Configuration" 
+                                       FontSize="18" 
+                                       FontWeight="SemiBold"
+                                       Foreground="#333"/>
+                            <TextBlock x:Name="BuildStatusText"
+                                       Text="Running from published EXE" 
+                                       FontSize="14" 
+                                       Foreground="#666"
+                                       Margin="0,5,0,10"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Scenarios Header -->
+                <TextBlock Text="Select Demo Scenario" 
+                           FontSize="20" 
+                           FontWeight="SemiBold"
+                           Foreground="#333"
+                           Margin="10,20,10,10"/>
+
+                <!-- Scenario Cards Grid -->
+                <UniformGrid Columns="2">
+                    
+                    <!-- Fresh Install -->
+                    <Border Style="{StaticResource ScenarioCard}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="📦" FontSize="32" Margin="0,0,10,0"/>
+                                <TextBlock Text="Fresh Install" 
+                                           FontSize="20" 
+                                           FontWeight="SemiBold"
+                                           Foreground="#333"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="Experience the complete installation wizard from start to finish. Perfect for showing new customers the setup process."
+                                       FontSize="14"
+                                       Foreground="#666"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,15"/>
+
+                            <Button Grid.Row="2"
+                                    Content="Launch Demo"
+                                    Style="{StaticResource ModernButton}"
+                                    Click="LaunchFreshInstall_Click"
+                                    HorizontalAlignment="Stretch"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Upgrade -->
+                    <Border Style="{StaticResource ScenarioCard}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="⬆️" FontSize="32" Margin="0,0,10,0"/>
+                                <TextBlock Text="Upgrade Existing" 
+                                           FontSize="20" 
+                                           FontWeight="SemiBold"
+                                           Foreground="#333"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="Demonstrate upgrading an existing installation with backup, file replacement, and database migration."
+                                       FontSize="14"
+                                       Foreground="#666"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,15"/>
+
+                            <Button Grid.Row="2"
+                                    Content="Launch Demo"
+                                    Style="{StaticResource ModernButton}"
+                                    Background="#4CAF50"
+                                    Click="LaunchUpgrade_Click"
+                                    HorizontalAlignment="Stretch"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Reconfigure -->
+                    <Border Style="{StaticResource ScenarioCard}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="🔧" FontSize="32" Margin="0,0,10,0"/>
+                                <TextBlock Text="Reconfigure" 
+                                           FontSize="20" 
+                                           FontWeight="SemiBold"
+                                           Foreground="#333"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="Show how to reset passwords, update configuration, and modify settings without reinstalling."
+                                       FontSize="14"
+                                       Foreground="#666"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,15"/>
+
+                            <Button Grid.Row="2"
+                                    Content="Launch Demo"
+                                    Style="{StaticResource ModernButton}"
+                                    Background="#FF9800"
+                                    Click="LaunchReconfigure_Click"
+                                    HorizontalAlignment="Stretch"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Uninstall -->
+                    <Border Style="{StaticResource ScenarioCard}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="🗑️" FontSize="32" Margin="0,0,10,0"/>
+                                <TextBlock Text="Uninstall" 
+                                           FontSize="20" 
+                                           FontWeight="SemiBold"
+                                           Foreground="#333"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="Demonstrate the complete uninstallation process with options for keeping or removing data."
+                                       FontSize="14"
+                                       Foreground="#666"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,15"/>
+
+                            <Button Grid.Row="2"
+                                    Content="Launch Demo"
+                                    Style="{StaticResource ModernButton}"
+                                    Background="#F44336"
+                                    Click="LaunchUninstall_Click"
+                                    HorizontalAlignment="Stretch"/>
+                        </Grid>
+                    </Border>
+
+                </UniformGrid>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Grid Height="80" VerticalAlignment="Bottom" Background="#FAFAFA">
+            <Border BorderThickness="0,1,0,0" BorderBrush="#E0E0E0">
+                <StackPanel Orientation="Horizontal" 
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center">
+                    <TextBlock Text="💡" FontSize="16" Margin="0,0,10,0"/>
+                    <TextBlock FontSize="14" Foreground="#666">
+                        <Run Text="Demo Mode:"/>
+                        <Run Text="100% Safe" FontWeight="Bold" Foreground="#4CAF50"/>
+                        <Run Text=" • Zero Changes • Perfect for Presentations"/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+    </Grid>
+</Window>
+

@@ -1,0 +1,43 @@
+@*
+    Google Tag Manager / Analytics via Cloudflare Tag Gateway
+    Configured via Admin Panel ? Settings ? Google Analytics
+    Note: Admin pages are excluded from tracking
+    Uses Cloudflare Gateway for first-party tracking (bypasses ad blockers)
+*@
+@using EcommerceStarter.Services
+@inject ISiteSettingsService SiteSettingsService
+
+@{
+    var settings = await SiteSettingsService.GetSettingsAsync();
+    var tagId = settings.GoogleAnalyticsMeasurementId; // Can be GTM-XXXXXXX or G-XXXXXXXXXX
+    var measurementPath = settings.MeasurementPath ?? "/metrics";
+    
+    // Don't load analytics on admin pages
+    var isAdminPage = Context.Request.Path.StartsWithSegments("/admin", System.StringComparison.OrdinalIgnoreCase);
+    
+    if (!string.IsNullOrEmpty(tagId) && !isAdminPage)
+    {
+        if (tagId.StartsWith("GTM-"))
+        {
+            <!-- Google Tag Manager (via Cloudflare Gateway) -->
+            <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            '@measurementPath/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','@tagId');</script>
+            <!-- End Google Tag Manager -->
+        }
+        else if (tagId.StartsWith("G-"))
+        {
+            <!-- Google Analytics 4 (via Cloudflare Gateway) -->
+            <script async src="@measurementPath/gtag/js?id=@tagId"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '@tagId');
+            </script>
+            <!-- End Google Analytics 4 -->
+        }
+    }
+}

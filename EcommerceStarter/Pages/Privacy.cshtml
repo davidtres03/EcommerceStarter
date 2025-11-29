@@ -1,0 +1,238 @@
+@page
+@model PrivacyModel
+@{
+    ViewData["Title"] = "Privacy Policy";
+}
+
+<div>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="mb-4"><i class="bi bi-shield-lock"></i> Privacy Policy</h1>
+
+            <div class="alert alert-success border-success mb-4">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-heart-fill fs-3 me-3 text-success"></i>
+                    <div>
+                        <h5 class="alert-heading mb-2">Our Privacy Promise</h5>
+                        <p class="mb-0">
+                            At MyStore Supply Co., we believe your privacy is a fundamental right. We've designed
+                            our platform to collect only the absolute minimum information needed to provide you with a
+                            great shopping experience. <strong>Less data = less risk = more privacy for you.</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">What We Collect (And Why It's So Little)</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="text-success"><i class="bi bi-check-circle-fill"></i> What We DO Collect</h5>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Data Type</th>
+                                <th>Purpose</th>
+                                <th>When We Collect It</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Email Address</strong></td>
+                                <td>Account login and order confirmations</td>
+                                <td>When you create an account</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Password (encrypted)</strong></td>
+                                <td>Secure account access</td>
+                                <td>When you create an account</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Shipping Address</strong></td>
+                                <td>Deliver your order to you</td>
+                                <td>Only when you place an order</td>
+                            <tr>
+                                <td><strong>Full Name</strong></td>
+                                <td>Shipping label and payment processing</td>
+                                <td>Only when you place an order (not stored in profile)</td>
+                            </tr>
+                            </tr>
+                            <tr>
+                                <td><strong>Phone Number</strong></td>
+                                <td>Delivery updates (optional)</td>
+                                <td>Only when you place an order</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Payment Info</strong></td>
+                                <td>Process your payment securely</td>
+                                <td>When you check out (via Stripe, not stored by us)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Order History</strong></td>
+                                <td>Track your orders and provide support</td>
+                                <td>When you make purchases</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <hr class="my-4">
+
+                    <h5 class="text-danger"><i class="bi bi-x-circle-fill"></i> What We DON'T Collect</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul>
+                                <li>Your name (not stored in your profile)</li>
+                                <li>Permanent home address</li>
+                                <li>Birth date or age</li>
+                                <li>Social security number</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul>
+                                <li>Demographics or personal characteristics</li>
+                                <li>Social media profiles</li>
+                                <li>Browsing history across other sites</li>
+                                <li>Any data we don't absolutely need</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">How We Protect Your Information</h4>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Encryption:</strong> All data transmission uses HTTPS/TLS encryption</li>
+                        <li><strong>Password Security:</strong> Passwords are hashed using industry-standard algorithms and never stored in plain text</li>
+                        <li><strong>Payment Security:</strong> We use Stripe for payment processing—we never see or store your full credit card details</li>
+                        <li><strong>Minimal Storage:</strong> We don't keep what we don't need, reducing your exposure in case of any security incident</li>
+                        <li><strong>Access Control:</strong> Only authorized personnel can access customer data, and only when necessary</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Our Privacy-First Design Philosophy</h4>
+                </div>
+                <div class="card-body">
+                    <h5>Why We Don't Store Names & Addresses in Your Profile</h5>
+                    <p>
+                        Unlike traditional e-commerce sites, we intentionally <strong>don't</strong> store your name or
+                        address in your user profile. Here's why we think this is better for you:
+                    </p>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-shield-check text-success"></i> Enhanced Privacy</h6>
+                                    <p class="small mb-0">
+                                        Less personal information in our database means less risk to you if there's
+                                        ever a security breach. Your email and encrypted password are all that's stored
+                                        in your permanent profile.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-gift text-danger"></i> Maximum Flexibility</h6>
+                                    <p class="small mb-0">
+                                        Want to send a gift to a friend? Shipping to your office? Vacation home?
+                                        You can enter a different address for each order without worrying about
+                                        "updating" your profile.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-calendar-x text-warning"></i> No Outdated Data</h6>
+                                    <p class="small mb-0">
+                                        People move, change phone numbers, and update their contact information.
+                                        By collecting fresh shipping details with each order, we ensure accuracy
+                                        and never have old, incorrect data sitting around.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-hand-thumbs-up text-info"></i> You Stay in Control</h6>
+                                    <p class="small mb-0">
+                                        Your data belongs to you. We believe in collecting only what's essential
+                                        and giving you full control over your information. Want to delete your
+                                        account? No problem—minimal data makes it simple.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Your Rights & Control</h4>
+                </div>
+                <div class="card-body">
+                    <p>You have complete control over your data. You can:</p>
+                    <ul>
+                        <li><strong>Update Your Email:</strong> Change it anytime in <a asp-page="/Account/Settings">Account Settings</a></li>
+                        <li><strong>Change Your Password:</strong> Update it whenever you want</li>
+                        <li><strong>View Your Orders:</strong> See all your past orders and shipping addresses used</li>
+                        <li><strong>Delete Your Account:</strong> Contact us to permanently remove your account and data</li>
+                        <li><strong>Request Your Data:</strong> Ask us for a copy of all data we have about you</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Cookies & Tracking</h4>
+                </div>
+                <div class="card-body">
+                    <p>We use minimal cookies to:</p>
+                    <ul>
+                        <li>Keep you logged in to your account</li>
+                        <li>Remember items in your shopping cart</li>
+                        <li>Remember your dark mode preference</li>
+                    </ul>
+                    <p class="mb-0">
+                        <strong>We do NOT:</strong> Use tracking cookies, sell your data to third parties, or track
+                        your browsing across other websites.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5><i class="bi bi-question-circle"></i> Questions About Privacy?</h5>
+                    <p>
+                        We're committed to transparency. If you have any questions about how we handle your data,
+                        please don't hesitate to reach out.
+                    </p>
+                    <p class="mb-0">
+                        <strong>Contact:</strong> <a href="mailto:privacy@MyStore.com">privacy@MyStore.com</a><br>
+                        <strong>Last Updated:</strong> @DateTime.Now.ToString("MMMM yyyy")
+                    </p>
+                </div>
+            </div>
+
+            <div class="text-center mt-5 mb-4">
+                <a asp-page="/Index" class="btn btn-primary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>

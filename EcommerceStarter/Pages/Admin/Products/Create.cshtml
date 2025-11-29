@@ -1,0 +1,293 @@
+@page
+@model CreateModel
+@{
+    ViewData["Title"] = "Create Product";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="mb-4">Create New Product</h1>
+            
+            <form method="post" asp-antiforgery="true" id="productForm">
+                <div asp-validation-summary="All" class="alert alert-danger mb-3 validation-summary-valid" role="alert" style="display: none;"></div>
+                
+                <div class="mb-3">
+                    <label asp-for="Product.Name" class="form-label"></label>
+                    <input asp-for="Product.Name" class="form-control" required />
+                    <span asp-validation-for="Product.Name" class="text-danger small"></span>
+                </div>
+                
+                <div class="mb-3">
+                    <label asp-for="Product.Description" class="form-label"></label>
+                    <textarea asp-for="Product.Description" class="form-control" rows="5" required></textarea>
+                    <small class="form-text text-muted d-block mt-1">
+                        <i class="bi bi-info-circle"></i> HTML formatting supported. Examples: &lt;b&gt;bold&lt;/b&gt;, &lt;i&gt;italic&lt;/i&gt;, &lt;br&gt; for line breaks, &lt;ul&gt;&lt;li&gt; for lists
+                    </small>
+                    <span asp-validation-for="Product.Description" class="text-danger small"></span>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Product.CategoryId" class="form-label">Category <span class="text-danger">*</span></label>
+                        <select asp-for="Product.CategoryId" class="form-select custom-select-enable" id="categorySelect" onchange="loadSubCategories(this.value)" required>
+                            <option value="">-- Select Category --</option>
+                            @foreach (var category in Model.Categories)
+                            {
+                                <option value="@category.Value">@category.Text</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Product.CategoryId" class="text-danger small"></span>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Product.SubCategoryId" class="form-label">Sub Category <span class="text-danger">*</span></label>
+                        <select asp-for="Product.SubCategoryId" class="form-select custom-select-enable" id="subCategorySelect" required>
+                            <option value="">-- Select Sub Category --</option>
+                        </select>
+                        <span asp-validation-for="Product.SubCategoryId" class="text-danger small"></span>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Product.Price" class="form-label"></label>
+                        <input asp-for="Product.Price" class="form-control" type="number" step="0.01" min="0.01" required />
+                        <span asp-validation-for="Product.Price" class="text-danger small"></span>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Product.StockQuantity" class="form-label"></label>
+                        <input asp-for="Product.StockQuantity" class="form-control" type="number" min="0" required />
+                        <span asp-validation-for="Product.StockQuantity" class="text-danger small"></span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label asp-for="Product.InventoryStatus" class="form-label"></label>
+                    <select asp-for="Product.InventoryStatus" class="form-select" required>
+                        <option value="0">In Stock</option>
+                        <option value="1">Out of Stock</option>
+                        <option value="2">Coming Soon</option>
+                    </select>
+                    <small class="form-text text-muted d-block mt-1">
+                        <i class="bi bi-info-circle"></i> Coming Soon products will be visible but not purchasable. Out of Stock products will not be displayed.
+                    </small>
+                    <span asp-validation-for="Product.InventoryStatus" class="text-danger small"></span>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input asp-for="Product.IsFeatured" type="checkbox" class="form-check-input" id="isFeaturedCheck" />
+                        <label class="form-check-label" for="isFeaturedCheck">
+                            <i class="bi bi-star-fill text-warning"></i> Mark as Featured Product
+                        </label>
+                        <small class="d-block text-muted mt-1">Featured products appear in the hero section on the homepage</small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label asp-for="Product.ImageUrl" class="form-label"></label>
+                    <input asp-for="Product.ImageUrl" class="form-control mb-2" placeholder="/images/products/..." readonly />
+                    <input asp-for="Product.CloudinaryPublicId" type="hidden" />
+                    <div class="input-group">
+                        <input type="file" id="productImageFile" class="form-control" accept="image/*" onchange="uploadProductImage(this.files[0])" />
+                        <span class="input-group-text">
+                            <span id="image-upload-spinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+                            <i class="bi bi-upload"></i>
+                        </span>
+                    </div>
+                    <small class="form-text text-muted">JPG, PNG, WEBP, or GIF (max 5MB). Uploaded to Cloudinary with automatic enhancement.</small>
+                    <span asp-validation-for="Product.ImageUrl" class="text-danger small"></span>
+                    
+                    <div class="mt-2 d-none" id="image-preview-container">
+                        <small class="form-label d-block mb-2">Preview (enhanced):</small>
+                        <div>
+                            <img id="image-preview" src="" alt="Product Preview" style="max-width: 200px; height: auto;" class="img-thumbnail" />
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Create Product</button>
+                    <a asp-page="Index" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="uploadToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i id="toast-icon" class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong class="me-auto" id="toast-title">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toast-message">
+                Image uploaded successfully!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show/hide validation summary based on presence of errors
+        function updateValidationSummary() {
+            const validationSummary = document.querySelector('[asp-validation-summary]');
+            const errorList = validationSummary?.querySelector('ul');
+            const hasErrors = errorList?.querySelector('li:not([style*="display: none"])') !== undefined;
+            
+            if (validationSummary) {
+                validationSummary.style.display = hasErrors ? 'block' : 'none';
+            }
+        }
+
+        // Check validation summary on page load
+        document.addEventListener('DOMContentLoaded', updateValidationSummary);
+
+        // Form submission validation
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.add('was-validated');
+            }
+        });
+
+        // Load subcategories when category changes
+        async function loadSubCategories(categoryId) {
+            const subCategorySelect = document.getElementById('subCategorySelect');
+            
+            // Clear existing options
+            subCategorySelect.innerHTML = '<option value="">-- Select Sub Category --</option>';
+            
+            if (!categoryId) {
+                // Update custom select if it exists
+                if (subCategorySelect.customSelectInstance) {
+                    subCategorySelect.customSelectInstance.updateOptions();
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch(`?handler=SubCategories&categoryId=${categoryId}`);
+                
+                if (!response.ok) {
+                    return;
+                }
+                
+                const subCategories = await response.json();
+                
+                subCategories.forEach(sc => {
+                    const option = document.createElement('option');
+                    option.value = sc.id;
+                    option.textContent = sc.name;
+                    subCategorySelect.appendChild(option);
+                });
+                
+                // Update custom select dropdown to reflect new options
+                if (subCategorySelect.customSelectInstance) {
+                    subCategorySelect.customSelectInstance.updateOptions();
+                }
+            } catch (error) {
+            }
+        }
+
+        // Upload product image via AJAX
+        async function uploadProductImage(file) {
+            if (!file) {
+                return;
+            }
+
+            const formData = new FormData();
+            const spinner = document.getElementById('image-upload-spinner');
+            const preview = document.getElementById('image-preview');
+            const previewContainer = document.getElementById('image-preview-container');
+            const urlInput = document.querySelector('input[name="Product.ImageUrl"]');
+            const publicIdInput = document.querySelector('input[name="Product.CloudinaryPublicId"]');
+
+            formData.append('imageFile', file);
+
+            // Show spinner
+            spinner.classList.remove('d-none');
+
+            try {
+                const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (!tokenElement) {
+                    throw new Error('CSRF token not found');
+                }
+
+                const response = await fetch('?handler=UploadImage', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': tokenElement.value
+                    }
+                });
+
+                const result = await response.json();
+
+                // Hide spinner
+                spinner.classList.add('d-none');
+
+                if (result.success) {
+                    // Update preview image
+                    preview.src = result.url;
+                    previewContainer.classList.remove('d-none');
+                    
+                    // Update hidden URL input
+                    urlInput.value = result.url;
+                    
+                    // Store Cloudinary public ID for later retrieval
+                    if (result.cloudinaryPublicId) {
+                        publicIdInput.value = result.cloudinaryPublicId;
+                    }
+
+                    // Show success toast
+                    showToast('Success', result.message, 'success');
+
+                    // Clear file input
+                    document.getElementById('productImageFile').value = '';
+                } else {
+                    // Show error toast
+                    showToast('Error', result.message, 'error');
+                }
+            } catch (error) {
+                // Hide spinner
+                spinner.classList.add('d-none');
+                
+                // Show error toast
+                showToast('Error', 'Upload failed. Please try again.', 'error');
+            }
+        }
+
+        // Show toast notification
+        function showToast(title, message, type = 'success') {
+            const toastEl = document.getElementById('uploadToast');
+            const toastTitle = document.getElementById('toast-title');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+
+            // Update icon based on type
+            if (type === 'success') {
+                toastIcon.className = 'bi bi-check-circle-fill text-success me-2';
+            } else if (type === 'error') {
+                toastIcon.className = 'bi bi-exclamation-triangle-fill text-danger me-2';
+            }
+
+            const toast = new bootstrap.Toast(toastEl, {
+                autohide: true,
+                delay: 3000
+            });
+            
+            toast.show();
+        }
+    </script>
+}

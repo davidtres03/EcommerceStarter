@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
+  <!-- Mushroom icon -->
+  <g transform="translate(40, 40)">
+    <!-- Cap -->
+    <ellipse cx="0" cy="-5" rx="18" ry="13" fill="#3d6b4a"/>
+    <ellipse cx="0" cy="-5" rx="15" ry="11" fill="#5a8a68"/>
+    
+    <!-- Spots -->
+    <circle cx="-6" cy="-7" r="2" fill="#c9a87c" opacity="0.9"/>
+    <circle cx="4" cy="-8" r="1.5" fill="#c9a87c" opacity="0.9"/>
+    <circle cx="-2" cy="-3" r="1.5" fill="#c9a87c" opacity="0.9"/>
+    <circle cx="7" cy="-5" r="1.5" fill="#c9a87c" opacity="0.9"/>
+    
+    <!-- Stem -->
+    <rect x="-5" y="2" width="10" height="18" rx="5" fill="#c9a87c"/>
+    <rect x="-4" y="2" width="8" height="18" rx="4" fill="#e0d3b8"/>
+    
+    <!-- Mycelium -->
+    <path d="M -7 20 Q -12 24, -14 26" stroke="#97b69f" stroke-width="1.5" fill="none" opacity="0.7"/>
+    <path d="M 7 20 Q 12 24, 14 26" stroke="#97b69f" stroke-width="1.5" fill="none" opacity="0.7"/>
+  </g>
+  
+  <!-- Brand text -->
+  <text x="85" y="38" font-family="Georgia, serif" font-size="26" font-weight="400" fill="#3d6b4a" letter-spacing="3">
+    CAP &amp; COLLAR
+  </text>
+  <text x="85" y="54" font-family="Georgia, serif" font-size="14" font-weight="300" fill="#6b6b6b" letter-spacing="2">
+    SUPPLY CO
+  </text>
+</svg>

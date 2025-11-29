@@ -1,0 +1,391 @@
+@page "{id:int}"
+@model VariantMatrixModel
+@{
+    ViewData["Title"] = "Variant Matrix Builder";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h1 class="mb-4">
+                <i class="bi bi-table"></i> Variant Matrix Builder
+                <small class="text-muted fs-6">Product: @Model.Product?.Name</small>
+            </h1>
+
+            <!-- Hidden form to generate antiforgery token -->
+            <form method="post" style="display: none;">
+                @Html.AntiForgeryToken()
+            </form>
+
+            <!-- Toast Container (matching site style) -->
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+                <div id="matrixToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <i id="toast-icon" class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong class="me-auto" id="toast-title">Success</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" id="toast-message">
+                        Variants created successfully!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Select Attributes -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-1-circle-fill"></i> Step 1: Select Attributes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Choose which attributes will define your variants (Color, Size, etc.)</p>
+                    
+                    <div class="row" id="attributeSelector">
+                        @if (Model.Attributes != null && Model.Attributes.Count > 0)
+                        {
+                            @foreach (var attr in Model.Attributes)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input attribute-checkbox" type="checkbox" 
+                                               id="attr_@attr.Id" value="@attr.Id" data-attr-name="@attr.Name"
+                                               onchange="updateMatrix()">
+                                        <label class="form-check-label" for="attr_@attr.Id">
+                                            <strong>@attr.Name</strong>
+                                            <small class="d-block text-muted">
+                                                @(attr.ValuesList != null ? string.Join(", ", attr.ValuesList) : "No values")
+                                            </small>
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                No attributes defined yet. 
+                                <a href="@Url.Page("/Admin/Products/Edit", new { id = Model.Product?.Id })#attributesList">
+                                    Add attributes first
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Build Matrix -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-2-circle-fill"></i> Step 2: Select Combinations</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Check the combinations you want to create variants for</p>
+                    
+                    <div id="matrixContainer">
+                        <div class="alert alert-secondary">
+                            Select at least 2 attributes above to see variant combinations
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Set Stock -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-3-circle-fill"></i> Step 3: Set Stock Quantities</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Enter stock quantity for each selected combination</p>
+                    
+                    <div id="stockInputsContainer">
+                        <div class="alert alert-secondary">
+                            Select combinations in Step 2 to enter stock quantities
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary & Actions -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-check2-circle"></i> Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p id="summaryText" class="text-muted">0 variants will be created</p>
+                    
+                    <div class="btn-group" role="group">
+                        <a asp-page="/Admin/Products/Edit" asp-route-id="@Model.Product?.Id" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Edit
+                        </a>
+                        <button type="button" class="btn btn-primary" onclick="createVariants()" id="createBtn" disabled>
+                            <i class="bi bi-plus-circle"></i> Create Variants
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let productId = @Model.Product?.Id ?? 0;
+        let selectedAttributes = [];
+        let allCombinations = [];
+        let selectedCombinations = new Set();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAttributeValues();
+        });
+
+        // Show toast notification
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('matrixToast');
+            const toastTitle = document.getElementById('toast-title');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+
+            const iconClass = type === 'success' ? 'bi-check-circle-fill text-success' : 
+                            type === 'warning' ? 'bi-exclamation-circle-fill text-warning' :
+                            'bi-x-circle-fill text-danger';
+
+            toastIcon.className = `bi ${iconClass} me-2`;
+
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+
+        // Load all attribute values
+        function loadAttributeValues() {
+            const checkboxes = document.querySelectorAll('.attribute-checkbox');
+            const attributeData = {};
+
+            checkboxes.forEach(cb => {
+                const attrId = cb.value;
+                const attrName = cb.getAttribute('data-attr-name');
+                attributeData[attrId] = {
+                    id: attrId,
+                    name: attrName,
+                    checked: cb.checked
+                };
+            });
+
+            window.attributeData = attributeData;
+        }
+
+        // Update matrix when attributes are selected
+        function updateMatrix() {
+            const checkboxes = document.querySelectorAll('.attribute-checkbox:checked');
+            selectedAttributes = Array.from(checkboxes).map(cb => ({
+                id: cb.value,
+                name: cb.getAttribute('data-attr-name')
+            }));
+
+            if (selectedAttributes.length < 2) {
+                document.getElementById('matrixContainer').innerHTML = 
+                    '<div class="alert alert-secondary">Select at least 2 attributes above to see variant combinations</div>';
+                document.getElementById('stockInputsContainer').innerHTML = 
+                    '<div class="alert alert-secondary">Select combinations in Step 2 to enter stock quantities</div>';
+                document.getElementById('createBtn').disabled = true;
+                return;
+            }
+
+            buildMatrix();
+        }
+
+        // Build the matrix of combinations
+        function buildMatrix() {
+            // Fetch attribute values from server
+            const attrIds = selectedAttributes.map(a => a.id).join(',');
+            
+            fetch(`?handler=GetAttributeValues&attrIds=${attrIds}&productId=${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Generate all combinations
+                    allCombinations = generateCombinations(data);
+                    displayMatrix();
+                })
+                .catch(error => {
+                    showToast('Error', 'Failed to load attribute values', 'danger');
+                });
+        }
+
+        // Generate all possible combinations
+        function generateCombinations(attributeValues) {
+            // attributeValues: { attrId: [value1, value2, ...], ... }
+            const keys = Object.keys(attributeValues);
+            const combinations = [];
+
+            function cartesianProduct(arrays) {
+                if (arrays.length === 0) return [[]];
+                const [head, ...tail] = arrays;
+                const subProduct = cartesianProduct(tail);
+                const result = [];
+                for (const item of head) {
+                    for (const subArray of subProduct) {
+                        result.push([item, ...subArray]);
+                    }
+                }
+                return result;
+            }
+
+            const valueArrays = keys.map(key => 
+                attributeValues[key].map(val => ({
+                    attrId: key,
+                    attrName: selectedAttributes.find(a => a.id == key)?.name || '',
+                    value: val
+                }))
+            );
+
+            const products = cartesianProduct(valueArrays);
+            return products;
+        }
+
+        // Display the matrix as checkboxes
+        function displayMatrix() {
+            const html = `
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;"><i class="bi bi-check-square"></i></th>
+                                ${selectedAttributes.map(attr => `<th>${attr.name}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${allCombinations.map((combo, idx) => `
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="combo-checkbox form-check-input" 
+                                               data-combo-idx="${idx}" 
+                                               onchange="updateSummary()">
+                                    </td>
+                                    ${combo.map(attr => `<td>${attr.value}</td>`).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            document.getElementById('matrixContainer').innerHTML = html;
+        }
+
+        // Update summary and stock inputs
+        function updateSummary() {
+            const checkboxes = document.querySelectorAll('.combo-checkbox:checked');
+            selectedCombinations = new Set(Array.from(checkboxes).map(cb => cb.getAttribute('data-combo-idx')));
+
+            document.getElementById('summaryText').textContent = 
+                `${selectedCombinations.size} variant(s) will be created`;
+
+            // Display stock input fields
+            if (selectedCombinations.size > 0) {
+                displayStockInputs();
+                document.getElementById('createBtn').disabled = false;
+            } else {
+                document.getElementById('stockInputsContainer').innerHTML = 
+                    '<div class="alert alert-secondary">Select combinations in Step 2 to enter stock quantities</div>';
+                document.getElementById('createBtn').disabled = true;
+            }
+        }
+
+        // Display stock input fields
+        function displayStockInputs() {
+            const html = `
+                <div class="row">
+                    ${Array.from(selectedCombinations).map(idx => {
+                        const combo = allCombinations[idx];
+                        const comboName = combo.map(a => a.value).join(' - ');
+                        return `
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><strong>${comboName}</strong></label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control stock-input" 
+                                           data-combo-idx="${idx}" 
+                                           placeholder="Stock Qty" value="0" min="0">
+                                    <span class="input-group-text">units</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            document.getElementById('stockInputsContainer').innerHTML = html;
+        }
+
+        // Create all variants
+        async function createVariants() {
+            const variants = [];
+            
+            document.querySelectorAll('.stock-input').forEach(input => {
+                const comboIdx = input.getAttribute('data-combo-idx');
+                const stock = parseInt(input.value) || 0;
+                const combo = allCombinations[comboIdx];
+                
+                const attributes = combo.map(attr => ({
+                    attributeId: attr.attrId,
+                    value: attr.value
+                }));
+                
+                const variantName = combo.map(a => a.value).join(' - ');
+                
+                variants.push({
+                    name: variantName,
+                    stock,
+                    attributes
+                });
+            });
+
+            if (variants.length === 0) {
+                showToast('Warning', 'No variants selected', 'warning');
+                return;
+            }
+
+            // Disable button and show loading state
+            const createBtn = document.getElementById('createBtn');
+            const originalText = createBtn.innerHTML;
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+
+            try {
+                const requestData = {
+                    productId: productId,
+                    variants: variants
+                };
+
+                const response = await fetch('?handler=CreateVariantMatrix', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Success', `${result.variantsCreated} variant(s) created successfully!`, 'success');
+                    
+                    // Redirect after a short delay to show the toast
+                    setTimeout(() => {
+                        window.location.href = '@Url.Page("/Admin/Products/Edit", new { id = Model.Product?.Id })';
+                    }, 1500);
+                } else {
+                    createBtn.disabled = false;
+                    createBtn.innerHTML = originalText;
+                    showToast('Error', result.message || 'Failed to create variants', 'danger');
+                }
+            } catch (error) {
+                createBtn.disabled = false;
+                createBtn.innerHTML = originalText;
+                showToast('Error', 'Failed to create variants. Please try again.', 'danger');
+            }
+        }
+    </script>
+}
+

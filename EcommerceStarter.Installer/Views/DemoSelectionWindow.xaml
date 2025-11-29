@@ -1,0 +1,352 @@
+﻿<Window x:Class="EcommerceStarter.Installer.Views.DemoSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Demo Mode - Select Scenario"
+        Height="700"
+        Width="900"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="White">
+
+    <Grid Margin="50">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0"
+                Margin="0,0,0,30">
+            <TextBlock Text="🎬 DEMO MODE"
+                       FontSize="36"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Foreground="#0078D4"/>
+            <TextBlock Text="Select a scenario to demonstrate (safe mode - no actual changes)"
+                       FontSize="15"
+                       Foreground="#666666"
+                       HorizontalAlignment="Center"
+                       Margin="0,12,0,0"/>
+        </StackPanel>
+
+        <!-- Warning Banner -->
+        <Border Grid.Row="1"
+                Background="#FFF3CD"
+                BorderBrush="#FFC107"
+                BorderThickness="2"
+                CornerRadius="8"
+                Padding="20"
+                Margin="0,0,0,30">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="⚠️"
+                        FontSize="28"
+                        VerticalAlignment="Center"
+                        Margin="0,0,15,0"/>
+                <TextBlock TextWrapping="Wrap"
+                        VerticalAlignment="Center">
+                    <Run Text="DEMO MODE ACTIVE:"
+                            FontWeight="Bold"
+                            FontSize="14"/>
+                    <LineBreak/>
+                    <Run Text="All operations use mock data. No actual installations, databases, or files will be modified."
+                            FontSize="13"/>
+                </TextBlock>
+            </StackPanel>
+        </Border>
+
+        <!-- Scenario Selection -->
+        <ScrollViewer Grid.Row="2"
+                VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Choose a demo scenario:"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Margin="0,0,0,25"/>
+
+                <!-- Fresh Install Demo -->
+                <Button x:Name="FreshInstallButton"
+                        Height="80"
+                        Click="FreshInstall_Click"
+                        Margin="0,0,0,15"
+                        HorizontalContentAlignment="Stretch"
+                        Padding="25,15"
+                        Background="White"
+                        BorderBrush="#0078D4"
+                        BorderThickness="2"
+                        Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="8"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver"
+                                        Value="True">
+                                    <Setter Property="Background"
+                                            Value="#EBF5FF"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                Text="📦"
+                                FontSize="38"
+                                VerticalAlignment="Center"
+                                Margin="0,0,25,0"/>
+                        <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="Fresh Installation"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Foreground="#0078D4"/>
+                            <TextBlock Text="Demo: Installing EcommerceStarter from scratch with all configuration steps"
+                                       FontSize="13"
+                                       Foreground="#666666"
+                                       TextWrapping="Wrap"
+                                       Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <!-- Reconfigure Demo -->
+                <Button x:Name="ReconfigureButton"
+                        Height="80"
+                        Click="Reconfigure_Click"
+                        Margin="0,0,0,15"
+                        HorizontalContentAlignment="Stretch"
+                        Padding="25,15"
+                        Background="White"
+                        BorderBrush="#CCCCCC"
+                        BorderThickness="1"
+                        Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="8"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver"
+                                        Value="True">
+                                    <Setter Property="Background"
+                                            Value="#F8F9FA"/>
+                                    <Setter Property="BorderBrush"
+                                            Value="#999999"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                Text="🔧"
+                                FontSize="38"
+                                VerticalAlignment="Center"
+                                Margin="0,0,25,0"/>
+                        <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="Reconfigure Settings"
+                                    FontSize="18"
+                                    FontWeight="Bold"/>
+                            <TextBlock Text="Demo: Reset admin password and update store configuration"
+                                       FontSize="13"
+                                       Foreground="#666666"
+                                       TextWrapping="Wrap"
+                                       Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <!-- Repair Demo -->
+                <Button x:Name="RepairButton"
+                        Height="80"
+                        Click="Repair_Click"
+                        Margin="0,0,0,15"
+                        HorizontalContentAlignment="Stretch"
+                        Padding="25,15"
+                        Background="White"
+                        BorderBrush="#CCCCCC"
+                        BorderThickness="1"
+                        Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="8"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver"
+                                        Value="True">
+                                    <Setter Property="Background"
+                                            Value="#F8F9FA"/>
+                                    <Setter Property="BorderBrush"
+                                            Value="#999999"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                Text="🔨"
+                                FontSize="38"
+                                VerticalAlignment="Center"
+                                Margin="0,0,25,0"/>
+                        <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="Repair Installation"
+                                    FontSize="18"
+                                    FontWeight="Bold"/>
+                            <TextBlock Text="Demo: Fix broken files and verify installation integrity"
+                                       FontSize="13"
+                                       Foreground="#666666"
+                                       TextWrapping="Wrap"
+                                       Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <!-- Uninstall Demo -->
+                <Button x:Name="UninstallButton"
+                        Height="80"
+                        Click="Uninstall_Click"
+                        HorizontalContentAlignment="Stretch"
+                        Padding="25,15"
+                        Background="White"
+                        BorderBrush="#E74C3C"
+                        BorderThickness="1"
+                        Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="8"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver"
+                                        Value="True">
+                                    <Setter Property="Background"
+                                            Value="#FDEDEC"/>
+                                    <Setter Property="BorderBrush"
+                                            Value="#C0392B"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                Text="🗑️"
+                                FontSize="38"
+                                VerticalAlignment="Center"
+                                Margin="0,0,25,0"/>
+                        <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="Uninstall"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Foreground="#E74C3C"/>
+                            <TextBlock Text="Demo: Remove an existing installation (database preserved)"
+                                       FontSize="13"
+                                       Foreground="#666666"
+                                       TextWrapping="Wrap"
+                                       Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Exit Button -->
+        <Button Grid.Row="3"
+                Content="Exit Demo Mode"
+                Width="180"
+                Height="45"
+                HorizontalAlignment="Right"
+                Margin="0,30,0,0"
+                Click="Exit_Click"
+                Background="White"
+                BorderBrush="#CCCCCC"
+                FontSize="15"
+                Cursor="Hand">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="25,10">
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver"
+                                Value="True">
+                            <Setter Property="Background"
+                                    Value="#F8F9FA"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
+    </Grid>
+</Window>

@@ -1,0 +1,226 @@
+@page
+@model GuestOrderDetailsModel
+@{
+    ViewData["Title"] = $"Order {Model.Order?.OrderNumber}";
+}
+
+@if (Model.Order == null)
+{
+    <div class="container mt-4">
+        <div class="alert alert-danger">
+            Order not found. <a asp-page="/Orders/TrackOrder">Try again</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container mt-4 mb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>
+                        <i class="bi bi-receipt"></i> Order @Model.Order.OrderNumber
+                    </h1>
+                    <a asp-page="/Orders/TrackOrder" class="btn btn-outline-secondary">
+                        <i class="bi bi-search"></i> Track Another Order
+                    </a>
+                </div>
+
+                <!-- Order Status -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Order Status</h5>
+                            @switch (Model.Order.Status)
+                            {
+                                case EcommerceStarter.Models.OrderStatus.Pending:
+                                    <span class="badge bg-warning fs-6">Pending</span>
+                                    break;
+                                case EcommerceStarter.Models.OrderStatus.Processing:
+                                    <span class="badge bg-info fs-6">Processing</span>
+                                    break;
+                                case EcommerceStarter.Models.OrderStatus.Shipped:
+                                    <span class="badge bg-light text-dark fs-6">Shipped</span>
+                                    break;
+                                case EcommerceStarter.Models.OrderStatus.Delivered:
+                                    <span class="badge bg-success fs-6">Delivered</span>
+                                    break;
+                                case EcommerceStarter.Models.OrderStatus.Cancelled:
+                                    <span class="badge bg-danger fs-6">Cancelled</span>
+                                    break;
+                            }
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Order Date:</strong> @Model.Order.OrderDate.ToLocalTime().ToString("MMMM dd, yyyy hh:mm tt")</p>
+                                <p class="mb-2"><strong>Order Number:</strong> @Model.Order.OrderNumber</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Payment Status:</strong> 
+                                    @switch (Model.Order.PaymentStatus)
+                                    {
+                                        case EcommerceStarter.Models.PaymentStatus.Succeeded:
+                                            <span class="badge bg-success">Paid</span>
+                                            break;
+                                        case EcommerceStarter.Models.PaymentStatus.Pending:
+                                            <span class="badge bg-warning">Pending</span>
+                                            break;
+                                        case EcommerceStarter.Models.PaymentStatus.Failed:
+                                            <span class="badge bg-danger">Failed</span>
+                                            break;
+                                        case EcommerceStarter.Models.PaymentStatus.Refunded:
+                                            <span class="badge bg-info">Refunded</span>
+                                            break;
+                                    }
+                                </p>
+                                <p class="mb-0"><strong>Total Amount:</strong> <span class="text-success fs-5">$@Model.Order.TotalAmount.ToString("F2")</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- Order Items -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-box-seam"></i> Order Items</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>Quantity</th>
+                                                <th>Price</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Model.Order.OrderItems)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        @if (item.Product != null)
+                                                        {
+                                                            <div class="d-flex align-items-center">
+                                                                <img src="@item.Product.ImageUrl" alt="@item.Product.Name" class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                                                <strong>@item.Product.Name</strong>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>Product (ID: @item.ProductId)</span>
+                                                        }
+                                                    </td>
+                                                    <td>@item.Quantity</td>
+                                                    <td>$@item.UnitPrice.ToString("F2")</td>
+                                                    <td><strong>$@item.TotalPrice.ToString("F2")</strong></td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                                <td><strong>$@Model.Order.Subtotal.ToString("F2")</strong></td>
+                                            </tr>
+                                            @if (Model.Order.TaxAmount > 0)
+                                            {
+                                                <tr>
+                                                    <td colspan="3" class="text-end"><strong>Tax:</strong></td>
+                                                    <td><strong>$@Model.Order.TaxAmount.ToString("F2")</strong></td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td colspan="3" class="text-end"><strong>Shipping:</strong></td>
+                                                <td><strong class="text-success">FREE</strong></td>
+                                            </tr>
+                                            <tr class="table-primary">
+                                                <td colspan="3" class="text-end"><h5 class="mb-0">Total:</h5></td>
+                                                <td><h5 class="mb-0 text-success">$@Model.Order.TotalAmount.ToString("F2")</h5></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <!-- Shipping Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Shipping Information</h5>
+                            </div>
+                            <div class="card-body">
+                                @if (!string.IsNullOrEmpty(Model.Order.ShippingName))
+                                {
+                                    <p class="mb-2"><strong>Name:</strong> @Model.Order.ShippingName</p>
+                                }
+                                <address class="mb-0">
+                                    <strong>Address:</strong><br>
+                                    @Model.Order.ShippingAddress<br>
+                                    @Model.Order.ShippingCity, @Model.Order.ShippingState @Model.Order.ShippingZip
+                                </address>
+                            </div>
+                        </div>
+
+                        <!-- Contact Email -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-envelope"></i> Order Confirmation</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">
+                                    <strong>Email:</strong><br>
+                                    @Model.Order.CustomerEmail
+                                </p>
+                                <hr>
+                                <p class="small text-muted mb-0">
+                                    A confirmation email was sent to this address.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Create Account Prompt -->
+                        @if (Model.Order.IsGuestOrder)
+                        {
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-person-plus"></i> Create an Account?
+                                    </h6>
+                                    <p class="card-text small">
+                                        Track all your orders easily by creating an account with the email you used for this order.
+                                    </p>
+                                    <a asp-page="/Account/Register" class="btn btn-sm btn-success w-100">
+                                        Create Account
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h6><i class="bi bi-question-circle text-primary"></i> Need Help?</h6>
+                        <p class="mb-2 small">
+                            For questions about your order, please contact us at:
+                        </p>
+                        <p class="mb-0 small">
+                            <strong>Email:</strong> <a href="mailto:support@example.com">support@example.com</a><br>
+                            <strong>Include:</strong> Order @Model.Order.OrderNumber in your message
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+

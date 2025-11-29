@@ -1,0 +1,356 @@
+@page
+@using Microsoft.AspNetCore.Identity
+@using EcommerceStarter.Models
+@inject SignInManager<ApplicationUser> SignInManager
+@model IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<!-- Hero Section with Integrated Featured Products -->
+<div class="hero-section text-center py-5 mb-5"
+    style="background: linear-gradient(135deg, @Model.Settings.PrimaryColor 0%, @Model.Settings.PrimaryDark 100%)@(Model.Settings.HeroImageId.HasValue ? $", url('/images/stored/{Model.Settings.HeroImageId}') center/cover" : !string.IsNullOrEmpty(Model.Settings.HeroImageUrl) ? $", url('{Model.Settings.HeroImageUrl}') center/cover" : ""); background-blend-mode: overlay; color: white; border-radius: var(--border-radius, 16px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);">
+    <div class="container py-5">
+        <!-- Hero Header -->
+        <h1 class="display-3 fw-bold mb-3 text-white" style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">
+            @if (!string.IsNullOrEmpty(Model.Settings.SiteIcon))
+            {
+                <span class="me-3">@Model.Settings.SiteIcon</span>
+            }
+            @Model.Settings.SiteName
+        </h1>
+        <p class="lead mb-4 text-white" style="font-size: 1.3rem;">
+            @Model.Settings.SiteTagline
+        </p>
+
+        <!-- Featured Products in Hero -->
+        @if (Model.Products.Any(p => p.IsFeatured))
+        {
+            <div class="hero-featured-products mb-5"
+                style="background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px);">
+                <div class="row g-3 justify-content-center">
+                    @foreach (var product in Model.Products.Where(p => p.IsFeatured && p.IsAvailable && p.InventoryStatus !=
+                                    InventoryStatus.OutOfStock).Take(3))
+                    {
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card h-100 product-card-hover border-0 shadow-sm hero-product-card">
+                                <a asp-page="/Products/Details" asp-route-id="@product.Id" class="text-decoration-none">
+                                    <div class="position-relative">
+                                        <img src="@product.ImageUrl" class="card-img-top" alt="@product.Name"
+                                            style="height: 180px; object-fit: cover;">
+                                        @if (!product.IsAvailable)
+                                        {
+                                            <div class="position-absolute top-0 end-0 m-2">
+                                                <span class="badge bg-danger">Out of Stock</span>
+                                            </div>
+                                        }
+                                        else if (product.StockQuantity < 10)
+                                        {
+                                            <div class="position-absolute top-0 end-0 m-2">
+                                                <span class="badge bg-warning text-dark">Low Stock</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </a>
+                                <div class="card-body d-flex flex-column py-2">
+                                    <a asp-page="/Products/Details" asp-route-id="@product.Id"
+                                        class="text-decoration-none text-dark">
+                                        <h6 class="card-title mb-1">@product.Name</h6>
+                                    </a>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold"
+                                            style="color: var(--primary-color); font-size: 1rem;">$@product.Price.ToString("F2")</span>
+                                        <small class="text-muted">
+                                            @if (product.SubCategoryNavigation != null)
+                                            {
+                                                <i class="@product.SubCategoryNavigation.IconClass"></i>
+                                                @product.SubCategoryNavigation.Name
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-tag"></i>
+                                                @product.SubCategory
+                                            }
+                                        </small>
+                                    </div>
+                                    <div class="mt-auto">
+                                        @if (product.IsAvailable)
+                                        {
+                                            <a asp-page="/Products/Details" asp-route-id="@product.Id"
+                                                class="btn btn-sm btn-primary w-100">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-secondary w-100" disabled>
+                                                <i class="bi bi-x-circle"></i> Out of Stock
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="mt-3">
+                    <a asp-page="/Products/Index" class="btn btn-light fw-bold">
+                        View All Products <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        }
+
+        <!-- Feature Highlights -->
+        <div class="row mt-4 text-center">
+            <div class="col-md-3 mb-3">
+                <div class="p-3">
+                    <i class="bi bi-truck" style="font-size: 2.5rem; color: @Model.Settings.AccentColor;"></i>
+                    <h5 class="mt-3 text-white">Free Shipping</h5>
+                    <p class="mb-0 text-white-50">On all orders</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="p-3">
+                    <i class="bi bi-shield-lock" style="font-size: 2.5rem; color: @Model.Settings.AccentColor;"></i>
+                    <h5 class="mt-3 text-white">Privacy-Focused</h5>
+                    <p class="mb-0 text-white-50">Minimal data collection</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="p-3">
+                    <i class="bi bi-shield-check" style="font-size: 2.5rem; color: @Model.Settings.AccentColor;"></i>
+                    <h5 class="mt-3 text-white">Quality Guaranteed</h5>
+                    <p class="mb-0 text-white-50">Premium products</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="p-3">
+                    <i class="bi bi-arrow-counterclockwise" style="font-size: 2.5rem; color: @Model.Settings.AccentColor;"></i>
+                    <h5 class="mt-3 text-white">30-Day Returns</h5>
+                    <p class="mb-0 text-white-50">Hassle-free</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Callout Banner -->
+<div class="alert alert-success border-success mb-5" style="border-radius: 12px; border-width: 2px;">
+    <div class="row align-items-center">
+        <div class="col-md-1 text-center">
+            <i class="bi bi-shield-check" style="font-size: 3rem; color: @Model.Settings.AccentColor;"></i>
+        </div>
+        <div class="col-md-11">
+            <h4 class="alert-heading mb-2">
+                <i class="bi bi-lock-fill text-success"></i> Your Privacy is Our Priority
+            </h4>
+            <p class="mb-2">
+                We believe in <strong>minimal data collection</strong>. Unlike other online stores, we don't ask for or
+                store unnecessary personal information. Just your email for account access—that's it!
+            </p>
+            <p class="mb-0 small">
+                <i class="bi bi-check-circle-fill text-success"></i> No stored names or addresses in your profile
+                <span class="mx-2">•</span>
+                <i class="bi bi-check-circle-fill text-success"></i> Shipping details collected per-order only
+                <span class="mx-2">•</span>
+                <i class="bi bi-check-circle-fill text-success"></i> Maximum privacy, maximum flexibility
+                <span class="mx-2">•</span>
+                <a asp-page="/Privacy" class="alert-link">Learn more about our privacy promise <i
+                        class="bi bi-arrow-right"></i></a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+@if (!SignInManager.IsSignedIn(User))
+{
+    <div class="row mb-5">
+        <div class="col-md-6 mb-3">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-search" style="font-size: 3rem; color: var(--primary-color);"></i>
+                    <h4 class="mt-3 mb-3">Track Your Order</h4>
+                    <p class="text-muted mb-4">
+                        Enter your email and order number to check your order status
+                    </p>
+                    <a asp-page="/Orders/TrackOrder" class="btn btn-primary btn-lg">
+                        <i class="bi bi-search"></i> Track Order
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-lightning-charge" style="font-size: 3rem; color: @Model.Settings.AccentColor;"></i>
+                    <h4 class="mt-3 mb-3">Guest Checkout Available</h4>
+                    <p class="text-muted mb-4">
+                        Shop without creating an account - it's fast, easy, and privacy-focused!
+                    </p>
+                    <a asp-page="/Products/Index" class="btn btn-success btn-lg">
+                        <i class="bi bi-bag"></i> Start Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Categories Section -->
+@if (Model.ActiveCategories.Any())
+{
+    <div class="mb-5">
+        <h2 class="mb-4 text-center">
+            <i class="bi bi-grid-3x3-gap me-2"></i>Shop by Category
+        </h2>
+        <div class="row g-4 justify-content-center">
+            @foreach (var category in Model.ActiveCategories)
+            {
+                <div class="col-md-6 col-lg-3">
+                    <a asp-page="/Products/Index" asp-route-category="@category.Name" class="text-decoration-none">
+                        <div class="card text-center border-0 h-100 category-card"
+                            style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            <div class="card-body py-5">
+                                <i class="@category.IconClass" style="font-size: 4rem; color: var(--primary-color);"></i>
+                                <h4 class="mt-3">@category.Name</h4>
+                                @if (!string.IsNullOrEmpty(category.Description))
+                                {
+                                    <p class="text-muted mb-0">@category.Description</p>
+                                }
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+            @if (Model.ActiveCategories.Count < 4)
+            {
+                <div class="col-md-6 col-lg-3">
+                    <a asp-page="/Products/Index" class="text-decoration-none">
+                        <div class="card text-center border-0 h-100 category-card"
+                            style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            <div class="card-body py-5">
+                                <i class="bi bi-grid" style="font-size: 4rem; color: var(--primary-color);"></i>
+                                <h4 class="mt-3">View All</h4>
+                                <p class="text-muted mb-0">Browse Everything</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Trust Indicators -->
+<div class="bg-light rounded-lg-custom p-5 text-center">
+    <h3 class="mb-4">Why Choose @Model.Settings.SiteName?</h3>
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <i class="bi bi-award-fill text-primary-custom" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">Premium Quality</h5>
+            <p class="text-muted small">Only the best products make it to our store</p>
+        </div>
+        <div class="col-md-3 mb-4">
+            <i class="bi bi-people-fill text-primary-custom" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">Expert Support</h5>
+            <p class="text-muted small">Knowledgeable team ready to help</p>
+        </div>
+        <div class="col-md-3 mb-4">
+            <i class="bi bi-lightning-charge-fill text-primary-custom" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">Fast Shipping</h5>
+            <p class="text-muted small">Quick delivery to your door</p>
+        </div>
+        <div class="col-md-3 mb-4">
+            <i class="bi bi-heart-fill text-primary-custom" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">Customer First</h5>
+            <p class="text-muted small">Your satisfaction is our priority</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hero-featured-products {
+        border-radius: 12px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-featured-products::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: inherit;
+        opacity: 0.1;
+        z-index: 0;
+        border-radius: 12px;
+    }
+
+    .hero-featured-products>* {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-product-card {
+        background: rgba(255, 255, 255, 0.95) !important;
+        transition: all 0.3s ease;
+    }
+
+    .hero-product-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .hero-product-card .card-text {
+        color: #666 !important;
+    }
+
+    .hero-product-card .card-title {
+        color: #333 !important;
+        font-weight: 600;
+    }
+
+    .category-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .category-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 12px 24px rgba(107, 68, 35, 0.15);
+    }
+
+    .category-card i {
+        transition: all 0.3s ease;
+    }
+
+    .category-card:hover i {
+        transform: scale(1.1);
+        color: #c77d3a !important;
+    }
+
+    .product-card-hover {
+        transition: all 0.3s ease;
+    }
+
+    .product-card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(107, 68, 35, 0.2) !important;
+    }
+
+    @@media (max-width: 768px) {
+        .hero-featured-products {
+            padding: 15px;
+        }
+
+        .hero-product-card {
+            margin-bottom: 10px;
+        }
+    }
+</style>

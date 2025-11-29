@@ -1,0 +1,151 @@
+﻿@page
+@model EcommerceStarter.Pages.Admin.Settings.ApiTestingModel
+@{
+    ViewData["Title"] = "API Testing Configuration";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>API Testing Configuration</h2>
+                    <p class="text-muted">Configure internal service authentication for automated API testing</p>
+                </div>
+                <a asp-page="/Admin/Settings/Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Settings
+                </a>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row">
+                <!-- Service Key Card -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-key"></i> Internal Service Key</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>What is this?</strong> The internal service key allows automated testing scripts and scheduled tasks to authenticate with your API without using JWT tokens.
+                            </div>
+
+                            <form method="post" asp-page-handler="ToggleAuth">
+                                <div class="form-check form-switch mb-4">
+                                    <input class="form-check-input" type="checkbox" id="enableAuth" name="enable" 
+                                           @(Model.IsEnabled ? "checked" : "") onchange="this.form.submit()">
+                                    <label class="form-check-label" for="enableAuth">
+                                        <strong>Enable Internal Service Authentication</strong>
+                                    </label>
+                                </div>
+                            </form>
+
+                            @if (Model.IsEnabled)
+                            {
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Current Service Key:</label>
+                                    <div class="input-group">
+                                        <input type="password" id="serviceKey" class="form-control font-monospace" 
+                                               value="@Model.ServiceKey" readonly>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="toggleKeyVisibility()">
+                                            <i id="eyeIcon" class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary" type="button" onclick="copyKey()">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Use this key in the X-Internal-Service-Key header</small>
+                                </div>
+
+                                <form method="post" asp-page-handler="RegenerateKey" onsubmit="return confirm('Are you sure? This will invalidate the old key and break any existing automated tests.');">
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="bi bi-arrow-repeat"></i> Regenerate Key
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> Internal service authentication is disabled. Enable it to use automated API testing.
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Instructions Card -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-book"></i> Usage</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="fw-bold">Test Script Example:</h6>
+                            <pre class="bg-light p-3 rounded"><code>curl -H "X-Internal-Service-Key: YOUR_KEY" \
+  http://localhost:8080/api/admin/categories</code></pre>
+
+                            <h6 class="fw-bold mt-3">Bash Script:</h6>
+                            <pre class="bg-light p-3 rounded"><code>SERVICE_KEY="@Model.ServiceKey"
+curl -H "X-Internal-Service-Key: $SERVICE_KEY" \
+  http://localhost:8080/api/...</code></pre>
+
+                            <div class="alert alert-warning mt-3">
+                                <small>
+                                    <i class="bi bi-shield-lock"></i>
+                                    <strong>Security:</strong> This key is stored encrypted in the database. Keep it secure and regenerate if compromised.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleKeyVisibility() {
+            const keyInput = document.getElementById('serviceKey');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (keyInput.type === 'password') {
+                keyInput.type = 'text';
+                eyeIcon.classList.remove('bi-eye');
+                eyeIcon.classList.add('bi-eye-slash');
+            } else {
+                keyInput.type = 'password';
+                eyeIcon.classList.remove('bi-eye-slash');
+                eyeIcon.classList.add('bi-eye');
+            }
+        }
+
+        function copyKey() {
+            const keyInput = document.getElementById('serviceKey');
+            const originalType = keyInput.type;
+            keyInput.type = 'text';
+            keyInput.select();
+            document.execCommand('copy');
+            keyInput.type = originalType;
+            
+            // Show toast or alert
+            alert('Service key copied to clipboard!');
+        }
+    </script>
+}

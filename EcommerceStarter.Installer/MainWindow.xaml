@@ -1,0 +1,94 @@
+﻿<Window x:Class="EcommerceStarter.Installer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        Title="EcommerceStarter Setup" 
+        Height="600" 
+        Width="900"
+        MinHeight="600"
+        MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
+    
+    <Window.Resources>
+        <!-- Page transition animation -->
+        <Storyboard x:Key="PageFadeIn">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                           From="0" To="1" Duration="0:0:0.3"/>
+        </Storyboard>
+    </Window.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Header -->
+            <RowDefinition Height="*"/>    <!-- Content -->
+            <RowDefinition Height="Auto"/> <!-- Footer/Navigation -->
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" 
+                Background="{StaticResource BrandPrimaryBrush}"
+                Padding="30,20">
+            <StackPanel>
+                <TextBlock Text="🛒 EcommerceStarter Setup"
+                          FontSize="24"
+                          FontWeight="SemiBold"
+                          FontFamily="Segoe UI Emoji, Segoe UI Symbol, Arial"
+                          Foreground="White"/>
+                <TextBlock Text="Professional E-Commerce Platform Installer"
+                          FontSize="13"
+                          Foreground="White"
+                          Opacity="0.9"
+                          Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Content Area -->
+        <Border Grid.Row="1" Padding="40,30">
+            <Frame x:Name="ContentFrame"
+                   NavigationUIVisibility="Hidden"
+                   Background="Transparent"/>
+        </Border>
+        
+        <!-- Footer / Navigation -->
+        <Border Grid.Row="2" 
+                Background="{DynamicResource SystemControlPageBackgroundChromeLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="30,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Left side info -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="StepIndicator" 
+                              Text="Step 1 of 5"
+                              FontSize="12"
+                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+                
+                <!-- Right side buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BackButton"
+                           Content="← Back"
+                           Style="{StaticResource SecondaryButtonStyle}"
+                           Click="BackButton_Click"
+                           IsEnabled="False"/>
+                    <Button x:Name="NextButton"
+                           Content="Next →"
+                           Style="{StaticResource PrimaryButtonStyle}"
+                           Click="NextButton_Click"/>
+                    <Button x:Name="CancelButton"
+                           Content="Cancel"
+                           Style="{StaticResource SecondaryButtonStyle}"
+                           Click="CancelButton_Click"
+                           Margin="20,5,5,5"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

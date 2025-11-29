@@ -1,0 +1,141 @@
+@page
+@model CartModel
+@{
+    ViewData["Title"] = "Shopping Cart";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Shopping Cart</h1>
+
+    @if (Model.SuccessMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model.CartItems.Any())
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        @foreach (var item in Model.CartItems)
+                        {
+                            <div class="row align-items-center border-bottom py-3">
+                                <div class="col-md-2">
+                                    <img src="@item.ImageUrl" alt="@item.ProductName" class="img-fluid rounded">
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="mb-0">@item.ProductName</h6>
+                                    <small class="text-muted">$@item.Price.ToString("F2") each</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <form method="post" asp-page-handler="UpdateQuantity" asp-route-productId="@item.ProductId" class="d-flex align-items-center gap-2">
+                                        <label class="me-2">Qty:</label>
+                                        <select name="quantity" class="form-select form-select-sm" style="width: 100px;" onchange="this.form.submit()">
+                                            @{
+                                                // If StockQuantity is not set or is 0, default to 20 options
+                                                int maxQty = item.StockQuantity > 0 ? Math.Min(item.StockQuantity, 20) : 20;
+                                                
+                                                for (int i = 1; i <= maxQty; i++)
+                                                {
+                                                    if (item.Quantity == i)
+                                                    {
+                                                        <option value="@i" selected>@i</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@i">@i</option>
+                                                    }
+                                                }
+                                                
+                                                // If current quantity exceeds maxQty, add it as an option
+                                                if (item.Quantity > maxQty)
+                                                {
+                                                    <option value="@item.Quantity" selected>@item.Quantity</option>
+                                                }
+                                            }
+                                        </select>
+                                    </form>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <strong>$@item.Subtotal.ToString("F2")</strong>
+                                    @if (item.StockQuantity > 0 && item.Quantity >= item.StockQuantity)
+                                    {
+                                        <div class="text-warning small mt-1">
+                                            <i class="bi bi-exclamation-circle"></i> Limited stock
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <form method="post" asp-page-handler="RemoveItem" asp-route-productId="@item.ProductId">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Remove">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <a asp-page="/Products/Index" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Continue Shopping
+                </a>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Items (@Model.CartItems.Sum(c => c.Quantity)):</span>
+                            <strong>$@Model.Total.ToString("F2")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <strong>FREE</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <h5>Total:</h5>
+                            <h5 class="text-primary"><strong>$@Model.Total.ToString("F2")</strong></h5>
+                        </div>
+                        
+                        <a asp-page="/Checkout/CheckoutMethod" class="btn btn-success btn-lg w-100 mb-2">
+                            <i class="bi bi-credit-card"></i> Proceed to Checkout
+                        </a>
+                        
+                        @if (!Model.IsAuthenticated)
+                        {
+                            <div class="alert alert-info border-info mb-2 small">
+                                <i class="bi bi-info-circle"></i> 
+                                <strong>No account required!</strong> You can checkout as a guest or sign in if you have an account.
+                            </div>
+                        }
+                        
+                        <form method="post" asp-page-handler="ClearCart" onsubmit="return confirm('Are you sure you want to clear your cart?');">
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="bi bi-trash"></i> Clear Cart
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-cart-x text-muted" style="font-size: 5rem;"></i>
+            <h3 class="mt-3">Your cart is empty</h3>
+            <p class="text-muted">Add some products to get started!</p>
+            <a asp-page="/Products/Index" class="btn btn-primary btn-lg mt-3">
+                Browse Products
+            </a>
+        </div>
+    }
+</div>
+

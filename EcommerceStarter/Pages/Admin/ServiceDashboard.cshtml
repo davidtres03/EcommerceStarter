@@ -1,0 +1,385 @@
+@page
+@model ServiceDashboardModel
+@{
+    ViewData["Title"] = "Service Dashboard";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5">Service Dashboard</h1>
+            <p class="text-muted">Real-time monitoring and health status</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshDashboard()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh Now
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                <i class="bi bi-gear"></i> Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Indicators -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-success shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Web Service</h6>
+                    <p class="card-text mb-2">
+                        <i class="bi @(Model.CurrentStatus?.IsWebServiceOnline == true ? "bi-check-circle-fill text-success" : "bi-x-circle-fill text-danger")"></i>
+                        @(Model.CurrentStatus?.IsWebServiceOnline == true ? "Online" : "Offline")
+                    </p>
+                    <small class="text-muted">Response: @(Model.CurrentStatus?.ResponseTimeMs ?? 0)ms</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Background Service</h6>
+                    <p class="card-text mb-2">
+                        <i class="bi @(Model.CurrentStatus?.IsBackgroundServiceRunning == true ? "bi-check-circle-fill text-success" : "bi-x-circle-fill text-danger")"></i>
+                        @(Model.CurrentStatus?.IsBackgroundServiceRunning == true ? "Running" : "Stopped")
+                    </p>
+                    <small class="text-muted">Memory: @(Model.CurrentStatus?.MemoryUsageMb ?? 0)MB</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Database</h6>
+                    <p class="card-text mb-2">
+                        <i class="bi @(Model.CurrentStatus?.DatabaseConnected == true ? "bi-check-circle-fill text-success" : "bi-x-circle-fill text-danger")"></i>
+                        @(Model.CurrentStatus?.DatabaseConnected == true ? "Connected" : "Disconnected")
+                    </p>
+                    <small class="text-muted">CPU: @(Model.CurrentStatus?.CpuUsagePercent ?? 0)%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Uptime</h6>
+                    <p class="card-text mb-2">
+                        <span class="text-success fw-bold">@(Model.CurrentStatus?.UptimePercent ?? 0)%</span>
+                    </p>
+                    <small class="text-muted">Last checked: @(Model.CurrentStatus?.Timestamp.ToString("g") ?? "N/A")</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-primary shadow-sm">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Queue Size</h6>
+                            <h4 class="fw-bold">@(Model.CurrentStatus?.QueueSize ?? 0)</h4>
+                            <small class="text-muted">Pending events</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Active Users</h6>
+                            <h4 class="fw-bold">@(Model.CurrentStatus?.ActiveUserCount ?? 0)</h4>
+                            <small class="text-muted">Current sessions</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Pending Orders</h6>
+                            <h4 class="fw-bold">@(Model.CurrentStatus?.PendingOrdersCount ?? 0)</h4>
+                            <small class="text-muted">Awaiting processing</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Error Message</h6>
+                            @if (!string.IsNullOrEmpty(Model.CurrentStatus?.ErrorMessage))
+                            {
+                                <p class="text-danger mb-0"><small>@Model.CurrentStatus.ErrorMessage</small></p>
+                            }
+                            else
+                            {
+                                <p class="text-success mb-0"><i class="bi bi-check-circle-fill"></i> No errors</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Updates -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-download"></i> Recent Updates
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.RecentUpdates?.Any() == true)
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var update in Model.RecentUpdates.Take(5))
+                            {
+                                <div class="list-group-item">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <h6 class="mb-1">v@(update.Version)</h6>
+                                            <small class="text-muted">@update.AppliedAt.ToString("MMM dd, yyyy HH:mm")</small>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            @if (update.Status == "Success")
+                                            {
+                                                <span class="badge bg-success">Success</span>
+                                            }
+                                            else if (update.Status == "Failed")
+                                            {
+                                                <span class="badge bg-danger">Failed</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">@update.Status</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(update.ReleaseNotes))
+                                    {
+                                        <small class="text-muted d-block mt-2">@update.ReleaseNotes</small>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-3 text-center text-muted">No updates recorded yet</div>
+                    }
+                </div>
+                <div class="card-footer bg-light">
+                    <a href="/Admin/Updates" class="btn btn-sm btn-outline-primary">View All Updates</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Errors -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Recent Errors
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.RecentErrors?.Any() == true)
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var error in Model.RecentErrors.Take(5))
+                            {
+                                <div class="list-group-item">
+                                    <div class="row align-items-start">
+                                        <div class="col-md-1">
+                                            @if (error.Severity == "Critical")
+                                            {
+                                                <i class="bi bi-exclamation-circle-fill text-danger"></i>
+                                            }
+                                            else if (error.Severity == "Warning")
+                                            {
+                                                <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-info-circle-fill text-info"></i>
+                                            }
+                                        </div>
+                                        <div class="col-md-8">
+                                            <h6 class="mb-1">@error.Source</h6>
+                                            <small class="text-muted">@error.Timestamp.ToString("MMM dd, HH:mm:ss")</small>
+                                            <p class="mb-0 small mt-1">@error.Message</p>
+                                        </div>
+                                        <div class="col-md-3 text-end">
+                                            @if (!error.IsAcknowledged)
+                                            {
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="acknowledgeError('@error.Id')">Acknowledge</button>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-dark">Acknowledged</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-3 text-center text-muted">No errors recorded</div>
+                    }
+                </div>
+                <div class="card-footer bg-light">
+                    <a href="/Admin/Errors" class="btn btn-sm btn-outline-primary">View All Errors</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Summary -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Performance Metrics (24 Hour Summary)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Avg Response Time</h6>
+                            <h4 class="fw-bold">@(Model.Metrics?.AverageResponseTimeMs ?? 0)ms</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Avg CPU Usage</h6>
+                            <h4 class="fw-bold">@(Model.Metrics?.AverageCpuUsagePercent ?? 0)%</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Avg Memory Usage</h6>
+                            <h4 class="fw-bold">@(Model.Metrics?.AverageMemoryUsageMb ?? 0)MB</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Uptime</h6>
+                            <h4 class="fw-bold text-success">@(Model.Metrics?.UptimePercent ?? 0)%</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dashboard Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="refreshInterval" class="form-label">Auto-refresh Interval (seconds)</label>
+                    <input type="number" class="form-control" id="refreshInterval" value="30" min="5" max="300">
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="enableNotifications" checked>
+                    <label class="form-check-label" for="enableNotifications">
+                        Enable Error Notifications
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let autoRefreshInterval = 30000; // 30 seconds default
+        let adminToken = null;
+
+        async function getAdminToken() {
+            if (adminToken) return adminToken;
+
+            // Check sessionStorage first
+            const stored = sessionStorage.getItem('adminToken');
+            const expiry = sessionStorage.getItem('adminTokenExpiry');
+            
+            if (stored && expiry && new Date().getTime() < parseInt(expiry)) {
+                adminToken = stored;
+                return adminToken;
+            }
+
+            // Get new token from API
+            try {
+                const response = await fetch('/api/auth/admin/token', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get admin token');
+                }
+
+                const data = await response.json();
+                adminToken = data.accessToken;
+                
+                // Store token with expiry (subtract 5 minutes for safety)
+                const expiryTime = new Date().getTime() + ((data.expiresIn - 300) * 1000);
+                sessionStorage.setItem('adminToken', adminToken);
+                sessionStorage.setItem('adminTokenExpiry', expiryTime.toString());
+                
+                return adminToken;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        async function acknowledgeError(errorId) {
+            try {
+                const token = await getAdminToken();
+                const response = await fetch(`/api/admin/service/errors/${errorId}/acknowledge`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    refreshDashboard();
+                } else if (response.status === 401) {
+                    // Token expired, clear and retry
+                    sessionStorage.removeItem('adminToken');
+                    sessionStorage.removeItem('adminTokenExpiry');
+                    adminToken = null;
+                    alert('Session expired. Please try again.');
+                } else {
+                    throw new Error('Failed to acknowledge error');
+                }
+            } catch (error) {
+                alert('Failed to acknowledge error. Please try again.');
+            }
+        }
+
+        function saveSettings() {
+            const interval = document.getElementById('refreshInterval').value;
+            localStorage.setItem('dashboardRefreshInterval', interval);
+            autoRefreshInterval = interval * 1000;
+            bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+        }
+
+        // Load settings on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedInterval = localStorage.getItem('dashboardRefreshInterval');
+            if (savedInterval) {
+                document.getElementById('refreshInterval').value = savedInterval;
+                autoRefreshInterval = savedInterval * 1000;
+            }
+        });
+
+        // Auto-refresh every interval
+        setInterval(refreshDashboard, autoRefreshInterval);
+    </script>
+}

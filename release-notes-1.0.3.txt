@@ -1,0 +1,9 @@
+## Fixed
+- **Auto-Update System** - Fixed upgrader executable not found in package
+  - Changed MaintenanceModePage to use `EcommerceStarter.Installer.exe` for upgrades (already included in package)
+  - Installer.exe now handles in-place upgrades directly from downloaded package
+  - Added fallback path detection for legacy package structures
+  - Resolves "Upgrader Not Found" error after successful package download
+
+## Technical Details
+The v1.0.0-1.0.2 packages did not include the separate Upgrader.exe, causing in-place upgrades to fail. This version simplifies the architecture by using the main Installer.exe (which is always present in the package) to perform upgrades. The installer accepts the same command-line arguments and provides identical upgrade functionality.

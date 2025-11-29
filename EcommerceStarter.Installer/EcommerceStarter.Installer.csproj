@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- Self-Contained Deployment: Fully standalone, no .NET runtime required -->
+    <PublishSelfContained>true</PublishSelfContained>
+    <SelfContainedRuntimeIdentifier>win-x64</SelfContainedRuntimeIdentifier>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- Version - Single source of truth, used for all version properties -->
+    <Version>1.0.5</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WPF Modern UI -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
+    <PackageReference Include="ModernWpfUI" Version="0.9.6" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+
+    <!-- System Integration -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="System.IO.FileSystem.DriveInfo" Version="4.3.1" />
+
+    <!-- Database -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
+
+    <!-- JSON Configuration -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include migrations bundle in output -->
+    <None Include="..\migrations\efbundle.exe" Link="migrations\efbundle.exe" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\migrations\efbundle.exe')" />
+
+    <!-- Include Windows Service files in installer -->
+    <None Include="..\EcommerceStarter.WindowsService\bin\Release\net9.0\**\*.*" Link="WindowsService\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\EcommerceStarter.WindowsService\bin\Release\net9.0\')" />
+  </ItemGroup>
+
+</Project>

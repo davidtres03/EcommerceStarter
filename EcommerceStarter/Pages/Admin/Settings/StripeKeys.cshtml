@@ -1,0 +1,330 @@
+@page
+@model StripeKeysModel
+@{
+    ViewData["Title"] = "Stripe API Keys Management";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-key-fill"></i> Stripe API Keys</h1>
+                <a asp-page="/Admin/Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Admin
+                </a>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="alert alert-success alert-dismissible alert-temporary fade show" role="alert">
+                    <i class="bi bi-check-circle"></i> @Model.SuccessMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i> @Model.ErrorMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Security Warning -->
+            <div class="alert alert-warning">
+                <h5><i class="bi bi-shield-exclamation"></i> Security Notice</h5>
+                <ul class="mb-0">
+                    <li><strong>Keys are encrypted</strong> in the database using AES-256 encryption</li>
+                    <li><strong>Encryption key</strong> must be set as environment variable: <code>ENCRYPTION_KEY</code></li>
+                    <li><strong>Never share</strong> your Stripe Secret Key or Webhook Secret</li>
+                    <li><strong>All changes</strong> are logged in the audit trail below</li>
+                    <li><strong>Use Test Mode</strong> for development, Live Mode only in production</li>
+                </ul>
+            </div>
+
+            <div class="row">
+                <!-- Configuration Form -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear-fill"></i> 
+                                @if (Model.CurrentConfiguration == null)
+                                {
+                                    <text>Configure Stripe API Keys</text>
+                                }
+                                else
+                                {
+                                    <text>Update Stripe API Keys</text>
+                                }
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.CurrentConfiguration != null)
+                            {
+                                <div class="alert alert-info">
+                                    <strong>Current Configuration:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li><strong>Mode:</strong> @(Model.CurrentConfiguration.IsTestMode ? "Test Mode" : "Live Mode")</li>
+                                        <li><strong>Publishable Key:</strong> <code>@Model.CurrentConfiguration.GetMaskedPublishableKey()</code></li>
+                                        <li><strong>Secret Key:</strong> <code>@Model.CurrentConfiguration.GetMaskedSecretKey()</code></li>
+                                        <li><strong>Webhook Secret:</strong> <code>@Model.CurrentConfiguration.GetMaskedWebhookSecret()</code></li>
+                                        <li><strong>Last Updated:</strong> @Model.CurrentConfiguration.LastUpdated.ToLocalTime().ToString("MMMM dd, yyyy hh:mm tt") by @Model.CurrentConfiguration.UpdatedBy</li>
+                                    </ul>
+                                </div>
+                            }
+
+                            <form method="post">
+                                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                                <!-- Mode Selection -->
+                                <div class="mb-4">
+                                    <label class="form-label"><strong>Stripe Mode</strong></label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" asp-for="IsTestMode" value="true" id="testMode" checked>
+                                        <label class="form-check-label" for="testMode">
+                                            <strong>Test Mode</strong> - Use for development and testing
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" asp-for="IsTestMode" value="false" id="liveMode">
+                                        <label class="form-check-label" for="liveMode">
+                                            <strong>Live Mode</strong> - Use for production (real payments)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Publishable Key -->
+                                <div class="mb-3">
+                                    <label asp-for="PublishableKey" class="form-label">
+                                        <strong>Publishable Key</strong>
+                                        <i class="bi bi-info-circle" data-bs-toggle="tooltip" 
+                                           title="Used in frontend, starts with pk_test_ or pk_live_"></i>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-eye"></i></span>
+                                        <input asp-for="PublishableKey" class="form-control font-monospace" 
+                                               placeholder="pk_test_..." />
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Leave blank to keep existing key. Get from: 
+                                        <a href="https://dashboard.stripe.com/apikeys" target="_blank">Stripe Dashboard</a>
+                                    </small>
+                                    <span asp-validation-for="PublishableKey" class="text-danger"></span>
+                                </div>
+
+                                <!-- Secret Key -->
+                                <div class="mb-3">
+                                    <label asp-for="SecretKey" class="form-label">
+                                        <strong>Secret Key</strong>
+                                        <i class="bi bi-shield-lock-fill text-danger" data-bs-toggle="tooltip" 
+                                           title="NEVER share this key! Starts with sk_test_ or sk_live_"></i>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                        <input asp-for="SecretKey" type="password" class="form-control font-monospace" 
+                                               placeholder="sk_test_..." id="secretKeyInput" />
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('secretKeyInput', this)">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">Leave blank to keep existing key</small>
+                                    <span asp-validation-for="SecretKey" class="text-danger"></span>
+                                </div>
+
+                                <!-- Webhook Secret -->
+                                <div class="mb-3">
+                                    <label asp-for="WebhookSecret" class="form-label">
+                                        <strong>Webhook Secret</strong>
+                                        <i class="bi bi-info-circle" data-bs-toggle="tooltip" 
+                                           title="Used to verify webhook signatures, starts with whsec_"></i>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-broadcast"></i></span>
+                                        <input asp-for="WebhookSecret" type="password" class="form-control font-monospace" 
+                                               placeholder="whsec_..." id="webhookSecretInput" />
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('webhookSecretInput', this)">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">Leave blank to keep existing secret</small>
+                                    <span asp-validation-for="WebhookSecret" class="text-danger"></span>
+                                </div>
+
+                                <hr>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                    @if (Model.CurrentConfiguration != null)
+                                    {
+                                        <button type="submit" class="btn btn-danger" asp-page-handler="Delete" 
+                                                onclick="return confirm('Are you sure you want to delete all Stripe API keys? This cannot be undone!')">
+                                            <i class="bi bi-trash"></i> Delete Keys
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <div></div>
+                                    }
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-save"></i> Save API Keys
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-link-45deg"></i> Quick Links</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <a href="https://dashboard.stripe.com/apikeys" target="_blank" class="btn btn-outline-primary w-100">
+                                        <i class="bi bi-box-arrow-up-right"></i> Stripe API Keys
+                                    </a>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <a href="https://dashboard.stripe.com/webhooks" target="_blank" class="btn btn-outline-primary w-100">
+                                        <i class="bi bi-box-arrow-up-right"></i> Stripe Webhooks
+                                    </a>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <a href="https://stripe.com/docs/keys" target="_blank" class="btn btn-outline-secondary w-100">
+                                        <i class="bi bi-book"></i> API Keys Docs
+                                    </a>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <a href="https://stripe.com/docs/webhooks" target="_blank" class="btn btn-outline-secondary w-100">
+                                        <i class="bi bi-book"></i> Webhooks Docs
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Security Features -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="bi bi-shield-check"></i> Security Features</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success"></i> <strong>AES-256 Encryption</strong>
+                                    <br><small class="text-muted">Keys encrypted at rest</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success"></i> <strong>Environment Variable</strong>
+                                    <br><small class="text-muted">Encryption key separate</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success"></i> <strong>Audit Logging</strong>
+                                    <br><small class="text-muted">All changes tracked</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success"></i> <strong>Role-Based Access</strong>
+                                    <br><small class="text-muted">Admin only</small>
+                                </li>
+                                <li>
+                                    <i class="bi bi-check-circle text-success"></i> <strong>Key Validation</strong>
+                                    <br><small class="text-muted">Format checked</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Audit Trail -->
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h6>
+                        </div>
+                        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                            @if (Model.RecentAudits.Any())
+                            {
+                                <div class="list-group list-group-flush">
+                                    @foreach (var audit in Model.RecentAudits)
+                                    {
+                                        <div class="list-group-item px-0">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">
+                                                    @if (audit.Action == "Created")
+                                                    {
+                                                        <i class="bi bi-plus-circle text-success"></i>
+                                                    }
+                                                    else if (audit.Action == "Updated")
+                                                    {
+                                                        <i class="bi bi-pencil text-primary"></i>
+                                                    }
+                                                    else if (audit.Action == "Deleted")
+                                                    {
+                                                        <i class="bi bi-trash text-danger"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-eye text-info"></i>
+                                                    }
+                                                    @audit.Action
+                                                </h6>
+                                                <small>@audit.Timestamp.ToLocalTime().ToString("MMM dd, hh:mm tt")</small>
+                                            </div>
+                                            <p class="mb-1"><small>@audit.UserEmail</small></p>
+                                            @if (!string.IsNullOrEmpty(audit.Changes))
+                                            {
+                                                <small class="text-muted">@audit.Changes</small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">No activity yet</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Toggle password visibility
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+
+        // Auto-update mode labels based on selection
+        document.querySelectorAll('input[name="IsTestMode"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const isTest = this.value === 'true';
+                const modeText = isTest ? 'Test Mode' : 'Live Mode';
+            });
+        });
+    </script>
+}
+

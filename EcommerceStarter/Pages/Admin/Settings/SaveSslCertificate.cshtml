@@ -1,0 +1,376 @@
+@page
+@model SaveSslCertificateModel
+@{
+    ViewData["Title"] = "Save SSL Certificate";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-lock"></i> Save SSL Certificate
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Cloudflare Origin Certificate Setup</strong>
+                        <p class="mb-0 mt-2">Paste your Cloudflare Origin Certificate and Private Key below. They will be encrypted and stored securely in the database.</p>
+                    </div>
+
+                    <form method="post">
+                        <div class="mb-3">
+                            <label asp-for="DomainName" class="form-label">Domain Name</label>
+                            <input asp-for="DomainName" class="form-control" placeholder="yourdomain.com" />
+                            <span asp-validation-for="DomainName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Certificate" class="form-label">
+                                SSL Certificate (PEM Format)
+                            </label>
+                            <textarea asp-for="Certificate" class="form-control font-monospace" rows="12" 
+                                placeholder="-----BEGIN CERTIFICATE-----
+MIIDYTCCAkmgAwIBAgIUEt+...
+...
+-----END CERTIFICATE-----"></textarea>
+                            <span asp-validation-for="Certificate" class="text-danger"></span>
+                            <small class="text-muted">
+                                Copy from Cloudflare: SSL/TLS ? Origin Server ? Create Certificate ? Origin Certificate
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PrivateKey" class="form-label">
+                                Private Key (PEM Format)
+                            </label>
+                            <textarea asp-for="PrivateKey" class="form-control font-monospace" rows="12" 
+                                placeholder="-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFA...
+...
+-----END PRIVATE KEY-----"></textarea>
+                            <span asp-validation-for="PrivateKey" class="text-danger"></span>
+                            <small class="text-muted">
+                                Copy from Cloudflare: SSL/TLS ? Origin Server ? Create Certificate ? Private Key
+                            </small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Issuer" class="form-label">Issuer</label>
+                                <input asp-for="Issuer" class="form-control" value="Cloudflare" />
+                                <span asp-validation-for="Issuer" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ExpirationDate" class="form-label">Expiration Date (Optional)</label>
+                                <input asp-for="ExpirationDate" type="date" class="form-control" />
+                                <span asp-validation-for="ExpirationDate" class="text-danger"></span>
+                                <small class="text-muted">Cloudflare Origin Certificates are valid for 15 years</small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Security Notice:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Certificate and private key will be encrypted using AES-256</li>
+                                <li>Only use this form over HTTPS connection</li>
+                                <li>This page is accessible to Admin users only</li>
+                                <li>All actions are logged in the audit trail</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-shield-lock"></i> Save Certificate (Encrypted)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (Model.ExistingCertificate != null)
+            {
+                <div class="card shadow mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history"></i> Current Certificate
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Domain:</strong> @Model.ExistingCertificate.DomainName</p>
+                                <p><strong>Issuer:</strong> @Model.ExistingCertificate.Issuer</p>
+                                <p><strong>Created:</strong> @Model.ExistingCertificate.CreatedDate.ToLocalTime().ToString("g")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Last Updated:</strong> @Model.ExistingCertificate.LastUpdated.ToLocalTime().ToString("g")</p>
+                                <p><strong>Updated By:</strong> @(Model.ExistingCertificate.UpdatedBy ?? "Unknown")</p>
+                                @if (Model.ExistingCertificate.ExpirationDate.HasValue)
+                                {
+                                    var daysUntilExpiry = (Model.ExistingCertificate.ExpirationDate.Value - DateTime.UtcNow).Days;
+                                    var statusClass = daysUntilExpiry < 30 ? "text-danger" : daysUntilExpiry < 90 ? "text-warning" : "text-success";
+                                    <p>
+                                        <strong>Expires:</strong> 
+                                        <span class="@statusClass">
+                                            @Model.ExistingCertificate.ExpirationDate.Value.ToLocalTime().ToString("d")
+                                            (@daysUntilExpiry days remaining)
+                                        </span>
+                                    </p>
+                                }
+                            </div>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <h6 class="mb-3">
+                            <i class="bi bi-download"></i> Download Certificate Files
+                        </h6>
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Security Warning:</strong> Keep private key secure! Do not share or commit to version control.
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <form method="get" asp-page-handler="DownloadCertificate">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-file-earmark-text"></i> Certificate Only
+                                    </button>
+                                </form>
+                                <small class="text-muted d-block mt-2">Public certificate (.pem)</small>
+                            </div>
+                            <div class="col-md-4">
+                                <form method="get" asp-page-handler="DownloadPrivateKey" onsubmit="return confirm('?? WARNING: You are about to download the PRIVATE KEY. Keep this file secure and NEVER share it!');">
+                                    <button type="submit" class="btn btn-danger w-100">
+                                        <i class="bi bi-key-fill"></i> Private Key
+                                    </button>
+                                </form>
+                                <small class="text-muted d-block mt-2">Private key (.pem) - Keep secure!</small>
+                            </div>
+                            <div class="col-md-4">
+                                <form method="get" asp-page-handler="DownloadBoth" onsubmit="return confirm('?? WARNING: This downloads both certificate AND private key. Keep this file extremely secure!');">
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bi bi-file-earmark-zip"></i> Full Bundle
+                                    </button>
+                                </form>
+                                <small class="text-muted d-block mt-2">Combined file (cert + key)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deployment Instructions Card -->
+                <div class="card shadow mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-book"></i> Next Steps: Deploying Your Certificate
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Your Cloudflare SSL Configuration:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>? Cloudflare SSL/TLS Mode: <strong>Strict</strong> (Full or Full Strict)</li>
+                                <li>? Origin Certificate stored securely (encrypted)</li>
+                                <li>?? Next: Configure your server to use this certificate</li>
+                            </ul>
+                        </div>
+
+                        <!-- Tab Navigation -->
+                        <ul class="nav nav-tabs" id="deploymentTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="iis-tab" data-bs-toggle="tab" data-bs-target="#iis" type="button" role="tab">
+                                    <i class="bi bi-windows"></i> Windows / IIS
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="kestrel-tab" data-bs-toggle="tab" data-bs-target="#kestrel" type="button" role="tab">
+                                    <i class="bi bi-server"></i> Kestrel
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="nginx-tab" data-bs-toggle="tab" data-bs-target="#nginx" type="button" role="tab">
+                                    <i class="bi bi-globe"></i> Nginx
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content border border-top-0 p-4" id="deploymentTabsContent">
+                            <!-- IIS Tab -->
+                            <div class="tab-pane fade show active" id="iis" role="tabpanel">
+                                <h6><i class="bi bi-1-circle"></i> Download Certificate Files</h6>
+                                <pre class="bg-light p-3 rounded"><code># Click the download buttons above:
+1. Download "Full Bundle" or download Certificate + Private Key separately
+2. Save files to C:\Certificates\ on your server</code></pre>
+
+                                <h6 class="mt-4"><i class="bi bi-2-circle"></i> Create PFX File (Required for IIS)</h6>
+                                <pre class="bg-light p-3 rounded"><code># On your Windows server, open PowerShell as Administrator:
+
+# If you downloaded the bundle:
+openssl pkcs12 -export -out C:\Certificates\certificate.pfx -in C:\Certificates\ssl-bundle.pem -passout pass:YourStrongPassword
+
+# If you downloaded separately:
+openssl pkcs12 -export -out C:\Certificates\certificate.pfx -inkey C:\Certificates\private-key.pem -in C:\Certificates\certificate.pem -passout pass:YourStrongPassword
+
+# Note: Replace "YourStrongPassword" with a secure password!</code></pre>
+
+                                <h6 class="mt-4"><i class="bi bi-3-circle"></i> Import Certificate to IIS</h6>
+                                <pre class="bg-light p-3 rounded"><code># PowerShell:
+$pwd = ConvertTo-SecureString -String "YourStrongPassword" -Force -AsPlainText
+Import-PfxCertificate -FilePath "C:\Certificates\certificate.pfx" -CertStoreLocation Cert:\LocalMachine\My -Password $pwd</code></pre>
+
+                                <h6 class="mt-4"><i class="bi bi-4-circle"></i> Bind Certificate in IIS Manager</h6>
+                                <ol>
+                                    <li>Open IIS Manager</li>
+                                    <li>Select your website in the left panel</li>
+                                    <li>Click <strong>"Bindings..."</strong> on the right</li>
+                                    <li>Add or Edit the HTTPS binding (port 443)</li>
+                                    <li>Select your imported certificate from the dropdown</li>
+                                    <li>Click <strong>OK</strong></li>
+                                </ol>
+
+                                <div class="alert alert-success mt-3">
+                                    <i class="bi bi-check-circle"></i>
+                                    <strong>Done!</strong> Your site should now use the Cloudflare Origin Certificate.
+                                </div>
+                            </div>
+
+                            <!-- Kestrel Tab -->
+                            <div class="tab-pane fade" id="kestrel" role="tabpanel">
+                                <h6><i class="bi bi-1-circle"></i> Download & Prepare Certificate</h6>
+                                <pre class="bg-light p-3 rounded"><code># Download certificate files and save to your server
+mkdir /etc/ssl/cloudflare
+# Copy downloaded files to /etc/ssl/cloudflare/</code></pre>
+
+                                <h6 class="mt-4"><i class="bi bi-2-circle"></i> Create PFX (if needed)</h6>
+                                <pre class="bg-light p-3 rounded"><code># If using PFX format:
+openssl pkcs12 -export -out /etc/ssl/cloudflare/certificate.pfx -inkey private-key.pem -in certificate.pem -passout pass:YourStrongPassword</code></pre>
+
+                                <h6 class="mt-4"><i class="bi bi-3-circle"></i> Update appsettings.Production.json</h6>
+                                <pre class="bg-light p-3 rounded"><code>{
+  "Kestrel": {
+    "Endpoints": {
+      "Http": {
+        "Url": "http://0.0.0.0:80"
+      },
+      "Https": {
+        "Url": "https://0.0.0.0:443",
+        "Certificate": {
+          "Path": "/etc/ssl/cloudflare/certificate.pfx",
+          "Password": "YourStrongPassword"
+        }
+      }
+    }
+  }
+}</code></pre>
+
+                                <h6 class="mt-4"><i class="bi bi-4-circle"></i> Restart Your Application</h6>
+                                <pre class="bg-light p-3 rounded"><code>sudo systemctl restart your-app-name</code></pre>
+
+                                <div class="alert alert-success mt-3">
+                                    <i class="bi bi-check-circle"></i>
+                                    <strong>Done!</strong> Kestrel will now use your Cloudflare Origin Certificate.
+                                </div>
+                            </div>
+
+                            <!-- Nginx Tab -->
+                            <div class="tab-pane fade" id="nginx" role="tabpanel">
+                                <h6><i class="bi bi-1-circle"></i> Download Certificate Files</h6>
+                                <pre class="bg-light p-3 rounded"><code># Save downloaded files to:
+sudo mkdir -p /etc/ssl/cloudflare
+sudo mv certificate.pem /etc/ssl/cloudflare/
+sudo mv private-key.pem /etc/ssl/cloudflare/
+sudo chmod 600 /etc/ssl/cloudflare/private-key.pem</code></pre>
+
+                                <h6 class="mt-4"><i class="bi bi-2-circle"></i> Update Nginx Configuration</h6>
+                                <pre class="bg-light p-3 rounded"><code>server {
+    listen 443 ssl;
+    server_name @Model.ExistingCertificate.DomainName;
+
+    ssl_certificate /etc/ssl/cloudflare/certificate.pem;
+    ssl_certificate_key /etc/ssl/cloudflare/private-key.pem;
+    
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection keep-alive;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</code></pre>
+
+                                <h6 class="mt-4"><i class="bi bi-3-circle"></i> Test & Reload Nginx</h6>
+                                <pre class="bg-light p-3 rounded"><code>sudo nginx -t
+sudo systemctl reload nginx</code></pre>
+
+                                <div class="alert alert-success mt-3">
+                                    <i class="bi bi-check-circle"></i>
+                                    <strong>Done!</strong> Nginx is now configured with your Cloudflare Origin Certificate.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Verification Steps -->
+                        <div class="alert alert-primary mt-4">
+                            <h6 class="mb-3"><i class="bi bi-check2-circle"></i> Verify Your Setup:</h6>
+                            <ol class="mb-0">
+                                <li>Visit your domain: <strong>https://@Model.ExistingCertificate.DomainName</strong></li>
+                                <li>Check that the connection is secure (padlock icon in browser)</li>
+                                <li>Verify certificate issuer shows "Cloudflare" in browser certificate details</li>
+                                <li>Test SSL configuration: <a href="https://www.ssllabs.com/ssltest/" target="_blank" class="text-white"><strong>SSL Labs Server Test</strong></a></li>
+                            </ol>
+                        </div>
+
+                        <!-- Troubleshooting -->
+                        <div class="alert alert-warning mt-3">
+                            <h6><i class="bi bi-tools"></i> Troubleshooting:</h6>
+                            <ul class="mb-0">
+                                <li><strong>ERR_SSL_PROTOCOL_ERROR:</strong> Check that certificate is properly installed and server is listening on port 443</li>
+                                <li><strong>Certificate not trusted:</strong> Ensure Cloudflare SSL/TLS mode is set to "Full (strict)" not "Flexible"</li>
+                                <li><strong>Connection refused:</strong> Check firewall allows port 443 inbound</li>
+                                <li><strong>Mixed content warnings:</strong> Ensure all resources load via HTTPS</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,652 @@
+@page "{id:int}"
+@model DetailsModel
+@{
+    ViewData["Title"] = "Order Details";
+}
+
+<div class="container-fluid mt-4">
+    @if (Model.Order == null)
+    {
+        <div class="alert alert-danger">
+            <h4>Order Not Found</h4>
+            <p>The order you're looking for doesn't exist.</p>
+            <a asp-page="Index" class="btn btn-primary">Back to Orders</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-receipt"></i> Order #@Model.Order.Id</h1>
+            <div>
+                <a asp-page="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Orders
+                </a>
+            </div>
+        </div>
+
+        @if (Model.SuccessMessage != null)
+        {
+            <div class="alert alert-success alert-dismissible alert-temporary fade show" role="alert">
+                <i class="bi bi-check-circle"></i> @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row">
+            <!-- Order Information -->
+            <div class="col-md-8 mb-4">
+                <!-- Order Status Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Order Information</h5>
+                            @switch (Model.Order.Status)
+                            {
+                                case EcommerceStarter.Models.OrderStatus.Pending:
+                                    <span class="badge bg-warning fs-6">Pending</span>
+                                    break;
+                                case EcommerceStarter.Models.OrderStatus.Processing:
+                                    <span class="badge bg-info fs-6">Processing</span>
+                                    break;
+                                case EcommerceStarter.Models.OrderStatus.Shipped:
+                                    <span class="badge bg-light text-dark fs-6">Shipped</span>
+                                    break;
+                                case EcommerceStarter.Models.OrderStatus.Delivered:
+                                    <span class="badge bg-success fs-6">Delivered</span>
+                                    break;
+                                case EcommerceStarter.Models.OrderStatus.Cancelled:
+                                    <span class="badge bg-danger fs-6">Cancelled</span>
+                                    break;
+                            }
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted small">Order Date</label>
+                                <p class="mb-0"><strong>@Model.Order.OrderDate.ToLocalTime().ToString("MMMM dd, yyyy hh:mm tt")</strong></p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted small">Order ID</label>
+                                <p class="mb-0"><strong>#@Model.Order.Id</strong></p>
+                            </div>
+                        </div>
+
+                        <!-- Update Status Form -->
+                        <div class="card bg-light mt-3">
+                            <div class="card-body">
+                                <h6>Update Order Status <span class="text-danger">*</span></h6>
+                                <form method="post" asp-page-handler="UpdateStatus" class="row g-3">
+                                    <div class="col-md-8">
+                                        <select name="status" class="form-select custom-select-enable" required>
+                                            <option value="" disabled>Select new status...</option>
+                                            @foreach (var status in Enum.GetValues<EcommerceStarter.Models.OrderStatus>())
+                                            {
+                                                <option value="@((int)status)" selected="@(status == Model.Order.Status)">@status</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-check-circle"></i> Update Status
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information Card -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-credit-card"></i> Payment Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted small">Payment Status</label>
+                                <p class="mb-0">
+                                    @switch (Model.Order.PaymentStatus)
+                                    {
+                                        case EcommerceStarter.Models.PaymentStatus.Pending:
+                                            <span class="badge bg-secondary fs-6">
+                                                <i class="bi bi-clock"></i> Pending
+                                            </span>
+                                            break;
+                                        case EcommerceStarter.Models.PaymentStatus.Succeeded:
+                                            <span class="badge bg-success fs-6">
+                                                <i class="bi bi-check-circle-fill"></i> Payment Successful
+                                            </span>
+                                            break;
+                                        case EcommerceStarter.Models.PaymentStatus.Failed:
+                                            <span class="badge bg-danger fs-6">
+                                                <i class="bi bi-x-circle-fill"></i> Payment Failed
+                                            </span>
+                                            break;
+                                        case EcommerceStarter.Models.PaymentStatus.Refunded:
+                                            <span class="badge bg-warning fs-6">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Refunded
+                                            </span>
+                                            break;
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted small">Payment Method</label>
+                                <p class="mb-0">
+                                    <i class="bi bi-stripe"></i> <strong>Stripe</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Order.PaymentIntentId))
+                        {
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label class="text-muted small">Stripe Payment Intent ID</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control font-monospace" value="@Model.Order.PaymentIntentId" readonly id="paymentIntentId">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Use this ID to look up the transaction in your Stripe Dashboard</small>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="d-grid gap-2">
+                                <a href="https://dashboard.stripe.com/test/payments/@Model.Order.PaymentIntentId" 
+                                   target="_blank" 
+                                   class="btn btn-outline-primary">
+                                    <i class="bi bi-box-arrow-up-right"></i> View in Stripe Dashboard
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle"></i> No payment information available for this order.
+                            </div>
+                        }
+
+                        <!-- Update Payment Status Form -->
+                        <div class="card bg-light mt-3">
+                            <div class="card-body">
+                                <h6>Update Payment Status <span class="text-danger">*</span></h6>
+                                <form method="post" asp-page-handler="UpdatePaymentStatus" class="row g-3">
+                                    <div class="col-md-8">
+                                        <select name="paymentStatus" class="form-select custom-select-enable" required>
+                                            <option value="" disabled>Select payment status...</option>
+                                            @foreach (var status in Enum.GetValues<EcommerceStarter.Models.PaymentStatus>())
+                                            {
+                                                <option value="@((int)status)" selected="@(status == Model.Order.PaymentStatus)">@status</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="bi bi-credit-card-fill"></i> Update Payment
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        @* Refund Processing Section *@
+                        @if (!string.IsNullOrEmpty(Model.Order.PaymentIntentId) && Model.Order.PaymentStatus == EcommerceStarter.Models.PaymentStatus.Succeeded)
+                        {
+                            <div class="card bg-light mt-3">
+                                <div class="card-body">
+                                    <h6 class="text-danger"><i class="bi bi-arrow-counterclockwise"></i> Process Refund</h6>
+                                    <form method="post" asp-page-handler="ProcessRefund" id="refundForm">
+                                        <input type="hidden" name="id" value="@Model.Order.Id" />
+                                        
+                                        <!-- Refund Type -->
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Refund Type</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="refundType" id="refundTypeFull" value="full" checked onchange="togglePartialAmount()">
+                                                <label class="form-check-label" for="refundTypeFull">
+                                                    Full Refund ($@Model.Order.TotalAmount.ToString("F2"))
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="refundType" id="refundTypePartial" value="partial" onchange="togglePartialAmount()">
+                                                <label class="form-check-label" for="refundTypePartial">
+                                                    Partial Refund
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- Partial Amount -->
+                                        <div class="mb-3" id="partialAmountDiv" style="display:none;">
+                                            <label class="form-label small text-muted">Refund Amount</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" step="0.01" min="0.01" max="@Model.Order.TotalAmount" 
+                                                       name="refundAmount" id="refundAmount" class="form-control" placeholder="0.00">
+                                            </div>
+                                            <small class="text-muted">Order total: $@Model.Order.TotalAmount.ToString("F2")</small>
+                                        </div>
+
+                                        <!-- Refund Reason -->
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Refund Reason <span class="text-danger">*</span></label>
+                                            <select name="refundReason" class="form-select form-select-sm" required>
+                                                <option value="">Select reason...</option>
+                                                <option value="defective">Defective Product</option>
+                                                <option value="wrong_item">Wrong Item Received</option>
+                                                <option value="customer_request">Customer Request</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Restock Inventory -->
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" name="restockInventory" id="restockInventory" checked>
+                                            <label class="form-check-label small" for="restockInventory">
+                                                Restock inventory items
+                                            </label>
+                                        </div>
+
+                                        <!-- Additional Notes -->
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted">Notes (Optional)</label>
+                                            <textarea name="refundNotes" class="form-control form-control-sm" rows="2" placeholder="Add any additional notes about this refund..."></textarea>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-danger btn-sm w-100" onclick="return confirm('Are you sure you want to process this refund? This action cannot be undone.');">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Process Refund
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                        else if (Model.Order.PaymentStatus == EcommerceStarter.Models.PaymentStatus.Refunded)
+                        {
+                            <div class="alert alert-warning mt-3 mb-0">
+                                <i class="bi bi-check-circle"></i> This order has been refunded.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* Refund History *@
+                @if (Model.Order.RefundHistories != null && Model.Order.RefundHistories.Any())
+                {
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning">
+                            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Refund History</h5>
+                        </div>
+                        <div class="card-body">
+                            @foreach (var refund in Model.Order.RefundHistories.OrderByDescending(r => r.ProcessedDate))
+                            {
+                                <div class="border-start border-warning border-4 ps-3 mb-3 pb-3 @(refund != Model.Order.RefundHistories.OrderByDescending(r => r.ProcessedDate).Last() ? "border-bottom" : "")">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <strong>$@refund.RefundAmount.ToString("F2")</strong>
+                                                <span class="badge bg-secondary ms-2">@(refund.RefundType == "full" ? "Full" : "Partial")</span>
+                                            </h6>
+                                            <p class="mb-1 small text-muted">
+                                                <i class="bi bi-calendar"></i> @refund.ProcessedDate.ToLocalTime().ToString("MMM dd, yyyy hh:mm tt")
+                                            </p>
+                                        </div>
+                                        <span class="badge @(refund.RefundStatus == "succeeded" ? "bg-success" : "bg-danger")">
+                                            @refund.RefundStatus
+                                        </span>
+                                    </div>
+                                    <div class="mt-2 small">
+                                        <p class="mb-1"><strong>Reason:</strong> @GetRefundReasonDisplay(refund.RefundReason)</p>
+                                        @if (!string.IsNullOrEmpty(refund.RefundNotes))
+                                        {
+                                            <p class="mb-1"><strong>Notes:</strong> <em>@refund.RefundNotes</em></p>
+                                        }
+                                        <p class="mb-1"><strong>Processed by:</strong> @refund.ProcessedBy</p>
+                                        <p class="mb-1">
+                                            <strong>Inventory:</strong> 
+                                            @(refund.InventoryRestocked ? 
+                                                "<span class='text-success'><i class='bi bi-check-circle'></i> Restocked</span>" : 
+                                                "<span class='text-muted'>Not restocked</span>")
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(refund.StripeRefundId))
+                                        {
+                                            <p class="mb-0 font-monospace text-muted" style="font-size: 0.75rem;">
+                                                <strong>Stripe ID:</strong> @refund.StripeRefundId
+                                            </p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @functions {
+                        string GetRefundReasonDisplay(string refundReason)
+                        {
+                            return refundReason switch
+                            {
+                                "defective" => "Defective Product",
+                                "wrong_item" => "Wrong Item Received",
+                                "customer_request" => "Customer Request",
+                                "other" => "Other",
+                                _ => refundReason
+                            };
+                        }
+                    }
+                }
+
+                <!-- Order Items -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-box-seam"></i> Order Items</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Order.OrderItems)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    @if (item.Product != null)
+                                                    {
+                                                        <img src="@item.Product.ImageUrl" alt="@item.Product.Name" class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                                        <div>
+                                                            <strong>@item.Product.Name</strong><br>
+                                                            <small class="text-muted">Product ID: @item.ProductId</small>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Product ID: @item.ProductId (Deleted)</span>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td>@item.Quantity</td>
+                                            <td>$@item.UnitPrice.ToString("F2")</td>
+                                            <td><strong>$@item.TotalPrice.ToString("F2")</strong></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                        <td><strong>$@Model.Order.Subtotal.ToString("F2")</strong></td>
+                                    </tr>
+                                    @if (Model.Order.TaxAmount > 0)
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="text-end">
+                                                <strong>Tax (@TaxRates.GetTaxRateFormatted(Model.Order.ShippingState)):</strong>
+                                            </td>
+                                            <td><strong>$@Model.Order.TaxAmount.ToString("F2")</strong></td>
+                                        </tr>
+                                    }
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Shipping:</strong></td>
+                                        <td><strong>FREE</strong></td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <td colspan="3" class="text-end"><h5 class="mb-0">Total:</h5></td>
+                                        <td><h5 class="mb-0">$@Model.Order.TotalAmount.ToString("F2")</h5></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer & Shipping Information -->
+            <div class="col-md-4 mb-4">
+                <!-- Customer Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person"></i> Customer</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Order.IsGuestOrder)
+                        {
+                            <!-- Guest Order -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>@Model.Order.CustomerEmail</strong>
+                                <span class="badge bg-secondary">Guest</span>
+                            </div>
+                            <p class="mb-2">
+                                <i class="bi bi-envelope"></i> @Model.Order.CustomerEmail
+                            </p>
+                            <hr>
+                            <div class="alert alert-info mb-0 small">
+                                <i class="bi bi-info-circle"></i> Guest checkout - no account created
+                            </div>
+                        }
+                        else if (Model.Order.User != null)
+                        {
+                            <!-- Registered User -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>@Model.Order.User.Email</strong>
+                                <span class="badge bg-primary">Registered</span>
+                            </div>
+                            <p class="mb-2">
+                                <i class="bi bi-envelope"></i> @Model.Order.User.Email
+                            </p>
+                            @if (!string.IsNullOrEmpty(Model.Order.User.PhoneNumber))
+                            {
+                                <p class="mb-2">
+                                    <i class="bi bi-telephone"></i> @Model.Order.User.PhoneNumber
+                                </p>
+                            }
+                            <hr>
+                            <a asp-page="/Admin/Customers/Details" asp-route-id="@Model.Order.UserId" class="btn btn-sm btn-outline-info w-100">
+                                <i class="bi bi-person-circle"></i> View Customer Profile
+                            </a>
+                        }
+                        else
+                        {
+                            <!-- Fallback: Show CustomerEmail if User is null but not a guest order -->
+                            <p class="mb-2">
+                                <i class="bi bi-envelope"></i> @Model.Order.CustomerEmail
+                            </p>
+                            <hr>
+                            <div class="alert alert-warning mb-0 small">
+                                <i class="bi bi-exclamation-triangle"></i> Customer account not found
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Shipping Address -->
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Shipping Address</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(Model.Order.ShippingName))
+                        {
+                            <p class="mb-2"><strong>Name:</strong> @Model.Order.ShippingName</p>
+                        }
+                        <address class="mb-0">
+                            <strong>Deliver to:</strong><br>
+                            @Model.Order.ShippingAddress<br>
+                            @Model.Order.ShippingCity, @Model.Order.ShippingState @Model.Order.ShippingZip
+                        </address>
+                    </div>
+                </div>
+
+                <!-- Tracking Number -->
+                <div class="card mt-4" style="overflow: visible; z-index: 10;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-box2"></i> Tracking Information</h5>
+                    </div>
+                    <div class="card-body" style="overflow: visible;">
+                        @if (!string.IsNullOrEmpty(Model.Order.TrackingNumber))
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <p class="mb-1"><strong>Current Tracking Number:</strong></p>
+                                    <p class="mb-0">
+                                        <code class="bg-light p-2 rounded">@Model.Order.TrackingNumber</code>
+                                    </p>
+                                </div>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle-fill"></i> Tracked
+                                </span>
+                            </div>
+                            <hr>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle"></i> No tracking number added yet.
+                            </div>
+                        }
+
+                        <!-- Add/Update Tracking Number Form -->
+                        <form method="post" asp-page-handler="AddTrackingNumber" class="row g-3">
+                            <div class="col-12">
+                                <label for="trackingNumber" class="form-label">Enter Tracking Number</label>
+                                <input type="text" 
+                                       id="trackingNumber" 
+                                       name="trackingNumber" 
+                                       class="form-control" 
+                                       placeholder="e.g., 1Z999AA10123456784"
+                                       value="@Model.Order.TrackingNumber"
+                                       onchange="detectCourierFromTracking(this.value)" />
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle"></i> The customer will receive an email with a tracking link
+                                </small>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="trackingCourier" class="form-label">Courier <span class="text-danger">*</span></label>
+                                <select id="trackingCourier" 
+                                        name="trackingCourier" 
+                                        class="form-select custom-select-enable" 
+                                        required
+                                        style="position: relative; z-index: 100;">
+                                    <option value="0">-- Auto Detect --</option>
+                                    @foreach (var courier in Model.AvailableCouriers)
+                                    {
+                                        <option value="@((int)courier)" selected="@(courier == Model.Order.TrackingCourier)">
+                                            @courier.GetShortName()
+                                        </option>
+                                    }
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle"></i> Automatically detected from tracking number format when possible
+                                </small>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-send"></i> Add Tracking & Notify Customer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function copyToClipboard() {
+            const input = document.getElementById('paymentIntentId');
+            input.select();
+            input.setSelectionRange(0, 99999); // For mobile devices
+            
+            navigator.clipboard.writeText(input.value).then(function() {
+                // Show success feedback
+                const button = event.target.closest('button');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-success');
+                
+                setTimeout(function() {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-secondary');
+                }, 2000);
+            });
+        }
+
+        // Detect courier from tracking number
+        // This calls the server to detect the courier, then updates the dropdown
+        async function detectCourierFromTracking(trackingNumber) {
+            if (!trackingNumber || trackingNumber.trim().length === 0) {
+                return;
+            }
+
+            try {
+                const response = await fetch('?handler=DetectCourier&trackingNumber=' + encodeURIComponent(trackingNumber));
+                
+                if (!response.ok) {
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                // Update the dropdown with the detected courier
+                if (result.courier && result.courier !== 0) {
+                    document.getElementById('trackingCourier').value = result.courier;
+                }
+            } catch (error) {
+            }
+        }
+
+        // Toggle partial refund amount field
+        function togglePartialAmount() {
+            const partialAmountDiv = document.getElementById('partialAmountDiv');
+            const refundTypePartial = document.getElementById('refundTypePartial');
+            const refundAmountInput = document.getElementById('refundAmount');
+            
+            if (refundTypePartial && refundTypePartial.checked) {
+                partialAmountDiv.style.display = 'block';
+                refundAmountInput.required = true;
+            } else {
+                partialAmountDiv.style.display = 'none';
+                refundAmountInput.required = false;
+                refundAmountInput.value = '';
+            }
+        }
+    </script>
+
+    <style>
+        /* Fix dropdown cutoff by allowing overflow on tracking card */
+        .card[style*="overflow: visible"] {
+            overflow: visible !important;
+        }
+
+        .card[style*="overflow: visible"] .card-body {
+            overflow: visible !important;
+        }
+
+        /* Ensure select dropdown can expand beyond container */
+        #trackingCourier {
+            position: relative;
+            z-index: 100;
+        }
+
+        /* Allow dropdown menu to appear outside card bounds */
+        select.form-select {
+            overflow: visible !important;
+        }
+    </style>
+}
+

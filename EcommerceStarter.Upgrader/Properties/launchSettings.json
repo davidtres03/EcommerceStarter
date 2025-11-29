@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EcommerceStarter.Upgrader": {
+      "commandName": "Project",
+      "commandLineArgs": "--sitename \"CapAndCollarSupplyCo\" --installpath \"C:\\inetpub\\wwwroot\\CapAndCollarSupplyCo\" --dbserver \"localhost\\SQLEXPRESS\" --dbname \"CapAndCollarSupplyCo\" --version \"1.2.0.2\""
+    }
+  }
+}

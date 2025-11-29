@@ -1,0 +1,369 @@
+@page
+@model EcommerceStarter.Pages.Admin.AnalyticsModel
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-0">
+                <i class="bi bi-graph-up text-primary"></i> Analytics Dashboard
+            </h1>
+            <p class="text-muted">Visitor analytics and insights</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <form method="get" class="d-inline">
+                <select name="DateRange" class="form-select d-inline-block w-auto" onchange="this.form.submit()">
+                    <option value="today" selected="@(Model.DateRange == "today")">Today</option>
+                    <option value="yesterday" selected="@(Model.DateRange == "yesterday")">Yesterday</option>
+                    <option value="7days" selected="@(Model.DateRange == "7days")">Last 7 Days</option>
+                    <option value="30days" selected="@(Model.DateRange == "30days")">Last 30 Days</option>
+                    <option value="90days" selected="@(Model.DateRange == "90days")">Last 90 Days</option>
+                    <option value="year" selected="@(Model.DateRange == "year")">Last Year</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Key Metrics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Sessions</h6>
+                            <h2 class="mb-0">@Model.Summary.TotalSessions.ToString("N0")</h2>
+                        </div>
+                        <div class="text-primary" style="font-size: 2.5rem;">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Page Views</h6>
+                            <h2 class="mb-0">@Model.Summary.TotalPageViews.ToString("N0")</h2>
+                        </div>
+                        <div class="text-info" style="font-size: 2.5rem;">
+                            <i class="bi bi-file-earmark-text-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Unique Visitors</h6>
+                            <h2 class="mb-0">@Model.Summary.UniqueVisitors.ToString("N0")</h2>
+                        </div>
+                        <div class="text-success" style="font-size: 2.5rem;">
+                            <i class="bi bi-person-check-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Conversion Rate</h6>
+                            <h2 class="mb-0">@Model.Summary.ConversionRate.ToString("F1")%</h2>
+                        </div>
+                        <div class="text-warning" style="font-size: 2.5rem;">
+                            <i class="bi bi-cart-check-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Metrics -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Avg. Session Duration</h6>
+                    <h4>@TimeSpan.FromSeconds(Model.Summary.AverageSessionDuration).ToString(@"mm\:ss")</h4>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Avg. Pages/Session</h6>
+                    <h4>@Model.Summary.AveragePagesPerSession.ToString("F1")</h4>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Bounce Rate</h6>
+                    <h4>@Model.Summary.BounceRate%</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Top Pages -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary">
+                    <h5 class="mb-0"><i class="bi bi-star-fill"></i> Top Pages</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.TopPages.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Page</th>
+                                        <th class="text-end">Views</th>
+                                        <th class="text-end">Unique</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var pageItem in Model.TopPages)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <small class="text-muted">@pageItem.Url</small><br />
+                                                @(pageItem.PageTitle ?? "Untitled")
+                                            </td>
+                                            <td class="text-end">@pageItem.Views</td>
+                                            <td class="text-end">@pageItem.UniqueVisitors</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-4">No data available</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Referrers -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-success">
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Top Referrers</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.TopReferrers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Source</th>
+                                        <th class="text-end">Sessions</th>
+                                        <th class="text-end">Conversions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var referrer in Model.TopReferrers)
+                                    {
+                                        <tr>
+                                            <td>@referrer.Referrer</td>
+                                            <td class="text-end">@referrer.Sessions</td>
+                                            <td class="text-end">@referrer.Conversions</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-4">No referrer data available</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Device Breakdown -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-info">
+                    <h5 class="mb-0"><i class="bi bi-phone-fill"></i> Device Type</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.DeviceBreakdown.Any())
+                    {
+                        @foreach (var device in Model.DeviceBreakdown.OrderByDescending(d => d.Value))
+                        {
+                            var percentage = Model.Summary.TotalSessions > 0 
+                                ? (device.Value * 100.0 / Model.Summary.TotalSessions) 
+                                : 0;
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>@device.Key</span>
+                                    <span>@device.Value (@percentage.ToString("F1")%)</span>
+                                </div>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: @percentage%" 
+                                         aria-valuenow="@percentage" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-4">No device data available</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Browser Breakdown -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="bi bi-browser-chrome"></i> Browser</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.BrowserBreakdown.Any())
+                    {
+                        @foreach (var browser in Model.BrowserBreakdown.OrderByDescending(b => b.Value).Take(5))
+                        {
+                            var percentage = Model.Summary.TotalSessions > 0 
+                                ? (browser.Value * 100.0 / Model.Summary.TotalSessions) 
+                                : 0;
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>@browser.Key</span>
+                                    <span>@browser.Value (@percentage.ToString("F1")%)</span>
+                                </div>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                         style="width: @percentage%" 
+                                         aria-valuenow="@percentage" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-4">No browser data available</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Events -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentEvents.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 140px;">Time</th>
+                                        <th style="width: 120px;">Category</th>
+                                        <th>Action</th>
+                                        <th>Label</th>
+                                        <th class="text-end" style="width: 100px;">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var evt in Model.RecentEvents)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-clock me-1"></i>@evt.Timestamp.ToLocalTime().ToString("MM/dd HH:mm:ss")
+                                                </small>
+                                            </td>
+                                            <td>
+                                                @{
+                                                    var categoryBadge = evt.Category?.ToLower() switch
+                                                    {
+                                                        "product" => "bg-info",
+                                                        "cart" => "bg-success",
+                                                        "checkout" => "bg-warning",
+                                                        "order" => "bg-primary",
+                                                        "navigation" => "bg-secondary",
+                                                        _ => "bg-dark"
+                                                    };
+                                                }
+                                                <span class="badge @categoryBadge">@evt.Category</span>
+                                            </td>
+                                            <td><strong>@evt.Action</strong></td>
+                                            <td class="text-truncate" style="max-width: 300px;" title="@evt.Label">
+                                                @evt.Label
+                                            </td>
+                                            <td class="text-end">
+                                                @if (evt.Value.HasValue)
+                                                {
+                                                    <span class="badge bg-success">@evt.Value.Value.ToString("C")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox display-4 text-muted"></i>
+                            <p class="text-muted mt-3">No recent activity recorded</p>
+                            <small class="text-muted">Events will appear here as users interact with your site</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

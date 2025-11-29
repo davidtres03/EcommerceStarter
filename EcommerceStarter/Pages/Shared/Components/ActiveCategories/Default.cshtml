@@ -1,0 +1,9 @@
+@model List<EcommerceStarter.Models.Category>
+
+@if (Model.Any())
+{
+    @foreach (var category in Model)
+    {
+        <li><a asp-page="/Products/Index" asp-route-category="@category.Name"><i class="@category.IconClass me-1"></i>@category.Name</a></li>
+    }
+}

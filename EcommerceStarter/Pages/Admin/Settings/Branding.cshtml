@@ -1,0 +1,1941 @@
+@page
+@model EcommerceStarter.Pages.Admin.Settings.BrandingModel
+@{
+    ViewData["Title"] = "Branding & Theme Settings";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-0">
+                        <i class="bi bi-palette me-2"></i>Branding & Theme Settings
+                    </h1>
+                    <p class="text-muted">Customize your store's appearance and identity</p>
+                </div>
+                <div>
+                    <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form method="post" enctype="multipart/form-data" id="brandingForm">
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-4" id="brandingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="identity-tab" data-bs-toggle="tab" data-bs-target="#identity-panel" type="button" role="tab">
+                    <i class="bi bi-building"></i> Site Identity
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="hero-tab" data-bs-toggle="tab" data-bs-target="#hero-panel" type="button" role="tab">
+                    <i class="bi bi-star-fill"></i> Hero Section
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="colors-tab" data-bs-toggle="tab" data-bs-target="#colors-panel" type="button" role="tab">
+                    <i class="bi bi-palette-fill"></i> Colors & Fonts
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="business-tab" data-bs-toggle="tab" data-bs-target="#business-panel" type="button" role="tab">
+                    <i class="bi bi-briefcase"></i> Business Info
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email-panel" type="button" role="tab">
+                    <i class="bi bi-envelope"></i> Email Settings
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="regional-tab" data-bs-toggle="tab" data-bs-target="#regional-panel" type="button" role="tab">
+                    <i class="bi bi-globe"></i> Regional Settings
+                </button>
+            </li>
+        </ul>
+
+        <div class="row">
+            <!-- Tab Content Column -->
+            <div class="col-md-8">
+                <div class="tab-content" id="brandingTabContent">
+                    <!-- Site Identity Tab -->
+                    <div class="tab-pane fade show active" id="identity-panel" role="tabpanel" aria-labelledby="identity-tab">
+                        <!-- Site Identity -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-building me-2"></i>Site Identity
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.SiteName" class="form-label"></label>
+                                        <input asp-for="Settings.SiteName" class="form-control" onchange="updatePreview()" />
+                                        <span asp-validation-for="Settings.SiteName" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.CompanyName" class="form-label"></label>
+                                        <input asp-for="Settings.CompanyName" class="form-control" />
+                                        <span asp-validation-for="Settings.CompanyName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Settings.SiteTagline" class="form-label"></label>
+                                    <input asp-for="Settings.SiteTagline" class="form-control" onchange="updatePreview()" />
+                                    <span asp-validation-for="Settings.SiteTagline" class="text-danger"></span>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.LogoUrl" class="form-label"></label>
+                                        <input asp-for="Settings.LogoUrl" class="form-control mb-2" placeholder="/images/logo.png" readonly />
+                                        <div class="position-relative">
+                                            <input type="file" id="logoFile" class="form-control" accept="image/*" onchange="uploadImage('logo', this.files[0])" />
+                                            <span id="logo-upload-spinner" class="spinner-border spinner-border-sm position-absolute" style="right: 10px; top: 8px; display: none;"></span>
+                                        </div>
+                                        <small class="text-muted">JPG, PNG, GIF, or SVG (max 5MB) - Auto-uploads on selection</small>
+                                        @if (Model.Settings.LogoImageId.HasValue || !string.IsNullOrEmpty(Model.Settings.LogoUrl))
+                                        {
+                                            <div class="mt-2" id="logo-preview-container">
+                                                <img src="@(Model.Settings.LogoImageId.HasValue ? $"/images/stored/{Model.Settings.LogoImageId}" : Model.Settings.LogoUrl)" alt="Current Logo" id="logo-preview" style="max-width: 200px; max-height: 100px;" class="border rounded p-2" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="mt-2 d-none" id="logo-preview-container">
+                                                <img src="" alt="Logo Preview" id="logo-preview" style="max-width: 200px; max-height: 100px;" class="border rounded p-2" />
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.FaviconUrl" class="form-label"></label>
+                                        <input asp-for="Settings.FaviconUrl" class="form-control mb-2" placeholder="/favicon.ico" readonly />
+                                        <div class="position-relative">
+                                            <input type="file" id="faviconFile" class="form-control" accept="image/*" onchange="uploadImage('favicon', this.files[0])" />
+                                            <span id="favicon-upload-spinner" class="spinner-border spinner-border-sm position-absolute" style="right: 10px; top: 8px; display: none;"></span>
+                                        </div>
+                                        <small class="text-muted">ICO, PNG, or SVG (max 5MB) - Auto-uploads on selection</small>
+                                        @if (Model.Settings.FaviconImageId.HasValue || !string.IsNullOrEmpty(Model.Settings.FaviconUrl))
+                                        {
+                                            <div class="mt-2" id="favicon-preview-container">
+                                                <img src="@(Model.Settings.FaviconImageId.HasValue ? $"/images/stored/{Model.Settings.FaviconImageId}" : Model.Settings.FaviconUrl)" alt="Current Favicon" id="favicon-preview" style="max-width: 64px; max-height: 64px;" class="border rounded p-2" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="mt-2 d-none" id="favicon-preview-container">
+                                                <img src="" alt="Favicon Preview" id="favicon-preview" style="max-width: 64px; max-height: 64px;" class="border rounded p-2" />
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.HorizontalLogoUrl" class="form-label"></label>
+                                        <input asp-for="Settings.HorizontalLogoUrl" class="form-control mb-2" placeholder="/logo-horizontal.svg" readonly />
+                                        <div class="position-relative">
+                                            <input type="file" id="horizontalLogoFile" class="form-control" accept="image/*" onchange="uploadImage('horizontalLogo', this.files[0])" />
+                                            <span id="horizontalLogo-upload-spinner" class="spinner-border spinner-border-sm position-absolute" style="right: 10px; top: 8px; display: none;"></span>
+                                        </div>
+                                        <small class="text-muted">JPG, PNG, GIF, or SVG (max 5MB) - For header navigation - Auto-uploads on selection</small>
+                                        @if (Model.Settings.HorizontalLogoImageId.HasValue || !string.IsNullOrEmpty(Model.Settings.HorizontalLogoUrl))
+                                        {
+                                            <div class="mt-2" id="horizontalLogo-preview-container">
+                                                <img src="@(Model.Settings.HorizontalLogoImageId.HasValue ? $"/images/stored/{Model.Settings.HorizontalLogoImageId}" : Model.Settings.HorizontalLogoUrl)" alt="Current Horizontal Logo" id="horizontalLogo-preview" style="max-width: 300px; max-height: 80px;" class="border rounded p-2" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="mt-2 d-none" id="horizontalLogo-preview-container">
+                                                <img src="" alt="Horizontal Logo Preview" id="horizontalLogo-preview" style="max-width: 300px; max-height: 80px;" class="border rounded p-2" />
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.HeroImageUrl" class="form-label"></label>
+                                        <input asp-for="Settings.HeroImageUrl" class="form-control mb-2" placeholder="/images/hero-bg.jpg" readonly />
+                                        <div class="position-relative">
+                                            <input type="file" id="heroImageFile" class="form-control" accept="image/*" onchange="uploadImage('heroImage', this.files[0])" />
+                                            <span id="heroImage-upload-spinner" class="spinner-border spinner-border-sm position-absolute" style="right: 10px; top: 8px; display: none;"></span>
+                                        </div>
+                                        <small class="text-muted">JPG, PNG, GIF, or SVG (max 5MB) - Recommended: 1920x600px - Auto-uploads on selection</small>
+                                        @if (Model.Settings.HeroImageId.HasValue || !string.IsNullOrEmpty(Model.Settings.HeroImageUrl))
+                                        {
+                                            <div class="mt-2" id="heroImage-preview-container">
+                                                <img src="@(Model.Settings.HeroImageId.HasValue ? $"/images/stored/{Model.Settings.HeroImageId}" : Model.Settings.HeroImageUrl)" alt="Current Hero Image" id="heroImage-preview" style="max-width: 400px; max-height: 150px; object-fit: cover;" class="border rounded p-2" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="mt-2 d-none" id="heroImage-preview-container">
+                                                <img src="" alt="Hero Image Preview" id="heroImage-preview" style="max-width: 400px; max-height: 150px; object-fit: cover;" class="border rounded p-2" />
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.SiteIcon" class="form-label"></label>
+                                        <input asp-for="Settings.SiteIcon" class="form-control" placeholder="Mushroom" maxlength="10" onchange="updatePreview()" />
+                                        <small class="text-muted">Emoji or text icon (mushroom, teddy bear, laptop, etc.)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hero Section Tab -->
+                    <div class="tab-pane fade" id="hero-panel" role="tabpanel" aria-labelledby="hero-tab">
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Hero Section Customization</strong> - Customize every aspect of your homepage hero. 
+                            Leave fields empty to use default values (Site Name, Site Tagline, etc.).
+                        </div>
+
+                        <!-- Hero Content -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header text-white" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-type me-2"></i>Hero Content
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.HeroTitle" class="form-label"></label>
+                                    <input asp-for="Settings.HeroTitle" class="form-control" placeholder="Leave empty to use Site Name" />
+                                    <small class="text-muted">Main headline displayed in hero section. Falls back to Site Name if empty.</small>
+                                    <span asp-validation-for="Settings.HeroTitle" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Settings.HeroSubtitle" class="form-label"></label>
+                                    <textarea asp-for="Settings.HeroSubtitle" class="form-control" rows="2" placeholder="Leave empty to use Site Tagline"></textarea>
+                                    <small class="text-muted">Supporting text below title. Falls back to Site Tagline if empty.</small>
+                                    <span asp-validation-for="Settings.HeroSubtitle" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Settings.HeroBadgeText" class="form-label"></label>
+                                    <input asp-for="Settings.HeroBadgeText" class="form-control" placeholder="Leave empty to use Company Name" />
+                                    <small class="text-muted">Small badge text above title. Falls back to Company Name if empty.</small>
+                                    <span asp-validation-for="Settings.HeroBadgeText" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Call-to-Action Buttons -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-hand-index-thumb me-2"></i>Call-to-Action Buttons
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.HeroPrimaryButtonText" class="form-label"></label>
+                                        <input asp-for="Settings.HeroPrimaryButtonText" class="form-control" />
+                                        <small class="text-muted">Text for main call-to-action button</small>
+                                        <span asp-validation-for="Settings.HeroPrimaryButtonText" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.HeroPrimaryButtonLink" class="form-label"></label>
+                                        <input asp-for="Settings.HeroPrimaryButtonLink" class="form-control" placeholder="/Products/Index" />
+                                        <small class="text-muted">URL path (e.g., /Products/Index)</small>
+                                        <span asp-validation-for="Settings.HeroPrimaryButtonLink" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.HeroSecondaryButtonText" class="form-label"></label>
+                                        <input asp-for="Settings.HeroSecondaryButtonText" class="form-control" />
+                                        <small class="text-muted">Text for secondary button (optional)</small>
+                                        <span asp-validation-for="Settings.HeroSecondaryButtonText" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.HeroSecondaryButtonLink" class="form-label"></label>
+                                        <input asp-for="Settings.HeroSecondaryButtonLink" class="form-control" placeholder="/About" />
+                                        <small class="text-muted">URL path (e.g., /About)</small>
+                                        <span asp-validation-for="Settings.HeroSecondaryButtonLink" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hero Features (Trust Badges) -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-shield-check me-2"></i>Hero Features (Trust Badges)
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-4">
+                                    <input class="form-check-input" type="checkbox" asp-for="Settings.ShowHeroFeatures" id="showHeroFeatures">
+                                    <label class="form-check-label fw-bold" for="showHeroFeatures">
+                                        Show Hero Features
+                                    </label>
+                                    <small class="d-block text-muted">Toggle to hide/show all feature badges</small>
+                                </div>
+
+                                <div id="heroFeaturesContent">
+                                    <h6 class="fw-bold mb-3">Feature 1</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-8">
+                                            <label asp-for="Settings.HeroFeature1Text" class="form-label"></label>
+                                            <input asp-for="Settings.HeroFeature1Text" class="form-control" />
+                                            <span asp-validation-for="Settings.HeroFeature1Text" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="Settings.HeroFeature1Icon" class="form-label"></label>
+                                            <input asp-for="Settings.HeroFeature1Icon" class="form-control font-monospace" placeholder="bi-truck" />
+                                            <small class="text-muted"><a href="https://icons.getbootstrap.com/" target="_blank">Bootstrap Icons</a></small>
+                                            <span asp-validation-for="Settings.HeroFeature1Icon" class="text-danger"></span>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="fw-bold mb-3">Feature 2</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-8">
+                                            <label asp-for="Settings.HeroFeature2Text" class="form-label"></label>
+                                            <input asp-for="Settings.HeroFeature2Text" class="form-control" />
+                                            <span asp-validation-for="Settings.HeroFeature2Text" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="Settings.HeroFeature2Icon" class="form-label"></label>
+                                            <input asp-for="Settings.HeroFeature2Icon" class="form-control font-monospace" placeholder="bi-shield-check" />
+                                            <small class="text-muted"><a href="https://icons.getbootstrap.com/" target="_blank">Bootstrap Icons</a></small>
+                                            <span asp-validation-for="Settings.HeroFeature2Icon" class="text-danger"></span>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="fw-bold mb-3">Feature 3</h6>
+                                    <div class="row mb-3">
+                                        <div class="col-md-8">
+                                            <label asp-for="Settings.HeroFeature3Text" class="form-label"></label>
+                                            <input asp-for="Settings.HeroFeature3Text" class="form-control" />
+                                            <span asp-validation-for="Settings.HeroFeature3Text" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="Settings.HeroFeature3Icon" class="form-label"></label>
+                                            <input asp-for="Settings.HeroFeature3Icon" class="form-control font-monospace" placeholder="bi-arrow-counterclockwise" />
+                                            <small class="text-muted"><a href="https://icons.getbootstrap.com/" target="_blank">Bootstrap Icons</a></small>
+                                            <span asp-validation-for="Settings.HeroFeature3Icon" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visual Elements -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-eye me-2"></i>Visual Elements
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" asp-for="Settings.ShowScrollIndicator" id="showScrollIndicator">
+                                    <label class="form-check-label fw-bold" for="showScrollIndicator">
+                                        Show Scroll Indicator
+                                    </label>
+                                    <small class="d-block text-muted">Animated down arrow at bottom of hero</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Colors & Fonts Tab -->
+                    <div class="tab-pane fade" id="colors-panel" role="tabpanel" aria-labelledby="colors-tab">
+                        <!-- Color Scheme -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-palette-fill me-2"></i>Color Scheme
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Choose your brand colors. Changes apply instantly in the preview.</p>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label asp-for="Settings.PrimaryColor" class="form-label"></label>
+                                        <div class="input-group">
+                                            <input asp-for="Settings.PrimaryColor" type="color" class="form-control form-control-color" onchange="updatePreview()" />
+                                            <input asp-for="Settings.PrimaryColor" type="text" class="form-control" placeholder="#c77d3a" onchange="updatePreview()" />
+                                        </div>
+                                        <small class="text-muted">Main brand color</small>
+                                        <span asp-validation-for="Settings.PrimaryColor" class="text-danger d-block"></span>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label asp-for="Settings.PrimaryDark" class="form-label"></label>
+                                        <div class="input-group">
+                                            <input asp-for="Settings.PrimaryDark" type="color" class="form-control form-control-color" onchange="updatePreview()" />
+                                            <input asp-for="Settings.PrimaryDark" type="text" class="form-control" placeholder="#a0642e" onchange="updatePreview()" />
+                                        </div>
+                                        <small class="text-muted">Darker shade</small>
+                                        <span asp-validation-for="Settings.PrimaryDark" class="text-danger d-block"></span>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label asp-for="Settings.PrimaryLight" class="form-label"></label>
+                                        <div class="input-group">
+                                            <input asp-for="Settings.PrimaryLight" type="color" class="form-control form-control-color" onchange="updatePreview()" />
+                                            <input asp-for="Settings.PrimaryLight" type="text" class="form-control" placeholder="#d99960" onchange="updatePreview()" />
+                                        </div>
+                                        <small class="text-muted">Lighter shade</small>
+                                        <span asp-validation-for="Settings.PrimaryLight" class="text-danger d-block"></span>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.SecondaryColor" class="form-label"></label>
+                                        <div class="input-group">
+                                            <input asp-for="Settings.SecondaryColor" type="color" class="form-control form-control-color" onchange="updatePreview()" />
+                                            <input asp-for="Settings.SecondaryColor" type="text" class="form-control" placeholder="#8b9a7a" onchange="updatePreview()" />
+                                        </div>
+                                        <small class="text-muted">Accent/secondary color</small>
+                                        <span asp-validation-for="Settings.SecondaryColor" class="text-danger d-block"></span>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.AccentColor" class="form-label"></label>
+                                        <div class="input-group">
+                                            <input asp-for="Settings.AccentColor" type="color" class="form-control form-control-color" onchange="updatePreview()" />
+                                            <input asp-for="Settings.AccentColor" type="text" class="form-control" placeholder="#6b4423" onchange="updatePreview()" />
+                                        </div>
+                                        <small class="text-muted">Additional accent</small>
+                                        <span asp-validation-for="Settings.AccentColor" class="text-danger d-block"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Pre-defined color schemes -->
+                                <div class="alert alert-info">
+                                    <strong><i class="bi bi-lightbulb me-2"></i>Quick Themes:</strong>
+                                    <div class="d-flex flex-wrap gap-2 mt-2 mb-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTheme('mushroom')">
+                                            Mushroom (Default)
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTheme('toys')">
+                                            Playful Toys
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTheme('electronics')">
+                                            Modern Electronics
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTheme('nature')">
+                                            Natural/Organic
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTheme('bakery')">
+                                            Cozy Bakery
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTheme('fashion')">
+                                            Elegant Fashion
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTheme('sports')">
+                                            Active Sports
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyTheme('books')">
+                                            Literary Books
+                                        </button>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2 mt-3">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportTheme()">
+                                            <i class="bi bi-download"></i> Export Current Theme
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importThemeModal">
+                                            <i class="bi bi-upload"></i> Import Theme
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Typography -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-fonts me-2"></i>Typography
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.PrimaryFont" class="form-label"></label>
+                                        <select asp-for="Settings.PrimaryFont" class="form-select" onchange="updatePreview()">
+                                            <option value="Segoe UI, Tahoma, Geneva, Verdana, sans-serif">Segoe UI (Default)</option>
+                                            <option value="Arial, Helvetica, sans-serif">Arial</option>
+                                            <option value="Georgia, serif">Georgia</option>
+                                            <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                                            <option value="'Comic Sans MS', cursive">Comic Sans (Playful)</option>
+                                        </select>
+                                        <small class="text-muted">Body text font</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.HeadingFont" class="form-label"></label>
+                                        <select asp-for="Settings.HeadingFont" class="form-select" onchange="updatePreview()">
+                                            <option value="Segoe UI, Tahoma, Geneva, Verdana, sans-serif">Segoe UI (Default)</option>
+                                            <option value="Arial, Helvetica, sans-serif">Arial</option>
+                                            <option value="Georgia, serif">Georgia</option>
+                                            <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                                            <option value="Impact, Charcoal, sans-serif">Impact (Bold)</option>
+                                        </select>
+                                        <small class="text-muted">Headings font</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Info Tab -->
+                    <div class="tab-pane fade" id="business-panel" role="tabpanel" aria-labelledby="business-tab">
+                        <!-- Business Information -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-briefcase me-2"></i>Business Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.ContactEmail" class="form-label"></label>
+                                        <input asp-for="Settings.ContactEmail" class="form-control" type="email" />
+                                        <span asp-validation-for="Settings.ContactEmail" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.SupportEmail" class="form-label"></label>
+                                        <input asp-for="Settings.SupportEmail" class="form-control" type="email" />
+                                        <span asp-validation-for="Settings.SupportEmail" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Settings.Phone" class="form-label"></label>
+                                    <input asp-for="Settings.Phone" class="form-control" type="tel" />
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Settings.Address" class="form-label"></label>
+                                    <input asp-for="Settings.Address" class="form-control" />
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.City" class="form-label"></label>
+                                        <input asp-for="Settings.City" class="form-control" />
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label asp-for="Settings.State" class="form-label"></label>
+                                        <input asp-for="Settings.State" class="form-control" />
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label asp-for="Settings.PostalCode" class="form-label"></label>
+                                        <input asp-for="Settings.PostalCode" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Tax Configuration - Temporarily Disabled *@
+                    </div> <!-- End business-panel -->
+
+                    <!-- Email Settings Tab -->
+                    <div class="tab-pane fade" id="email-panel" role="tabpanel" aria-labelledby="email-tab">
+                        <!-- Email Configuration -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header text-white" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-envelope me-2"></i>Email Configuration
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Enable/Disable Toggle -->
+                                <div class="form-check form-switch mb-4">
+                                    <input class="form-check-input" type="checkbox" asp-for="Settings.EnableEmailNotifications" id="enableEmails">
+                                    <label class="form-check-label fw-bold" for="enableEmails">
+                                        Enable Email Notifications
+                                    </label>
+                                    <small class="d-block text-muted">Send transactional emails (order confirmations, shipping notifications, etc.)</small>
+                                </div>
+
+                                <!-- Provider Selection -->
+                                <div class="mb-4">
+                                    <label asp-for="Settings.EmailProvider" class="form-label fw-bold">Email Provider</label>
+                                    <select asp-for="Settings.EmailProvider" class="form-select" id="emailProviderSelect" onchange="updateEmailProviderUI()">
+                                        <option value="0">None (Emails Disabled)</option>
+                                        <option value="1">Resend (Recommended - No branding, 100/day free)</option>
+                                        <option value="3">Custom SMTP (Gmail, Outlook, etc.)</option>
+                                    </select>
+                                    <small class="text-muted">Current value: <span id="currentProviderValue">@Model.Settings.EmailProvider</span> (Enum: @((int)Model.Settings.EmailProvider))</small>
+                                </div>
+
+                                <!-- Provider Info Cards -->
+                                <div id="resendInfo" class="alert alert-info" style="display:none;">
+                                    <h6 class="fw-bold"><i class="bi bi-info-circle"></i> Resend Setup</h6>
+                                    <ol class="mb-2">
+                                        <li>Sign up at <a href="https://resend.com" target="_blank" class="alert-link">resend.com</a> (no credit card required)</li>
+                                        <li>Verify your domain (add DNS records in Cloudflare)</li>
+                                        <li>Create API key from dashboard</li>
+                                        <li>Paste key below</li>
+                                    </ol>
+                                    <p class="mb-0"><strong>Free Tier:</strong> 100 emails/day, zero branding, professional appearance <i class="bi bi-check-circle text-success"></i></p>
+                                </div>
+
+                                <div id="smtpInfo" class="alert alert-warning" style="display:none;">
+                                    <h6 class="fw-bold"><i class="bi bi-exclamation-triangle"></i> SMTP Setup</h6>
+                                    <p class="mb-2"><strong>Gmail Users:</strong></p>
+                                    <ol class="mb-2">
+                                        <li>Enable 2-Factor Authentication on your Gmail account</li>
+                                        <li>Go to <a href="https://myaccount.google.com/apppasswords" target="_blank" class="alert-link">App Passwords</a></li>
+                                        <li>Generate password for "Mail"</li>
+                                        <li>Use settings: smtp.gmail.com, port 587, SSL enabled</li>
+                                    </ol>
+                                    <p class="mb-0 small"><strong>Note:</strong> Emails will show "via gmail.com" - not as professional as Resend</p>
+                                </div>
+
+                                <!-- Resend Settings -->
+                                <div id="resendSettings" style="display:none;">
+                                    <!-- Resend uses API key configured under API Configurations > Email -->
+                                </div>
+
+                                <!-- SMTP Settings -->
+                                <div id="smtpSettings" style="display:none;">
+                                    <div class="row">
+                                        <div class="col-md-8 mb-3">
+                                            <label asp-for="Settings.SmtpHost" class="form-label">SMTP Host</label>
+                                            <input asp-for="Settings.SmtpHost" class="form-control" placeholder="smtp.gmail.com">
+                                            <span asp-validation-for="Settings.SmtpHost" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label asp-for="Settings.SmtpPort" class="form-label">Port</label>
+                                            <input asp-for="Settings.SmtpPort" type="number" class="form-control">
+                                            <span asp-validation-for="Settings.SmtpPort" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label asp-for="Settings.SmtpUsername" class="form-label">Username (Email)</label>
+                                        <input asp-for="Settings.SmtpUsername" type="email" class="form-control" placeholder="your-email@gmail.com">
+                                        <span asp-validation-for="Settings.SmtpUsername" class="text-danger"></span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label asp-for="Settings.SmtpPassword" class="form-label">Password (App Password)</label>
+                                        <input asp-for="Settings.SmtpPassword" type="password" class="form-control">
+                                        <span asp-validation-for="Settings.SmtpPassword" class="text-danger"></span>
+                                        <small class="text-muted">Will be encrypted when saved</small>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" asp-for="Settings.SmtpUseSsl" id="smtpSsl">
+                                        <label class="form-check-label" for="smtpSsl">
+                                            Use SSL/TLS (Recommended)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Common Email Settings -->
+                                <hr class="my-4">
+                                <h6 class="fw-bold">Email Appearance</h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.EmailFromName" class="form-label">From Name</label>
+                                        <input asp-for="Settings.EmailFromName" class="form-control">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.EmailFromAddress" class="form-label">From Email</label>
+                                        <input asp-for="Settings.EmailFromAddress" type="email" class="form-control">
+                                        <small class="text-muted">Must match your verified domain</small>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Settings.EmailLogoUrl" class="form-label">Email Logo (optional)</label>
+                                    <input asp-for="Settings.EmailLogoUrl" class="form-control mb-2" placeholder="/images/logo.png" readonly />
+                                    <div class="position-relative">
+                                        <input type="file" id="emailLogoFile" class="form-control" accept="image/*" onchange="uploadImage('emailLogo', this.files[0])" />
+                                        <span id="emailLogo-upload-spinner" class="spinner-border spinner-border-sm position-absolute" style="right: 10px; top: 8px; display: none;"></span>
+                                    </div>
+                                    <small class="text-muted">JPG, PNG, GIF, or SVG (max 5MB) - Auto-uploads on selection. Leave blank to use site logo</small>
+                                    @if (Model.Settings.EmailLogoImageId.HasValue || !string.IsNullOrEmpty(Model.Settings.EmailLogoUrl))
+                                    {
+                                        <div class="mt-2" id="emailLogo-preview-container">
+                                            <img src="@(Model.Settings.EmailLogoImageId.HasValue ? $"/images/stored/{Model.Settings.EmailLogoImageId}" : Model.Settings.EmailLogoUrl)" alt="Current Email Logo" id="emailLogo-preview" style="max-width: 200px; max-height: 100px;" class="border rounded p-2" />
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="mt-2 d-none" id="emailLogo-preview-container">
+                                            <img src="" alt="Email Logo Preview" id="emailLogo-preview" style="max-width: 200px; max-height: 100px;" class="border rounded p-2" />
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.EmailHeaderColor" class="form-label">Header Color</label>
+                                        <input asp-for="Settings.EmailHeaderColor" type="color" class="form-control form-control-color">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="Settings.EmailButtonColor" class="form-label">Button Color</label>
+                                        <input asp-for="Settings.EmailButtonColor" type="color" class="form-control form-control-color">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Settings.EmailFooterText" class="form-label">Footer Text</label>
+                                    <textarea asp-for="Settings.EmailFooterText" class="form-control" rows="2"></textarea>
+                                </div>
+
+                                <!-- Email Type Toggles -->
+                                <hr class="my-4">
+                                <h6 class="fw-bold">Email Types</h6>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" asp-for="Settings.SendOrderConfirmationEmails" id="orderEmails">
+                                    <label class="form-check-label" for="orderEmails">
+                                        Send Order Confirmation Emails
+                                    </label>
+                                </div>
+
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" asp-for="Settings.SendShippingNotificationEmails" id="shippingEmails">
+                                    <label class="form-check-label" for="shippingEmails">
+                                        Send Shipping Notification Emails
+                                    </label>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" asp-for="Settings.SendAdminOrderNotifications" id="adminEmails">
+                                    <label class="form-check-label" for="adminEmails">
+                                        Send Admin Order Notifications
+                                    </label>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Settings.AdminNotificationEmail" class="form-label">Admin Notification Email</label>
+                                    <input asp-for="Settings.AdminNotificationEmail" type="email" class="form-control" placeholder="admin@example.com">
+                                    <small class="text-muted">Where to send new order notifications</small>
+                                </div>
+
+                                <!-- Email Preview Buttons -->
+                                <hr class="my-4">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded mb-3">
+                                    <div>
+                                        <h6 class="mb-1">Preview Email Templates</h6>
+                                        <small class="text-muted">See how your emails will look (no credits used)</small>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="previewEmail('order')">
+                                            <i class="bi bi-envelope me-1"></i> Order
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="previewEmail('shipping')">
+                                            <i class="bi bi-truck me-1"></i> Shipping
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="previewEmail('welcome')">
+                                            <i class="bi bi-hand-thumbs-up me-1"></i> Welcome
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="previewEmail('test')">
+                                            <i class="bi bi-check-circle me-1"></i> Test
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Test Email Button -->
+                                <hr class="my-4">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                    <div>
+                                        <h6 class="mb-1">Send Test Email</h6>
+                                        <small class="text-muted">Send a test email to verify your configuration</small>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" id="testEmailBtn" onclick="sendTestEmail()">
+                                        <i class="bi bi-send"></i> Send Test Email
+                                    </button>
+                                </div>
+                                <div id="testEmailStatus" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Regional Settings Tab -->
+                    <div class="tab-pane fade" id="regional-panel" role="tabpanel" aria-labelledby="regional-tab">
+                        <!-- Timezone Configuration -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-globe me-2"></i>Timezone Configuration
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">
+                                    Configure your store's timezone for accurate date and time display. All dates and times are stored in UTC 
+                                    but will be displayed in your selected timezone throughout the website and admin panel.
+                                </p>
+
+                                <!-- Current Timezone Display -->
+                                <div class="alert alert-info mb-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold mb-1">
+                                                <i class="bi bi-clock me-2"></i>Current Timezone
+                                            </h6>
+                                            <p class="mb-0" id="current-timezone-display">Loading...</p>
+                                        </div>
+                                        <div class="col-md-6 text-md-end">
+                                            <h6 class="fw-bold mb-1">Local Time</h6>
+                                            <p class="mb-0 fs-5" id="current-time-display">--:--:--</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Timezone Selector -->
+                                <div class="mb-3">
+                                    <label for="timezoneSelect" class="form-label fw-bold">
+                                        <i class="bi bi-globe2 me-2"></i>Select Timezone
+                                    </label>
+                                    <select id="timezoneSelect" class="form-select" disabled>
+                                        <option value="">Loading timezones...</option>
+                                    </select>
+                                    <small class="text-muted">Choose the timezone for your business location or primary customer base</small>
+                                </div>
+
+                                <!-- Save Timezone Button -->
+                                <div class="d-flex justify-content-end">
+                                    <button type="button" class="btn btn-primary" id="saveTimezoneBtn" onclick="saveTimezone()" disabled>
+                                        <i class="bi bi-check-lg me-2"></i>Save Timezone
+                                    </button>
+                                </div>
+                                <div id="timezoneStatus" class="mt-3"></div>
+
+                                <!-- Information -->
+                                <hr class="my-4">
+                                <div class="alert alert-light">
+                                    <h6 class="fw-bold"><i class="bi bi-info-circle me-2"></i>How Timezone Conversion Works</h6>
+                                    <ul class="mb-0">
+                                        <li>All dates and times are stored in <strong>UTC (Coordinated Universal Time)</strong> in the database</li>
+                                        <li>When displayed, they are automatically converted to your configured timezone</li>
+                                        <li>This ensures accurate time tracking regardless of where your customers or admins are located</li>
+                                        <li>Changes take effect immediately for all new requests (with a 5-minute cache refresh)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Buttons (outside tabs, always visible) -->
+                <div class="card shadow-sm mt-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="submit" asp-page-handler="ResetToDefaults" class="btn btn-outline-secondary"
+                                    onclick="return confirm('Reset all branding to default mushroom theme?');">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults
+                            </button>
+                            <div>
+                                <span class="text-muted me-3" id="saveStatus"></span>
+                                <button type="submit" class="btn btn-primary btn-lg" id="saveBrandingBtn">
+                                    <i class="bi bi-check-lg"></i> Save Branding Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Column -->
+            <div class="col-md-4">
+                <div class="card shadow-sm sticky-top" style="top: 80px;">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-eye me-2"></i>Live Preview
+                        </h5>
+                        <!-- Collapse button for mobile -->
+                        <button class="btn btn-sm btn-outline-light d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#previewContent" aria-expanded="true" aria-controls="previewContent" id="previewToggleBtn">
+                            <i class="bi bi-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="collapse show" id="previewContent">
+                        <div class="card-body">
+                            <div class="mb-3 text-center py-3 rounded" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                <div class="d-flex justify-content-center align-items-center mb-2">
+                                    <span id="preview-icon" style="font-size: 2.5rem;">@Model.Settings.SiteIcon</span>
+                                </div>
+                                <h4 id="preview-site-name" class="mb-1">@Model.Settings.SiteName</h4>
+                                <p class="text-muted small mb-0" id="preview-tagline">@Model.Settings.SiteTagline</p>
+                            </div>
+                            
+                            <hr />
+                            
+                            <div class="mb-3">
+                                <h6 class="fw-bold">Colors</h6>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <div id="preview-primary" class="color-swatch rounded" title="Primary" style="background: @(Model.Settings.PrimaryColor); width: 100%; height: 40px; border: 2px solid #ddd;"></div>
+                                        <small class="text-muted d-block text-center mt-1">Primary</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div id="preview-primary-dark" class="color-swatch rounded" title="Dark" style="background: @(Model.Settings.PrimaryDark); width: 100%; height: 40px; border: 2px solid #ddd;"></div>
+                                        <small class="text-muted d-block text-center mt-1">Dark</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div id="preview-primary-light" class="color-swatch rounded" title="Light" style="background: @(Model.Settings.PrimaryLight); width: 100%; height: 40px; border: 2px solid #ddd;"></div>
+                                        <small class="text-muted d-block text-center mt-1">Light</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <div id="preview-secondary" class="color-swatch rounded" title="Secondary" style="background: @(Model.Settings.SecondaryColor); width: 100%; height: 40px; border: 2px solid #ddd;"></div>
+                                        <small class="text-muted d-block text-center mt-1">Secondary</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <div id="preview-accent" class="color-swatch rounded" title="Accent" style="background: @(Model.Settings.AccentColor); width: 100%; height: 40px; border: 2px solid #ddd;"></div>
+                                        <small class="text-muted d-block text-center mt-1">Accent</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr />
+
+                            <div class="mb-3">
+                                <h6 class="fw-bold">Buttons</h6>
+                                <button type="button" class="btn mb-2 w-100" id="preview-button-primary">Primary Button</button>
+                                <button type="button" class="btn w-100" id="preview-button-secondary">Secondary Button</button>
+                            </div>
+
+                            <hr />
+
+                            <div>
+                                <h6 class="fw-bold" id="preview-heading">Typography</h6>
+                                <p id="preview-text" class="small mb-0">The quick brown fox jumps over the lazy dog.</p>
+                            </div>
+                            
+                            <hr />
+                            
+                            <div class="text-center">
+                                <a asp-page="/Index" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>Preview Homepage
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <!-- Secure Key Management Script -->
+    <script src="~/js/secure-key-management.js"></script>
+
+    
+    <!-- IMMEDIATE AUTO-SCROLL SCRIPT - Runs before DOMContentLoaded -->
+    <script>
+        // Run this IMMEDIATELY to catch the success message as soon as possible
+        (function() {
+            // Check if there's a success or error alert on the page
+            const checkForAlert = function() {
+                const successAlert = document.querySelector('.alert-success');
+                const errorAlert = document.querySelector('.alert-danger');
+                
+                if (successAlert || errorAlert) {
+                    const alertElement = successAlert || errorAlert;
+                    
+                    // Scroll to top of page where the alert is
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    // Add pulse animation
+                    alertElement.style.animation = 'pulse 0.5s ease-in-out';
+                    setTimeout(() => {
+                        alertElement.style.animation = '';
+                    }, 500);
+                }
+            };
+            
+            // Try immediately
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', checkForAlert);
+            } else {
+                checkForAlert();
+            }
+        })();
+    </script>
+    
+    <!-- Preview Panel Styles -->
+    <style>
+        /* Make preview panel more compact */
+        #previewPanel {
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        /* Better sticky positioning to avoid navbar overlap */
+        .sticky-top {
+            z-index: 100;
+        }
+        
+        /* Smooth transitions for color swatches */
+        .color-swatch {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        
+        /* Allow dropdowns to overflow card boundaries */
+        .card.shadow-sm {
+            overflow: visible !important;
+            z-index: auto !important;
+            isolation: auto !important;
+        }
+        
+        .card-body {
+            overflow: visible !important;
+            z-index: auto !important;
+        }
+        
+        .tab-content {
+            overflow: visible !important;
+            z-index: auto !important;
+        }
+        
+        .tab-pane {
+            overflow: visible !important;
+            z-index: auto !important;
+        }
+        
+        .row {
+            overflow: visible !important;
+            z-index: auto !important;
+        }
+        
+        [class*="col-"] {
+            overflow: visible !important;
+            z-index: auto !important;
+        }
+
+        /* Mobile: Make preview collapsible */
+        @@media (max-width: 767.98px) {
+            .col-md-4 {
+                order: 2;
+                margin-top: 2rem;
+                margin-bottom: 2rem;
+            }
+
+            .col-md-8 {
+                order: 1;
+            }
+            
+            .sticky-top {
+                position: relative !important;
+                top: 0 !important;
+            }
+            
+            /* Collapsible preview with smooth animation */
+            .card {
+                transition: all 0.3s ease;
+            }
+            
+            #previewContent {
+                transition: height 0.3s ease;
+            }
+            
+            /* Smooth chevron rotation */
+            #previewToggleBtn i {
+                transition: transform 0.3s ease;
+            }
+            
+            #previewToggleBtn[aria-expanded="false"] i {
+                transform: rotate(180deg);
+            }
+        }
+
+        /* Desktop: Keep sticky positioning */
+        @@media (min-width: 768px) {
+            .col-md-4 {
+                position: sticky;
+                top: 80px;
+            }
+            
+            /* Hide toggle button on desktop */
+            #previewToggleBtn {
+                display: none !important;
+            }
+        }
+        
+        /* Better button preview styling */
+        #preview-button-primary,
+        #preview-button-secondary {
+            transition: transform 0.2s ease;
+        }
+        
+        #preview-button-primary:hover,
+        #preview-button-secondary:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Pulse animation for success/error alerts */
+        @@keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+    
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="uploadToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i id="toast-icon" class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong class="me-auto" id="toast-title">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toast-message">
+                Image uploaded successfully!
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Upload Script -->
+    <script>
+        // Mobile Preview Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const previewToggleBtn = document.getElementById('previewToggleBtn');
+            const previewContent = document.getElementById('previewContent');
+            
+            if (previewToggleBtn) {
+                previewToggleBtn.addEventListener('click', function() {
+                    // Update aria-expanded attribute (Bootstrap handles the rest)
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                });
+            }
+            
+            // Save preview state to localStorage
+            if (previewContent) {
+                previewContent.addEventListener('hidden.bs.collapse', function() {
+                    localStorage.setItem('brandingPreviewCollapsed', 'true');
+                });
+                
+                previewContent.addEventListener('shown.bs.collapse', function() {
+                    localStorage.setItem('brandingPreviewCollapsed', 'false');
+                });
+                
+                // Restore preview state
+                const wasCollapsed = localStorage.getItem('brandingPreviewCollapsed') === 'true';
+                if (wasCollapsed && window.innerWidth < 768) {
+                    previewContent.classList.remove('show');
+                    if (previewToggleBtn) {
+                        previewToggleBtn.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            }
+        });
+
+        // Upload image via AJAX
+        async function uploadImage(type, file) {
+            if (!file) return;
+
+            const formData = new FormData();
+            const spinner = document.getElementById(`${type}-upload-spinner`);
+            const preview = document.getElementById(`${type}-preview`);
+            const previewContainer = document.getElementById(`${type}-preview-container`);
+            const urlInput = document.querySelector(`input[name="Settings.${type === 'logo' ? 'LogoUrl' : type === 'favicon' ? 'FaviconUrl' : type === 'emailLogo' ? 'EmailLogoUrl' : type === 'horizontalLogo' ? 'HorizontalLogoUrl' : 'HeroImageUrl'}"]`);
+
+            // Map type to parameter name and handler
+            const uploadConfig = {
+                'logo': { param: 'logoFile', handler: 'UploadLogo' },
+                'horizontalLogo': { param: 'horizontalLogoFile', handler: 'UploadHorizontalLogo' },
+                'favicon': { param: 'faviconFile', handler: 'UploadFavicon' },
+                'heroImage': { param: 'heroImageFile', handler: 'UploadHeroImage' },
+                'emailLogo': { param: 'emailLogoFile', handler: 'UploadEmailLogo' }
+            };
+
+            const config = uploadConfig[type];
+            if (!config) return;
+
+            formData.append(config.param, file);
+
+            // Show spinner
+            spinner.style.display = 'inline-block';
+
+            try {
+                const response = await fetch(`?handler=${config.handler}`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+
+                const result = await response.json();
+
+                // Hide spinner
+                spinner.style.display = 'none';
+
+                if (result.success) {
+                    // Update preview image
+                    preview.src = result.url;
+                    previewContainer.classList.remove('d-none');
+                    
+                    // Update hidden URL input
+                    urlInput.value = result.url;
+
+                    // Show success toast
+                    showToast('Success', result.message, 'success');
+
+                    // Clear file input
+                    document.getElementById(`${type}File`).value = '';
+                } else {
+                    // Show error toast
+                    showToast('Error', result.message, 'error');
+                }
+            } catch (error) {
+                // Hide spinner
+                spinner.style.display = 'none';
+                
+                // Show error toast
+                showToast('Error', 'Upload failed. Please try again.', 'error');
+            }
+        }
+
+        // Show toast notification
+        function showToast(title, message, type = 'success') {
+            const toastEl = document.getElementById('uploadToast');
+            const toastTitle = document.getElementById('toast-title');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+
+            // Update icon based on type
+            if (type === 'success') {
+                toastIcon.className = 'bi bi-check-circle-fill text-success me-2';
+            } else if (type === 'error') {
+                toastIcon.className = 'bi bi-exclamation-triangle-fill text-danger me-2';
+            } else if (type === 'warning') {
+                toastIcon.className = 'bi bi-exclamation-circle-fill text-warning me-2';
+            } else {
+                toastIcon.className = 'bi bi-info-circle-fill text-primary me-2';
+            }
+
+            const toast = new bootstrap.Toast(toastEl, {
+                autohide: true,
+                delay: 3000
+            });
+            
+            toast.show();
+        }
+    </script>
+
+    <script>
+        // Export current theme
+        function exportTheme() {
+            const siteName = document.querySelector('input[name="Settings.SiteName"]').value;
+            const siteTagline = document.querySelector('input[name="Settings.SiteTagline"]').value;
+            const siteIcon = document.querySelector('input[name="Settings.SiteIcon"]').value;
+            const primary = document.querySelector('input[name="Settings.PrimaryColor"][type="text"]').value;
+            const primaryDark = document.querySelector('input[name="Settings.PrimaryDark"][type="text"]').value;
+            const primaryLight = document.querySelector('input[name="Settings.PrimaryLight"][type="text"]').value;
+            const secondary = document.querySelector('input[name="Settings.SecondaryColor"][type="text"]').value;
+            const accent = document.querySelector('input[name="Settings.AccentColor"][type="text"]').value;
+            const primaryFont = document.querySelector('select[name="Settings.PrimaryFont"]').value;
+            const headingFont = document.querySelector('select[name="Settings.HeadingFont"]').value;
+
+            const theme = {
+                SiteName: siteName,
+                SiteTagline: siteTagline,
+                SiteIcon: siteIcon,
+                PrimaryColor: primary,
+                PrimaryDark: primaryDark,
+                PrimaryLight: primaryLight,
+                SecondaryColor: secondary,
+                AccentColor: accent,
+                PrimaryFont: primaryFont,
+                HeadingFont: headingFont,
+                ExportedDate: new Date().toISOString(),
+                PlatformVersion: "1.0.0"
+            };
+
+            const json = JSON.stringify(theme, null, 2);
+            
+            // Download as file
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `theme-${siteName.replace(/\s+/g, '-').toLowerCase()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert('Theme exported successfully!');
+        }
+
+        // Import theme from JSON
+        function importTheme() {
+            const json = document.getElementById('themeImportJson').value;
+            
+            try {
+                const theme = JSON.parse(json);
+                
+                // Apply theme values
+                if (theme.SiteName)
+                    document.querySelector('input[name="Settings.SiteName"]').value = theme.SiteName;
+                
+                if (theme.SiteTagline)
+                    document.querySelector('input[name="Settings.SiteTagline"]').value = theme.SiteTagline;
+                
+                if (theme.SiteIcon)
+                    document.querySelector('input[name="Settings.SiteIcon"]').value = theme.SiteIcon;
+                
+                if (theme.PrimaryColor) {
+                    document.querySelector('input[name="Settings.PrimaryColor"][type="color"]').value = theme.PrimaryColor;
+                    document.querySelector('input[name="Settings.PrimaryColor"][type="text"]').value = theme.PrimaryColor;
+                }
+                
+                if (theme.PrimaryDark) {
+                    document.querySelector('input[name="Settings.PrimaryDark"][type="color"]').value = theme.PrimaryDark;
+                    document.querySelector('input[name="Settings.PrimaryDark"][type="text"]').value = theme.PrimaryDark;
+                }
+                
+                if (theme.PrimaryLight) {
+                    document.querySelector('input[name="Settings.PrimaryLight"][type="color"]').value = theme.PrimaryLight;
+                    document.querySelector('input[name="Settings.PrimaryLight"][type="text"]').value = theme.PrimaryLight;
+                }
+                
+                if (theme.SecondaryColor) {
+                    document.querySelector('input[name="Settings.SecondaryColor"][type="color"]').value = theme.SecondaryColor;
+                    document.querySelector('input[name="Settings.SecondaryColor"][type="text"]').value = theme.SecondaryColor;
+                }
+                
+                if (theme.AccentColor) {
+                    document.querySelector('input[name="Settings.AccentColor"][type="color"]').value = theme.AccentColor;
+                    document.querySelector('input[name="Settings.AccentColor"][type="text"]').value = theme.AccentColor;
+                }
+                
+                if (theme.PrimaryFont)
+                    document.querySelector('select[name="Settings.PrimaryFont"]').value = theme.PrimaryFont;
+                
+                if (theme.HeadingFont)
+                    document.querySelector('select[name="Settings.HeadingFont"]').value = theme.HeadingFont;
+
+                updatePreview();
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('importThemeModal'));
+                modal.hide();
+                
+                alert('Theme imported successfully! Click "Save Branding Settings" to apply.');
+            } catch (error) {
+                alert('Invalid theme JSON: ' + error.message);
+            }
+        }
+    </script>
+
+    <script>
+        // Add new theme definitions
+        const themes = {
+            mushroom: {
+                primary: '#c77d3a',
+                primaryDark: '#a0642e',
+                primaryLight: '#d99960',
+                secondary: '#8b9a7a',
+                accent: '#6b4423'
+            },
+            toys: {
+                primary: '#FF6B9D',
+                primaryDark: '#C73866',
+                primaryLight: '#FFB3D9',
+                secondary: '#4ECDC4',
+                accent: '#FFE66D'
+            },
+            electronics: {
+                primary: '#2196F3',
+                primaryDark: '#1976D2',
+                primaryLight: '#64B5F6',
+                secondary: '#607D8B',
+                accent: '#00BCD4'
+            },
+            nature: {
+                primary: '#8BC34A',
+                primaryDark: '#689F38',
+                primaryLight: '#AED581',
+                secondary: '#4CAF50',
+                accent: '#795548'
+            },
+            bakery: {
+                primary: '#D2691E',
+                primaryDark: '#A0522D',
+                primaryLight: '#F4A460',
+                secondary: '#FFE4B5',
+                accent: '#8B4513'
+            },
+            fashion: {
+                primary: '#212121',
+                primaryDark: '#000000',
+                primaryLight: '#424242',
+                secondary: '#FFD700',
+                accent: '#C0C0C0'
+            },
+            sports: {
+                primary: '#D32F2F',
+                primaryDark: '#B71C1C',
+                primaryLight: '#EF5350',
+                secondary: '#1976D2',
+                accent: '#FFC107'
+            },
+            books: {
+                primary: '#8B0000',
+                primaryDark: '#5C0000',
+                primaryLight: '#A52A2A',
+                secondary: '#D2B48C',
+                accent: '#654321'
+            }
+        };
+
+        // Make function globally accessible
+        window.applyTheme = function(themeName) {
+            const theme = themes[themeName];
+            if (!theme) return;
+
+            document.querySelector('input[name="Settings.PrimaryColor"][type="color"]').value = theme.primary;
+            document.querySelector('input[name="Settings.PrimaryColor"][type="text"]').value = theme.primary;
+            
+            document.querySelector('input[name="Settings.PrimaryDark"][type="color"]').value = theme.primaryDark;
+            document.querySelector('input[name="Settings.PrimaryDark"][type="text"]').value = theme.primaryDark;
+            
+            document.querySelector('input[name="Settings.PrimaryLight"][type="color"]').value = theme.primaryLight;
+            document.querySelector('input[name="Settings.PrimaryLight"][type="text"]').value = theme.primaryLight;
+            
+            document.querySelector('input[name="Settings.SecondaryColor"][type="color"]').value = theme.secondary;
+            document.querySelector('input[name="Settings.SecondaryColor"][type="text"]').value = theme.secondary;
+            
+            document.querySelector('input[name="Settings.AccentColor"][type="color"]').value = theme.accent;
+            document.querySelector('input[name="Settings.AccentColor"][type="text"]').value = theme.accent;
+
+            updatePreview();
+        }
+
+        // Make function globally accessible
+        window.updatePreview = function() {
+            // Update site name and icon
+            const siteName = document.querySelector('input[name="Settings.SiteName"]').value;
+            const siteIcon = document.querySelector('input[name="Settings.SiteIcon"]').value;
+            const tagline = document.querySelector('input[name="Settings.SiteTagline"]').value;
+            
+            document.getElementById('preview-site-name').textContent = siteName;
+            document.getElementById('preview-icon').textContent = siteIcon;
+            document.getElementById('preview-tagline').textContent = tagline;
+
+            // Update colors
+            const primary = document.querySelector('input[name="Settings.PrimaryColor"][type="text"]').value;
+            const primaryDark = document.querySelector('input[name="Settings.PrimaryDark"][type="text"]').value;
+            const primaryLight = document.querySelector('input[name="Settings.PrimaryLight"][type="text"]').value;
+            const secondary = document.querySelector('input[name="Settings.SecondaryColor"][type="text"]').value;
+            const accent = document.querySelector('input[name="Settings.AccentColor"][type="text"]').value;
+
+            document.getElementById('preview-primary').style.background = primary;
+            document.getElementById('preview-primary-dark').style.background = primaryDark;
+            document.getElementById('preview-primary-light').style.background = primaryLight;
+            document.getElementById('preview-secondary').style.background = secondary;
+            document.getElementById('preview-accent').style.background = accent;
+
+            // Update button styles
+            const btnPrimary = document.getElementById('preview-button-primary');
+            const btnSecondary = document.getElementById('preview-button-secondary');
+            
+            btnPrimary.style.cssText = `
+                background: linear-gradient(135deg, ${primary} 0%, ${primaryDark} 100%);
+                color: white;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+            `;
+            
+            btnSecondary.style.cssText = `
+                background: linear-gradient(135deg, ${secondary} 0%, ${accent} 100%);
+                color: white;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+            `;
+
+            // Update typography preview
+            const primaryFont = document.querySelector('select[name="Settings.PrimaryFont"]').value;
+            const headingFont = document.querySelector('select[name="Settings.HeadingFont"]').value;
+            
+            document.getElementById('preview-text').style.fontFamily = primaryFont;
+            document.getElementById('preview-heading').style.fontFamily = headingFont;
+        }
+
+        // Sync color picker with text input
+        document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+            const textInput = colorInput.nextElementSibling;
+            
+            if (textInput && textInput.tagName === 'INPUT' && textInput.type === 'text') {
+                // Update text input when color picker changes
+                colorInput.addEventListener('input', function() {
+                    textInput.value = this.value;
+                    updatePreview();
+                });
+                
+                // Update color picker when text input changes
+                textInput.addEventListener('input', function() {
+                    if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+                        colorInput.value = this.value;
+                        updatePreview();
+                    }
+                });
+                
+                // Sync on blur (when user leaves field)
+                textInput.addEventListener('blur', function() {
+                    if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+                        colorInput.value = this.value;
+                        updatePreview();
+                    }
+                });
+            }
+        });
+
+        // Initialize preview on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePreview();
+            
+            // Initialize email provider UI
+            updateEmailProviderUI();
+            
+            // Attach event listener to provider select
+            const providerSelect = document.getElementById('emailProviderSelect');
+            if (providerSelect) {
+                providerSelect.addEventListener('change', updateEmailProviderUI);
+            }
+            
+            // Initialize tax settings UI
+            updateTaxSettingsUI();
+            
+            // Attach event listeners for tax toggle
+            const collectTax = document.getElementById('Settings_CollectSalesTax');
+            if (collectTax) {
+                collectTax.addEventListener('change', updateTaxSettingsUI);
+            }
+            
+            // Attach event listeners for tax preview
+            const taxRateInput = document.querySelector('input[name="Settings.TaxRate"]');
+            const taxNameInput = document.querySelector('input[name="Settings.TaxDisplayName"]');
+            
+            if (taxRateInput) {
+                taxRateInput.addEventListener('input', updateTaxPreview);
+                updateTaxPreview(); // Initial update
+            }
+            
+            if (taxNameInput) {
+                taxNameInput.addEventListener('input', updateTaxPreview);
+            }
+            
+            // Initialize hero features toggle
+            const showHeroFeaturesCheckbox = document.getElementById('showHeroFeatures');
+            const heroFeaturesContent = document.getElementById('heroFeaturesContent');
+            
+            if (showHeroFeaturesCheckbox && heroFeaturesContent) {
+                // Set initial state
+                heroFeaturesContent.style.display = showHeroFeaturesCheckbox.checked ? 'block' : 'none';
+                
+                // Toggle on change
+                showHeroFeaturesCheckbox.addEventListener('change', function() {
+                    heroFeaturesContent.style.display = this.checked ? 'block' : 'none';
+                });
+            }
+            
+            // Run again after a short delay to ensure model binding is complete
+            setTimeout(updateEmailProviderUI, 100);
+            setTimeout(updateTaxSettingsUI, 100);
+
+            // Remember active tab
+            const lastTab = localStorage.getItem('brandingActiveTab');
+            if (lastTab) {
+                const tabBtn = document.querySelector(`button[data-bs-target="${lastTab}"]`);
+                if (tabBtn) {
+                    const tab = new bootstrap.Tab(tabBtn);
+                    tab.show();
+                }
+            }
+            
+            // Save active tab on change
+            document.querySelectorAll('#brandingTabs button[data-bs-toggle="tab"]').forEach(button => {
+                button.addEventListener('shown.bs.tab', function (e) {
+                    localStorage.setItem('brandingActiveTab', e.target.getAttribute('data-bs-target'));
+                });
+            });
+
+            // Form submission handler with loading state
+            const form = document.getElementById('brandingForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const saveBtn = document.getElementById('saveBrandingBtn');
+                    const resetBtn = form.querySelector('[asp-page-handler="ResetToDefaults"]');
+                    
+                    // Check if it's the reset button that was clicked
+                    if (document.activeElement === resetBtn) {
+                        resetBtn.disabled = true;
+                        resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Resetting...';
+                    } else {
+                        saveBtn.disabled = true;
+                        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+                    }
+                    
+                    // Store submission timestamp
+                    sessionStorage.setItem('brandingFormSubmitting', Date.now().toString());
+                });
+            }
+            
+            // Check if we just submitted the form (within last 3 seconds)
+            const submitTime = sessionStorage.getItem('brandingFormSubmitting');
+            if (submitTime) {
+                const timeSinceSubmit = Date.now() - parseInt(submitTime);
+                // Clear the flag
+                sessionStorage.removeItem('brandingFormSubmitting');
+            }
+        });
+
+        // Email Provider UI Management
+        function updateEmailProviderUI() {
+            const providerSelect = document.getElementById('emailProviderSelect');
+            const resendInfo = document.getElementById('resendInfo');
+            const smtpInfo = document.getElementById('smtpInfo');
+            const resendSettings = document.getElementById('resendSettings');
+            const smtpSettings = document.getElementById('smtpSettings');
+
+            if (!providerSelect) {
+                return;
+            }
+
+            const selectedProvider = providerSelect.value;
+            
+            // Hide all first
+            resendInfo.style.display = 'none';
+            smtpInfo.style.display = 'none';
+            resendSettings.style.display = 'none';
+            smtpSettings.style.display = 'none';
+
+            // Show relevant sections based on selection
+            if (selectedProvider === '1') { // Resend
+                resendInfo.style.display = 'block';
+                resendSettings.style.display = 'block';
+            } else if (selectedProvider === '3') { // SMTP
+                smtpInfo.style.display = 'block';
+                smtpSettings.style.display = 'block';
+            }
+        }
+
+        // Tax Configuration UI Management
+        function updateTaxSettingsUI() {
+            const collectTax = document.getElementById('Settings_CollectSalesTax');
+            const taxSettings = document.getElementById('taxSettings');
+            
+            if (collectTax && taxSettings) {
+                taxSettings.style.display = collectTax.checked ? 'block' : 'none';
+            }
+        }
+
+        function updateTaxPreview() {
+            const taxRateInput = document.querySelector('input[name="Settings.TaxRate"]');
+            const taxNameInput = document.querySelector('input[name="Settings.TaxDisplayName"]');
+            
+            if (!taxRateInput) return;
+            
+            const rate = parseFloat(taxRateInput.value) || 0;
+            const subtotal = 100;
+            const taxAmount = (subtotal * rate / 100);
+            const total = subtotal + taxAmount;
+            
+            document.getElementById('taxPreviewRate').textContent = rate.toFixed(2);
+            document.getElementById('taxPreviewAmount').textContent = '$' + taxAmount.toFixed(2);
+            document.getElementById('taxPreviewTotal').textContent = '$' + total.toFixed(2);
+            
+            if (taxNameInput) {
+                const taxName = taxNameInput.value || 'Sales Tax';
+                document.getElementById('taxPreviewLabel').innerHTML = `${taxName} (<span id="taxPreviewRate">${rate.toFixed(2)}</span>%):`;
+            }
+        }
+    </script>
+
+    <!-- Test Email functionality -->
+    <script>
+        async function sendTestEmail() {
+            const btn = document.getElementById('testEmailBtn');
+            const status = document.getElementById('testEmailStatus');
+            const emailRaw = prompt('Enter email address to send test email to:');
+
+            if (!emailRaw) return;
+
+            const email = emailRaw.trim();
+
+            // Use char code for at-sign to avoid Razor parsing
+            const atChar = String.fromCharCode(64);
+            if (email.length === 0 || email.indexOf(atChar) === -1 || email.indexOf('.') === -1) {
+                showTestEmailStatus('? Invalid email address format', 'danger');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+            showTestEmailStatus('Sending test email...', 'info');
+
+            try {
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const headers = { 'Content-Type': 'application/json' };
+                if (tokenInput) headers['RequestVerificationToken'] = tokenInput.value;
+
+                const response = await fetch('?handler=TestEmail', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ email: email })
+                });
+
+                const result = await response.json();
+
+                if (result && result.success) {
+                    showTestEmailStatus('? ' + result.message, 'success');
+                } else {
+                    showTestEmailStatus('? ' + (result?.message || 'Failed to send test email'), 'danger');
+                }
+            } catch (err) {
+                showTestEmailStatus("? Error: " + err.message, "danger");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send"></i> Send Test Email';
+                setTimeout(function() { status.innerHTML = ''; }, 10000);
+            }
+        }
+
+        function showTestEmailStatus(message, type) {
+            const status = document.getElementById('testEmailStatus');
+            const alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>';
+            status.innerHTML = alertHtml;
+        }
+    </script>
+
+    <!-- Import Theme Modal -->
+    <div class="modal fade" id="importThemeModal" tabindex="-1" aria-labelledby="importThemeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importThemeModalLabel">
+                        <i class="bi bi-upload me-2"></i>Import Theme
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="form-label">Paste JSON string</label>
+                        <textarea id="themeImportJson" class="form-control" rows="10" placeholder='{"SiteName":"New Theme","PrimaryColor":"#c77d3a",...}'></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Close
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="importTheme()">
+                        <i class="bi bi-check-circle"></i> Import Theme
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Preview Modal -->
+    <div class="modal fade" id="emailPreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewTitle">Email Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 600px; overflow-y: auto;">
+                    <div id="emailPreviewContent" style="background: #f3f4f6; padding: 20px; border-radius: 8px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="sendPreviewAsTest()">
+                        <i class="bi bi-send me-1"></i> Send This Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/email-preview.js"></script>
+
+    <!-- Timezone Management JavaScript -->
+    <script>
+        let availableTimezones = [];
+        let currentTimezone = null;
+        let timeUpdateInterval = null;
+
+        // Load timezone data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTimezones();
+            startTimeClock();
+        });
+
+        // Load current timezone and available timezones from page handlers
+        async function loadTimezones() {
+            try {
+                // Get current timezone
+                const currentResponse = await fetch('?handler=Timezone');
+                if (currentResponse.ok) {
+                    const current = await currentResponse.json();
+                    currentTimezone = current;
+                    document.getElementById('current-timezone-display').textContent = 
+                        `${current.displayName} (${current.currentUtcOffset})`;
+                    updateLocalTime(current.currentDateTime);
+                }
+
+                // Get available timezones
+                const availableResponse = await fetch('?handler=AvailableTimezones');
+                if (availableResponse.ok) {
+                    availableTimezones = await availableResponse.json();
+                    populateTimezoneDropdown();
+                }
+            } catch (error) {
+                document.getElementById('current-timezone-display').textContent = 'Error loading timezone';
+            }
+        }
+
+        // Populate dropdown with available timezones
+        function populateTimezoneDropdown() {
+            const select = document.getElementById('timezoneSelect');
+            select.innerHTML = '<option value="">-- Select a Timezone --</option>';
+            
+            availableTimezones.forEach(tz => {
+                const option = document.createElement('option');
+                option.value = tz.id;
+                option.textContent = `${tz.displayName}`;
+                if (currentTimezone && tz.id === currentTimezone.timeZoneId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            select.disabled = false;
+            document.getElementById('saveTimezoneBtn').disabled = false;
+        }
+
+        // Start live clock display
+        function startTimeClock() {
+            updateClock();
+            timeUpdateInterval = setInterval(updateClock, 1000);
+        }
+
+        // Update clock display every second
+        function updateClock() {
+            if (currentTimezone) {
+                // Parse the current datetime from API and add elapsed seconds
+                const now = new Date();
+                document.getElementById('current-time-display').textContent = 
+                    now.toLocaleTimeString('en-US', { hour12: true });
+            }
+        }
+
+        // Update local time display
+        function updateLocalTime(isoDateTime) {
+            try {
+                const date = new Date(isoDateTime);
+                document.getElementById('current-time-display').textContent = 
+                    date.toLocaleTimeString('en-US', { hour12: true });
+            } catch (error) {
+            }
+        }
+
+        // Save timezone selection
+        async function saveTimezone() {
+            const select = document.getElementById('timezoneSelect');
+            const selectedTimezoneId = select.value;
+            const statusDiv = document.getElementById('timezoneStatus');
+            const saveBtn = document.getElementById('saveTimezoneBtn');
+
+            if (!selectedTimezoneId) {
+                showTimezoneStatus('Please select a timezone', 'danger');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+            showTimezoneStatus('Saving timezone...', 'info');
+
+            try {
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const headers = { 'Content-Type': 'application/json' };
+                if (tokenInput) headers['RequestVerificationToken'] = tokenInput.value;
+
+                const response = await fetch('?handler=UpdateTimezone', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ timeZoneId: selectedTimezoneId })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showTimezoneStatus('? Timezone saved successfully! Reloading...', 'success');
+                    
+                    // Reload timezone data
+                    setTimeout(async () => {
+                        await loadTimezones();
+                        showTimezoneStatus('? Timezone updated successfully!', 'success');
+                        setTimeout(() => { statusDiv.innerHTML = ''; }, 5000);
+                    }, 1000);
+                } else {
+                    showTimezoneStatus('? ' + (result.message || 'Failed to save timezone'), 'danger');
+                }
+            } catch (error) {
+                showTimezoneStatus('? Error: ' + error.message, 'danger');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Save Timezone';
+            }
+        }
+
+        // Show timezone status message
+        function showTimezoneStatus(message, type) {
+            const statusDiv = document.getElementById('timezoneStatus');
+            statusDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+
+        // Clean up interval on page unload
+        window.addEventListener('beforeunload', function() {
+            if (timeUpdateInterval) {
+                clearInterval(timeUpdateInterval);
+            }
+        });
+    </script>
+}
+
+
+
+

@@ -1,0 +1,121 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build artifacts
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# TeamCity
+_TeamCity*
+
+# DotCover
+*.dotCover
+
+# User-specific files
+*.userprefs
+
+# Mono auto generated files
+mono_crash.*
+
+# Build folders
+publish/
+publish-temp/
+Packages/
+
+# Database files
+*.mdf
+*.ldf
+*.db
+*.db-shm
+*.db-wal
+
+# Migrations bundles (generated)
+migrations/*.exe
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# IDE files
+.idea/
+*.iml
+
+# Configuration files with secrets (use appsettings.json for templates)
+appsettings.Development.json
+appsettings.Production.json
+
+# Connection strings and secrets
+ConnectionStrings.json
+secrets.json
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+
+# Node modules (if using npm/yarn for frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# wwwroot lib (managed by libman or npm)
+wwwroot/lib/
+
+# Entity Framework
+*.edmx.diagram
+*.edmx.sql
+
+# Backup files
+*.bak
+*.backup

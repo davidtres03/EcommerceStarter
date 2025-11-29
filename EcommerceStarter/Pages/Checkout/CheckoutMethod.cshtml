@@ -1,0 +1,215 @@
+@page
+@model CheckoutMethodModel
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-4 text-center">
+                <i class="bi bi-cart-check"></i> Checkout
+            </h1>
+        </div>
+    </div>
+
+    @if (!Model.CartItems.Any())
+    {
+        <div class="alert alert-warning">
+            Your cart is empty. <a asp-page="/Products/Index">Continue shopping</a>
+        </div>
+    }
+    else
+    {
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Privacy Notice -->
+                <div class="alert alert-success border-success mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-shield-check fs-5 me-3 text-success"></i>
+                        <div>
+                            <h6 class="alert-heading mb-1">Privacy-Friendly Checkout Options</h6>
+                            <p class="mb-0 small">
+                                Choose how you'd like to check out. <strong>No account required!</strong> We believe in giving 
+                                you choice—shop as a guest for ultimate privacy, or create an account to track your orders easily.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="mb-4">Choose Your Checkout Method</h4>
+
+                <!-- Guest Checkout Option (Recommended) -->
+                <div class="card mb-3 border-success" style="cursor: pointer;" onclick="window.location='@Url.Page("/Checkout/Index", new { asGuest = true })'">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="checkoutMethod" id="guestCheckout" checked>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-2">
+                                    <i class="bi bi-lightning-charge text-success"></i> Continue as Guest 
+                                    <span class="badge bg-success ms-2">Recommended</span>
+                                </h5>
+                                <p class="mb-2">Fast, simple checkout without creating an account</p>
+                                <ul class="small text-muted mb-0">
+                                    <li><i class="bi bi-check-circle text-success"></i> No password required</li>
+                                    <li><i class="bi bi-check-circle text-success"></i> Maximum privacy - minimal data collection</li>
+                                    <li><i class="bi bi-check-circle text-success"></i> Track your order with email + order number</li>
+                                    <li><i class="bi bi-check-circle text-success"></i> Create account later if you want</li>
+                                </ul>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-success btn-lg" onclick="window.location='@Url.Page("/Checkout/Index", new { asGuest = true })'; event.stopPropagation();">
+                                    Continue as Guest <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <!-- Logged In User - Quick Checkout -->
+                    <div class="card mb-3 border-primary" style="cursor: pointer;" onclick="window.location='@Url.Page("/Checkout/Index")'">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="checkoutMethod" id="loggedInCheckout">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <h5 class="mb-2">
+                                        <i class="bi bi-person-check text-primary"></i> Continue as @User.Identity.Name
+                                    </h5>
+                                    <p class="mb-2">Checkout with your account</p>
+                                    <ul class="small text-muted mb-0">
+                                        <li><i class="bi bi-check-circle text-primary"></i> Email pre-filled from your account</li>
+                                        <li><i class="bi bi-check-circle text-primary"></i> View order in your account dashboard</li>
+                                        <li><i class="bi bi-check-circle text-primary"></i> Easy order tracking and history</li>
+                                    </ul>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-primary btn-lg" onclick="window.location='@Url.Page("/Checkout/Index")'; event.stopPropagation();">
+                                        Continue <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- Login Option -->
+                    <div class="card mb-3 border-info" style="cursor: pointer;" onclick="window.location='@Url.Page("/Account/Login", new { returnUrl = "/Checkout/Index" })'">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="checkoutMethod" id="loginCheckout">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <h5 class="mb-2">
+                                        <i class="bi bi-box-arrow-in-right text-info"></i> Login to Your Account
+                                    </h5>
+                                    <p class="mb-2">Already have an account? Sign in for easier checkout</p>
+                                    <ul class="small text-muted mb-0">
+                                        <li><i class="bi bi-check-circle text-info"></i> Faster checkout with saved email</li>
+                                        <li><i class="bi bi-check-circle text-info"></i> Track all your orders in one place</li>
+                                        <li><i class="bi bi-check-circle text-info"></i> View order history anytime</li>
+                                    </ul>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-info btn-lg" onclick="window.location='@Url.Page("/Account/Login", new { returnUrl = "/Checkout/Index" })'; event.stopPropagation();">
+                                        Sign In <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Create Account Option -->
+                    <div class="card border-secondary">
+                        <div class="card-body text-center">
+                            <h6 class="mb-2">Don't have an account yet?</h6>
+                            <p class="small text-muted mb-3">
+                                Create an account to track your orders easily. You can also create one after your purchase!
+                            </p>
+                            <a asp-page="/Account/Register" asp-route-returnUrl="/Checkout/Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-person-plus"></i> Create Account
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                <div class="mt-4 text-center">
+                    <a asp-page="/Cart/Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Cart
+                    </a>
+                </div>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var item in Model.CartItems)
+                        {
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small">@item.ProductName (x@(item.Quantity))</span>
+                                <strong class="small">$@item.Subtotal.ToString("F2")</strong>
+                            </div>
+                        }
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong>$@Model.Subtotal.ToString("F2")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <strong class="text-success">FREE</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small text-muted">Tax:</span>
+                            <span class="small text-muted">Calculated at checkout</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <h6>Estimated Total:</h6>
+                            <h6 class="text-success"><strong>$@Model.Subtotal.ToString("F2")</strong></h6>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-shield-check text-success"></i> Secure Checkout</h6>
+                        <p class="card-text small text-muted mb-2">
+                            <i class="bi bi-lock-fill text-success"></i> Your information is encrypted
+                        </p>
+                        <p class="card-text small text-muted mb-2">
+                            <i class="bi bi-credit-card text-primary"></i> Secure payment via Stripe
+                        </p>
+                        <p class="card-text small text-muted mb-0">
+                            <i class="bi bi-shield-lock text-info"></i> Minimal data collection
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: box-shadow 0.3s ease;
+    }
+</style>

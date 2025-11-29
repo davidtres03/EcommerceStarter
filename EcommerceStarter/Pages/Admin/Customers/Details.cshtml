@@ -1,0 +1,486 @@
+@page "{id}"
+@model DetailsModel
+@{
+    ViewData["Title"] = "Customer Details";
+}
+
+<div class="container-fluid mt-4">
+    @if (Model.Customer == null)
+    {
+        <div class="alert alert-danger">
+            <h4>Customer Not Found</h4>
+            <p>The customer you're looking for doesn't exist.</p>
+            <a asp-page="Index" class="btn btn-primary">Back to Customers</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-circle"></i> Customer Details</h1>
+            <div>
+                <a asp-page="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Customers
+                </a>
+            </div>
+        </div>
+
+        @if (Model.SuccessMessage != null)
+        {
+            <div class="alert alert-success alert-dismissible alert-temporary fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>@Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        
+        @if (Model.ErrorMessage != null)
+        {
+            <div class="alert alert-danger alert-dismissible alert-temporary fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="row">
+            <!-- Customer Information Card -->
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-badge"></i> Personal Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="text-muted small">Email Address</label>
+                            <p class="mb-0"><strong>@Model.Customer.Email</strong></p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small">Username</label>
+                            <p class="mb-0">@Model.Customer.UserName</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small">Phone Number</label>
+                            <p class="mb-0">@(Model.Customer.PhoneNumber ?? "Not provided")</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small">Email Confirmed</label>
+                            <p class="mb-0">
+                                @if (Model.Customer.EmailConfirmed)
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>Verified
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-exclamation-circle me-1"></i>Not Verified
+                                    </span>
+                                }
+                            </p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small">Member Since</label>
+                            <p class="mb-0">@Model.Customer.CreatedAt.ToLocalTime().ToString("MMMM dd, yyyy")</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small">Account Status</label>
+                            <p class="mb-0">
+                                @if (Model.IsDeactivated)
+                                {
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-lock-fill me-1"></i>Deactivated
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Active
+                                    </span>
+                                }
+                            </p>
+                        </div>
+
+                        <!-- Management Actions -->
+                        <div class="mb-3 pt-3 border-top">
+                            <label class="text-muted small">Management Actions</label>
+                            <div class="btn-group-vertical w-100" role="group">
+                                @if (!Model.Customer.EmailConfirmed)
+                                {
+                                    <form method="post" asp-page-handler="ResendEmailConfirmation" class="mb-2">
+                                        <button type="submit" class="btn btn-sm btn-info w-100" 
+                                                onclick="return confirm('Resend email verification to this user?\n\nThey will receive a new confirmation link valid for 24 hours.');">
+                                            <i class="bi bi-envelope me-2"></i>Resend Email Verification
+                                        </button>
+                                    </form>
+                                }
+                                
+                                @if (Model.IsDeactivated)
+                                {
+                                    <form method="post" asp-page-handler="Activate" class="mb-2">
+                                        <button type="submit" class="btn btn-sm btn-success w-100" 
+                                                onclick="return confirm('Activate this user? They will be able to sign in again.');">
+                                            <i class="bi bi-unlock me-2"></i>Activate Account
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="Deactivate" class="mb-2">
+                                        <button type="submit" class="btn btn-sm btn-warning w-100" 
+                                                onclick="return confirm('Deactivate this user? They will not be able to sign in.');">
+                                            <i class="bi bi-lock me-2"></i>Deactivate Account
+                                        </button>
+                                    </form>
+                                }
+                                
+                                <form method="post" asp-page-handler="Delete">
+                                    <button type="submit" class="btn btn-sm btn-danger w-100" 
+                                            onclick="return confirm('PERMANENT DELETE\n\nAre you absolutely sure? This will:\n- Delete the user account\n- Remove all personal data\n- Delete all associated records\n\nThis CANNOT be undone!');">
+                                        <i class="bi bi-trash me-2"></i>Delete User
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Customer Information Card -->
+                <div class="card mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Edit Customer Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" asp-page-handler="UpdateCustomer">
+                            <input type="hidden" name="id" value="@Model.Customer.Id" />
+                            
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Phone Number</label>
+                                <input type="tel" name="phoneNumber" class="form-control form-control-sm" 
+                                       value="@Model.Customer.PhoneNumber" 
+                                       placeholder="Enter phone number"
+                                       pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+                                       title="Format: 123-456-7890" />
+                                <small class="text-muted">Format: 123-456-7890</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Address</label>
+                                <input type="text" name="address" class="form-control form-control-sm" 
+                                       value="@Model.Customer.Address" 
+                                       placeholder="Enter street address"
+                                       maxlength="200" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted">City</label>
+                                    <input type="text" name="city" class="form-control form-control-sm" 
+                                           value="@Model.Customer.City" 
+                                           placeholder="Enter city"
+                                           maxlength="100" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-muted">State</label>
+                                    <select name="state" class="form-select form-select-sm">
+                                        <option value="">Select state...</option>
+                                        @foreach (var state in new[] { "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", 
+                                                                        "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
+                                                                        "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", 
+                                                                        "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", 
+                                                                        "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY" })
+                                        {
+                                            <option value="@state" selected="@(state == Model.Customer.State)">@state</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Postal Code</label>
+                                <input type="text" name="postalCode" class="form-control form-control-sm" 
+                                       value="@Model.Customer.PostalCode" 
+                                       placeholder="Enter postal code"
+                                       pattern="[0-9]{5}(-[0-9]{4})?"
+                                       title="Format: 12345 or 12345-6789"
+                                       maxlength="10" />
+                                <small class="text-muted">Format: 12345 or 12345-6789</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="bi bi-check-circle"></i> Update Customer
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Order Statistics Card -->
+                <div class="card mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Order Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <h4 class="text-primary mb-0">@Model.TotalOrders</h4>
+                                <small class="text-muted">Total Orders</small>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h4 class="text-success mb-0">$@Model.TotalSpent.ToString("N2")</h4>
+                                <small class="text-muted">Total Spent</small>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-info mb-0">$@Model.AverageOrderValue.ToString("N2")</h4>
+                                <small class="text-muted">Avg Order</small>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-warning mb-0">@Model.TotalItems</h4>
+                                <small class="text-muted">Items</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabbed Content Area -->
+            <div class="col-md-8 mb-4">
+                <ul class="nav nav-tabs" id="customerTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab">
+                            <i class="bi bi-cart"></i> Orders (@Model.TotalOrders)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button" role="tab">
+                            <i class="bi bi-clock-history"></i> Activity Log (@Model.AuditLogs.Count)
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content border border-top-0 rounded-bottom p-3 bg-white" id="customerTabsContent">
+                    <!-- Orders Tab -->
+                    <div class="tab-pane fade show active" id="orders" role="tabpanel">
+                        @if (Model.Customer.Orders.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Date</th>
+                                            <th>Items</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var order in Model.Customer.Orders.OrderByDescending(o => o.OrderDate))
+                                        {
+                                            <tr>
+                                                <td><strong>#@order.Id</strong></td>
+                                                <td>@order.OrderDate.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
+                                                <td>@order.OrderItems.Sum(oi => oi.Quantity)</td>
+                                                <td><strong>$@order.TotalAmount.ToString("F2")</strong></td>
+                                                <td>
+                                                    @switch (order.Status)
+                                                    {
+                                                        case EcommerceStarter.Models.OrderStatus.Pending:
+                                                            <span class="badge bg-warning">Pending</span>
+                                                            break;
+                                                        case EcommerceStarter.Models.OrderStatus.Processing:
+                                                            <span class="badge bg-info">Processing</span>
+                                                            break;
+                                                        case EcommerceStarter.Models.OrderStatus.Shipped:
+                                                            <span class="badge bg-primary">Shipped</span>
+                                                            break;
+                                                        case EcommerceStarter.Models.OrderStatus.Delivered:
+                                                            <span class="badge bg-success">Delivered</span>
+                                                            break;
+                                                        case EcommerceStarter.Models.OrderStatus.Cancelled:
+                                                            <span class="badge bg-danger">Cancelled</span>
+                                                            break;
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <a asp-page="/Admin/Orders/Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> This customer hasn't placed any orders yet.
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Activity Log Tab -->
+                    <div class="tab-pane fade" id="audit" role="tabpanel">
+                        @if (Model.AuditLogs.Any())
+                        {
+                            <!-- Filter Options -->
+                            <div class="mb-3">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <input type="radio" class="btn-check" name="auditFilter" id="filterAll" autocomplete="off" checked onchange="filterAuditLogs('all')">
+                                    <label class="btn btn-outline-secondary" for="filterAll">All (@Model.AuditLogs.Count)</label>
+
+                                    <input type="radio" class="btn-check" name="auditFilter" id="filterAuth" autocomplete="off" onchange="filterAuditLogs('Authentication')">
+                                    <label class="btn btn-outline-primary" for="filterAuth">
+                                        <i class="bi bi-shield-lock"></i> Auth (@Model.AuditLogs.Count(l => l.Category == EcommerceStarter.Models.AuditEventCategory.Authentication))
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="auditFilter" id="filterEmail" autocomplete="off" onchange="filterAuditLogs('Email')">
+                                    <label class="btn btn-outline-info" for="filterEmail">
+                                        <i class="bi bi-envelope"></i> Emails (@Model.AuditLogs.Count(l => l.Category == EcommerceStarter.Models.AuditEventCategory.Email))
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="auditFilter" id="filterAccount" autocomplete="off" onchange="filterAuditLogs('Account')">
+                                    <label class="btn btn-outline-success" for="filterAccount">
+                                        <i class="bi bi-person-gear"></i> Account (@Model.AuditLogs.Count(l => l.Category == EcommerceStarter.Models.AuditEventCategory.Account))
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="auditFilter" id="filterSecurity" autocomplete="off" onchange="filterAuditLogs('Security')">
+                                    <label class="btn btn-outline-warning" for="filterSecurity">
+                                        <i class="bi bi-shield-check"></i> Security (@Model.AuditLogs.Count(l => l.Category == EcommerceStarter.Models.AuditEventCategory.Security))
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="auditFilter" id="filterAdmin" autocomplete="off" onchange="filterAuditLogs('AdminAction')">
+                                    <label class="btn btn-outline-danger" for="filterAdmin">
+                                        <i class="bi bi-person-badge"></i> Admin (@Model.AuditLogs.Count(l => l.Category == EcommerceStarter.Models.AuditEventCategory.AdminAction))
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Activity Timeline -->
+                            <div class="audit-log-timeline" style="max-height: 600px; overflow-y: auto;">
+                                @foreach (var log in Model.AuditLogs)
+                                {
+                                    var categoryClass = log.Category switch
+                                    {
+                                        EcommerceStarter.Models.AuditEventCategory.Authentication => "primary",
+                                        EcommerceStarter.Models.AuditEventCategory.Email => "info",
+                                        EcommerceStarter.Models.AuditEventCategory.Account => "success",
+                                        EcommerceStarter.Models.AuditEventCategory.Security => "warning",
+                                        EcommerceStarter.Models.AuditEventCategory.AdminAction => "danger",
+                                        _ => "secondary"
+                                    };
+
+                                    var icon = log.Category switch
+                                    {
+                                        EcommerceStarter.Models.AuditEventCategory.Authentication => "shield-lock",
+                                        EcommerceStarter.Models.AuditEventCategory.Email => "envelope",
+                                        EcommerceStarter.Models.AuditEventCategory.Account => "person-gear",
+                                        EcommerceStarter.Models.AuditEventCategory.Security => "shield-check",
+                                        EcommerceStarter.Models.AuditEventCategory.AdminAction => "person-badge",
+                                        _ => "circle"
+                                    };
+
+                                    <div class="audit-log-entry mb-3 p-3 border-start border-4 border-@categoryClass bg-light rounded" data-category="@log.Category">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <span class="badge bg-@categoryClass me-2">
+                                                        <i class="bi bi-@icon"></i> @log.Category
+                                                    </span>
+                                                    @if (!log.Success)
+                                                    {
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-x-circle"></i> Failed
+                                                        </span>
+                                                    }
+                                                </div>
+                                                <h6 class="mb-1">@log.Description</h6>
+                                                <p class="text-muted small mb-1">
+                                                    <i class="bi bi-clock"></i> @log.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm:ss tt")
+                                                </p>
+                                                @if (!string.IsNullOrEmpty(log.IpAddress))
+                                                {
+                                                    <p class="text-muted small mb-1">
+                                                        <i class="bi bi-geo-alt"></i> IP: @log.IpAddress
+                                                    </p>
+                                                }
+                                                @if (!string.IsNullOrEmpty(log.Details))
+                                                {
+                                                    <div class="mt-2">
+                                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#details-@log.Id">
+                                                            <i class="bi bi-info-circle"></i> View Details
+                                                        </button>
+                                                        <div class="collapse mt-2" id="details-@log.Id">
+                                                            <div class="card card-body bg-white small">
+                                                                <pre class="mb-0" style="white-space: pre-wrap; word-wrap: break-word;">@log.Details</pre>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                @if (!string.IsNullOrEmpty(log.ErrorMessage))
+                                                {
+                                                    <div class="alert alert-danger mt-2 mb-0 py-1 px-2 small">
+                                                        <i class="bi bi-exclamation-triangle"></i> @log.ErrorMessage
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> No activity logged for this customer in the last 90 days.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function filterAuditLogs(category) {
+            const entries = document.querySelectorAll('.audit-log-entry');
+            
+            entries.forEach(entry => {
+                if (category === 'all' || entry.dataset.category === category) {
+                    entry.style.display = 'block';
+                } else {
+                    entry.style.display = 'none';
+                }
+            });
+        }
+
+        // Auto-dismiss success alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert-temporary');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    </script>
+}

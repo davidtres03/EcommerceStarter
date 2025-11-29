@@ -1,0 +1,817 @@
+@page
+@model EcommerceStarter.Pages.Admin.Settings.SecurityModel
+@{
+    ViewData["Title"] = "Security Settings";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-0">
+                        <i class="bi bi-shield-lock me-2"></i>Security Settings
+                    </h1>
+                    <p class="text-muted">Configure security and intrusion detection settings</p>
+                </div>
+                <div>
+                    <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <a asp-page="/Admin/Security/AuditLog" class="btn btn-outline-primary">
+                        <i class="bi bi-clock-history"></i> View Audit Log
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Filter Policy banner -->
+    <section class="card mb-3">
+        <div class="card-header">
+            <strong>Analytics Filter Policy</strong>
+        </div>
+        <div class="card-body">
+            <p>The system excludes analytics and geolocation for the following:</p>
+            <ul>
+                <li>Localhost IPs: <code>127.0.0.1</code> and <code>::1</code></li>
+                <li>Private network ranges (RFC1918 and IPv6 ULA)</li>
+                <li>Whitelisted IPs and CIDR ranges configured below</li>
+            </ul>
+            <p>Whitelisted IPs fully bypass analytics: no sessions, events, or geolocation.</p>
+            <p class="text-muted">See documentation: <a href="/docs/WHITELIST_BLACKLIST_GUIDE.md" target="_blank">Whitelist/Blacklist Guide</a> and <a href="/docs/QUEUE_TROUBLESHOOTING.md" target="_blank">Queue Troubleshooting</a>.</p>
+            <hr />
+            <div>
+                <strong>Last 24h (summary):</strong>
+                <ul>
+                    <li>Sessions excluded by whitelist: <span id="metric-whitelist-exclusions">@Model.WhitelistExclusionsLast24h</span></li>
+                    <li>Sessions excluded by private/localhost: <span id="metric-private-exclusions">@Model.PrivateExclusionsLast24h</span></li>
+                    <li>Admin page views excluded from analytics: <span id="metric-admin-exclusions">@Model.AdminPageExclusionsLast24h</span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form method="post" id="securityForm">
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-4" id="securityTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="ratelimit-tab" data-bs-toggle="tab" data-bs-target="#ratelimit-panel" type="button" role="tab">
+                    <i class="bi bi-speedometer2"></i> Rate Limiting
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="ipblock-tab" data-bs-toggle="tab" data-bs-target="#ipblock-panel" type="button" role="tab">
+                    <i class="bi bi-ban"></i> IP Blocking
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="autoblacklist-tab" data-bs-toggle="tab" data-bs-target="#autoblacklist-panel" type="button" role="tab">
+                    <i class="bi bi-shield-exclamation"></i> Auto-Blacklist
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="lockout-tab" data-bs-toggle="tab" data-bs-target="#lockout-panel" type="button" role="tab">
+                    <i class="bi bi-lock"></i> Account Lockout
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit-panel" type="button" role="tab">
+                    <i class="bi bi-clock-history"></i> Audit Logging
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-panel" type="button" role="tab">
+                    <i class="bi bi-gear"></i> Advanced
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="securityTabContent">
+            <!-- Rate Limiting Tab -->
+            <div class="tab-pane fade show active" id="ratelimit-panel" role="tabpanel" aria-labelledby="ratelimit-tab">
+                <!-- Rate Limiting Settings -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-speedometer2 me-2"></i>Rate Limiting Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="Settings.EnableRateLimiting" id="enableRateLimiting">
+                            <label class="form-check-label" for="enableRateLimiting">
+                                <strong>Enable Rate Limiting</strong>
+                                <small class="d-block text-muted">Prevent abuse by limiting requests per IP address</small>
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="Settings.ExemptAdminsFromRateLimiting" id="exemptAdmins">
+                            <label class="form-check-label" for="exemptAdmins">
+                                <strong>Exempt Admins from Rate Limiting</strong>
+                                <small class="d-block text-muted">Allow unlimited requests for authenticated admin users</small>
+                            </label>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.MaxRequestsPerMinute" class="form-label">
+                                        Max Requests Per Minute (General)
+                                    </label>
+                                    <input asp-for="Settings.MaxRequestsPerMinute" class="form-control" />
+                                    <small class="text-muted">Default: 60 requests/minute</small>
+                                    <span asp-validation-for="Settings.MaxRequestsPerMinute" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.MaxRequestsPerSecond" class="form-label">
+                                        Max Requests Per Second (General)
+                                    </label>
+                                    <input asp-for="Settings.MaxRequestsPerSecond" class="form-control" />
+                                    <small class="text-muted">Default: 20 requests/second</small>
+                                    <span asp-validation-for="Settings.MaxRequestsPerSecond" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.MaxRequestsPerMinuteAuth" class="form-label">
+                                        Max Requests Per Minute (Auth Endpoints)
+                                    </label>
+                                    <input asp-for="Settings.MaxRequestsPerMinuteAuth" class="form-control" />
+                                    <small class="text-muted">Default: 10 requests/minute for /account/login, /admin</small>
+                                    <span asp-validation-for="Settings.MaxRequestsPerMinuteAuth" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.MaxRequestsPerSecondAuth" class="form-label">
+                                        Max Requests Per Second (Auth Endpoints)
+                                    </label>
+                                    <input asp-for="Settings.MaxRequestsPerSecondAuth" class="form-control" />
+                                    <small class="text-muted">Default: 3 requests/second for /account/login, /admin</small>
+                                    <span asp-validation-for="Settings.MaxRequestsPerSecondAuth" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IP Blocking Tab -->
+            <div class="tab-pane fade" id="ipblock-panel" role="tabpanel" aria-labelledby="ipblock-tab">
+                <!-- IP Blocking Settings -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-ban me-2"></i>IP Blocking Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="Settings.EnableIpBlocking" id="enableIpBlocking">
+                            <label class="form-check-label" for="enableIpBlocking">
+                                <strong>Enable IP Blocking</strong>
+                                <small class="d-block text-muted">Automatically block IPs after excessive failed login attempts</small>
+                            </label>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.MaxFailedLoginAttempts" class="form-label">
+                                        Max Failed Login Attempts
+                                    </label>
+                                    <input asp-for="Settings.MaxFailedLoginAttempts" class="form-control" />
+                                    <small class="text-muted">Default: 5 attempts</small>
+                                    <span asp-validation-for="Settings.MaxFailedLoginAttempts" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.FailedLoginWindowMinutes" class="form-label">
+                                        Time Window (Minutes)
+                                    </label>
+                                    <input asp-for="Settings.FailedLoginWindowMinutes" class="form-control" />
+                                    <small class="text-muted">Default: 15 minutes</small>
+                                    <span asp-validation-for="Settings.FailedLoginWindowMinutes" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.IpBlockDurationMinutes" class="form-label">
+                                        Block Duration (Minutes)
+                                    </label>
+                                    <input asp-for="Settings.IpBlockDurationMinutes" class="form-control" />
+                                    <small class="text-muted">Default: 30 minutes</small>
+                                    <span asp-validation-for="Settings.IpBlockDurationMinutes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auto-Blacklist Tab -->
+            <div class="tab-pane fade" id="autoblacklist-panel" role="tabpanel" aria-labelledby="autoblacklist-tab">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-shield-exclamation me-2"></i>Auto-Blacklist Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="Settings.AutoPermanentBlacklistEnabled" id="autoBlacklistEnabled">
+                            <label class="form-check-label" for="autoBlacklistEnabled">
+                                <strong>Enable Auto-Permanent Blacklist</strong>
+                                <small class="d-block text-muted">Automatically escalate severe offenders to permanent blacklist</small>
+                            </label>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.ErrorSpikeThresholdPerMinute" class="form-label">
+                                        Error Spike Threshold (per minute)
+                                    </label>
+                                    <input asp-for="Settings.ErrorSpikeThresholdPerMinute" class="form-control" />
+                                    <small class="text-muted">Default: 20 errors/min</small>
+                                    <span asp-validation-for="Settings.ErrorSpikeThresholdPerMinute" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.ErrorSpikeConsecutiveMinutes" class="form-label">
+                                        Consecutive Minutes Required
+                                    </label>
+                                    <input asp-for="Settings.ErrorSpikeConsecutiveMinutes" class="form-control" />
+                                    <small class="text-muted">Default: 1 minute</small>
+                                    <span asp-validation-for="Settings.ErrorSpikeConsecutiveMinutes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.ReblockCountThreshold" class="form-label">
+                                        Re-block Count Threshold
+                                    </label>
+                                    <input asp-for="Settings.ReblockCountThreshold" class="form-control" />
+                                    <small class="text-muted">Default: 3 blocks in window</small>
+                                    <span asp-validation-for="Settings.ReblockCountThreshold" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.ReblockWindowHours" class="form-label">
+                                        Re-block Window (hours)
+                                    </label>
+                                    <input asp-for="Settings.ReblockWindowHours" class="form-control" />
+                                    <small class="text-muted">Default: 24 hours</small>
+                                    <span asp-validation-for="Settings.ReblockWindowHours" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.FailedLoginBurstThreshold" class="form-label">
+                                        Failed Login Burst Threshold
+                                    </label>
+                                    <input asp-for="Settings.FailedLoginBurstThreshold" class="form-control" />
+                                    <small class="text-muted">Default: 10 failed logins</small>
+                                    <span asp-validation-for="Settings.FailedLoginBurstThreshold" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.FailedLoginBurstWindowMinutes" class="form-label">
+                                        Failed Login Burst Window (minutes)
+                                    </label>
+                                    <input asp-for="Settings.FailedLoginBurstWindowMinutes" class="form-control" />
+                                    <small class="text-muted">Default: 15 minutes</small>
+                                    <span asp-validation-for="Settings.FailedLoginBurstWindowMinutes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            When enabled, severe offenders will be permanently blacklisted. Otherwise, temporary blocks use the configured duration.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Lockout Tab -->
+            <div class="tab-pane fade" id="lockout-panel" role="tabpanel" aria-labelledby="lockout-tab">
+                <!-- Account Lockout Settings -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-lock me-2"></i>Account Lockout Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="Settings.EnableAccountLockout" id="enableAccountLockout">
+                            <label class="form-check-label" for="enableAccountLockout">
+                                <strong>Enable Account Lockout</strong>
+                                <small class="d-block text-muted">Lock user accounts after failed login attempts</small>
+                            </label>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.AccountLockoutMaxAttempts" class="form-label">
+                                        Max Failed Attempts
+                                    </label>
+                                    <input asp-for="Settings.AccountLockoutMaxAttempts" class="form-control" />
+                                    <small class="text-muted">Default: 5 attempts</small>
+                                    <span asp-validation-for="Settings.AccountLockoutMaxAttempts" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Settings.AccountLockoutDurationMinutes" class="form-label">
+                                        Lockout Duration (Minutes)
+                                    </label>
+                                    <input asp-for="Settings.AccountLockoutDurationMinutes" class="form-control" />
+                                    <small class="text-muted">Default: 15 minutes</small>
+                                    <span asp-validation-for="Settings.AccountLockoutDurationMinutes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Logging Tab -->
+            <div class="tab-pane fade" id="audit-panel" role="tabpanel" aria-labelledby="audit-tab">
+                <!-- Audit Logging Settings -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>Audit Logging Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="Settings.EnableSecurityAuditLogging" id="enableAuditLogging">
+                            <label class="form-check-label" for="enableAuditLogging">
+                                <strong>Enable Security Audit Logging</strong>
+                                <small class="d-block text-muted">Log all security events to database</small>
+                            </label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Settings.AuditLogRetentionDays" class="form-label">
+                                Log Retention Period (Days)
+                            </label>
+                            <input asp-for="Settings.AuditLogRetentionDays" class="form-control" />
+                            <small class="text-muted">Default: 90 days. Logs older than this will be deleted automatically.</small>
+                            <span asp-validation-for="Settings.AuditLogRetentionDays" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Notification Settings -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-envelope-exclamation me-2"></i>Email Notifications
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Stay informed about security events</strong><br/>
+                            <small>Receive email alerts when critical security events occur, such as permanent IP blacklisting or excessive failed login attempts.</small>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="Settings.NotifyOnCriticalEvents" id="notifyOnCritical">
+                            <label class="form-check-label" for="notifyOnCritical">
+                                <strong>Notify on Critical Events</strong>
+                                <small class="d-block text-muted">Permanent IP blacklists, security breaches</small>
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" asp-for="Settings.NotifyOnIpBlocking" id="notifyOnIpBlock">
+                            <label class="form-check-label" for="notifyOnIpBlock">
+                                <strong>Notify on IP Blocking</strong>
+                                <small class="d-block text-muted">Temporary and permanent IP blocks</small>
+                            </label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Settings.NotificationEmail" class="form-label">
+                                <i class="bi bi-envelope"></i> Notification Email Address
+                            </label>
+                            <input asp-for="Settings.NotificationEmail" class="form-control" type="email" placeholder="admin@example.com" />
+                            <small class="text-muted">Security alerts will be sent to this email address.</small>
+                            <span asp-validation-for="Settings.NotificationEmail" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Important:</strong> Ensure email settings are configured in API Configurations > Email tab before enabling notifications.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Settings Tab -->
+            <div class="tab-pane fade" id="advanced-panel" role="tabpanel" aria-labelledby="advanced-tab">
+                <!-- Advanced Settings -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-gear me-2"></i>Advanced Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-check-circle text-success"></i> Whitelisted IP Addresses
+                            </label>
+                            <div class="alert alert-info mb-2">
+                                <strong><i class="bi bi-info-circle me-1"></i>What does whitelisting do?</strong>
+                                <ul class="mb-0 mt-2 small">
+                                    <li><strong>Bypasses ALL security:</strong> No rate limits, IP blocking, or account lockouts</li>
+                                    <li><strong>Excluded from analytics:</strong> Sessions, page views, and events are not tracked</li>
+                                    <li><strong>No geolocation lookups:</strong> Saves API calls and queue space</li>
+                                    <li><strong>Faster responses:</strong> Skips 5-7 security checks per request</li>
+                                </ul>
+                                <small class="text-muted">
+                                    <strong>💡 Tip:</strong> Whitelist your office IP, localhost (127.0.0.1, ::1), and testing environments to keep analytics clean.
+                                    <a href="/docs/WHITELIST_BLACKLIST_GUIDE.md" target="_blank">View complete guide</a>
+                                </small>
+                            </div>
+                            <p class="text-muted small">Supports CIDR notation (e.g., 192.168.1.0/24 for entire subnet)</p>
+                            
+                            <!-- Hidden field to store comma-separated values -->
+                            <input type="hidden" asp-for="Settings.WhitelistedIps" id="whitelistedIpsHidden" />
+                            
+                            <!-- List of whitelist entries -->
+                            <div id="whitelistContainer" class="border rounded p-3 bg-light mb-2" style="max-height: 300px; overflow-y: auto;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0 text-muted">Whitelist Entries</h6>
+                                    <span class="badge bg-secondary" id="whitelistCount">0</span>
+                                </div>
+                                <div id="whitelistItems">
+                                    <!-- Items will be populated by JavaScript -->
+                                </div>
+                                <div class="text-center text-muted py-3" id="whitelistEmpty">
+                                    <i class="bi bi-inbox"></i> No whitelisted IPs yet
+                                </div>
+                            </div>
+                            
+                            <!-- Add new entry -->
+                            <div class="input-group">
+                                <input type="text" id="newWhitelistIp" class="form-control" 
+                                       placeholder="Enter IP address or CIDR (e.g., 192.168.1.100 or 192.168.1.0/24)" />
+                                <button type="button" class="btn btn-success" onclick="addToWhitelist()">
+                                    <i class="bi bi-plus-lg"></i> Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-x-circle text-danger"></i> Blacklisted IP Addresses (Permanent Block)
+                            </label>
+                            <div class="alert alert-danger mb-2">
+                                <strong><i class="bi bi-exclamation-triangle me-1"></i>What does blacklisting do?</strong>
+                                <ul class="mb-0 mt-2 small">
+                                    <li><strong>Permanently blocked:</strong> Cannot access ANY page on your site</li>
+                                    <li><strong>Returns 403 Forbidden:</strong> Blocked at middleware level (very fast)</li>
+                                    <li><strong>Overrides everything:</strong> Even if whitelisted or admin, blacklist wins</li>
+                                    <li><strong>Logged in audit:</strong> All block attempts recorded with timestamp</li>
+                                </ul>
+                                <small class="text-muted">
+                                    <strong>⚠️ Warning:</strong> Use for persistent attackers, scrapers, or known bad actors only.
+                                    <a href="/docs/WHITELIST_BLACKLIST_GUIDE.md" target="_blank">View complete guide</a>
+                                </small>
+                            </div>
+                            <p class="text-muted small">Supports CIDR notation (e.g., 203.0.113.0/24 to block entire subnet)</p>
+                            
+                            <!-- Hidden field to store comma-separated values -->
+                            <input type="hidden" asp-for="Settings.BlacklistedIps" id="blacklistedIpsHidden" />
+                            
+                            <!-- List of blacklist entries -->
+                            <div id="blacklistContainer" class="border rounded p-3 bg-light mb-2" style="max-height: 300px; overflow-y: auto;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0 text-muted">Blacklist Entries</h6>
+                                    <span class="badge bg-danger" id="blacklistCount">0</span>
+                                </div>
+                                <div id="blacklistItems">
+                                    <!-- Items will be populated by JavaScript -->
+                                </div>
+                                <div class="text-center text-muted py-3" id="blacklistEmpty">
+                                    <i class="bi bi-inbox"></i> No blacklisted IPs yet
+                                </div>
+                            </div>
+                            
+                            <!-- Add new entry -->
+                            <div class="input-group">
+                                <input type="text" id="newBlacklistIp" class="form-control" 
+                                       placeholder="Enter IP address or CIDR (e.g., 203.0.113.5 or 203.0.113.0/24)" />
+                                <button type="button" class="btn btn-danger" onclick="addToBlacklist()">
+                                    <i class="bi bi-plus-lg"></i> Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Warning:</strong> Be careful when adding IPs to the blacklist. They will be permanently blocked until manually removed.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-0 text-muted">
+                            <small>
+                                <i class="bi bi-info-circle me-1"></i>
+                                Last modified: @Model.Settings.LastModified.ToLocalTime().ToString("g")
+                                @if (!string.IsNullOrEmpty(Model.Settings.LastModifiedBy))
+                                {
+                                    <text> by @Model.Settings.LastModifiedBy</text>
+                                }
+                            </small>
+                        </p>
+                    </div>
+                    <div>
+                        <button type="submit" asp-page-handler="ResetToDefaults" class="btn btn-outline-secondary me-2"
+                                onclick="return confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.');">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> Save Settings
+                        </button>
+                        <button type="submit" asp-page-handler="PurgeAnalytics" class="btn btn-outline-danger ms-2"
+                                onclick="return confirm('This will permanently delete ALL analytics data (sessions, page views, events). Are you absolutely sure?');">
+                            <i class="bi bi-trash"></i> Purge Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        // Whitelist and Blacklist management
+        let whitelistArray = [];
+        let blacklistArray = [];
+
+        // Initialize lists on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load whitelist from hidden field
+            const whitelistValue = document.getElementById('whitelistedIpsHidden').value;
+            if (whitelistValue) {
+                whitelistArray = whitelistValue.split(',').map(ip => ip.trim()).filter(ip => ip);
+            }
+            renderWhitelist();
+
+            // Load blacklist from hidden field
+            const blacklistValue = document.getElementById('blacklistedIpsHidden').value;
+            if (blacklistValue) {
+                blacklistArray = blacklistValue.split(',').map(ip => ip.trim()).filter(ip => ip);
+            }
+            renderBlacklist();
+        });
+
+        // Add to whitelist
+        function addToWhitelist() {
+            const input = document.getElementById('newWhitelistIp');
+            const ip = input.value.trim();
+            
+            if (!ip) {
+                alert('Please enter an IP address or CIDR notation');
+                return;
+            }
+            
+            if (whitelistArray.includes(ip)) {
+                alert('This IP/CIDR is already in the whitelist');
+                return;
+            }
+            
+            whitelistArray.push(ip);
+            input.value = '';
+            renderWhitelist();
+            updateHiddenField('whitelist');
+        }
+
+        // Remove from whitelist
+        function removeFromWhitelist(index) {
+            if (confirm('Remove this IP from whitelist?')) {
+                whitelistArray.splice(index, 1);
+                renderWhitelist();
+                updateHiddenField('whitelist');
+            }
+        }
+
+        // Add to blacklist
+        function addToBlacklist() {
+            const input = document.getElementById('newBlacklistIp');
+            const ip = input.value.trim();
+            
+            if (!ip) {
+                alert('Please enter an IP address or CIDR notation');
+                return;
+            }
+            
+            if (blacklistArray.includes(ip)) {
+                alert('This IP/CIDR is already in the blacklist');
+                return;
+            }
+            
+            blacklistArray.push(ip);
+            input.value = '';
+            renderBlacklist();
+            updateHiddenField('blacklist');
+        }
+
+        // Remove from blacklist
+        function removeFromBlacklist(index) {
+            if (confirm('Remove this IP from blacklist?')) {
+                blacklistArray.splice(index, 1);
+                renderBlacklist();
+                updateHiddenField('blacklist');
+            }
+        }
+
+        // Render whitelist
+        function renderWhitelist() {
+            const container = document.getElementById('whitelistItems');
+            const emptyMsg = document.getElementById('whitelistEmpty');
+            const count = document.getElementById('whitelistCount');
+            
+            if (whitelistArray.length === 0) {
+                container.innerHTML = '';
+                emptyMsg.style.display = 'block';
+            } else {
+                emptyMsg.style.display = 'none';
+                container.innerHTML = whitelistArray.map((ip, index) => `
+                    <div class="d-flex justify-content-between align-items-center p-2 mb-1 bg-white border rounded">
+                        <div>
+                            <code class="text-success">${escapeHtml(ip)}</code>
+                            ${ip.includes('/') ? '<span class="badge bg-info ms-2">CIDR</span>' : ''}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFromWhitelist(${index})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+            
+            count.textContent = whitelistArray.length;
+        }
+
+        // Render blacklist
+        function renderBlacklist() {
+            const container = document.getElementById('blacklistItems');
+            const emptyMsg = document.getElementById('blacklistEmpty');
+            const count = document.getElementById('blacklistCount');
+            
+            if (blacklistArray.length === 0) {
+                container.innerHTML = '';
+                emptyMsg.style.display = 'block';
+            } else {
+                emptyMsg.style.display = 'none';
+                container.innerHTML = blacklistArray.map((ip, index) => `
+                    <div class="d-flex justify-content-between align-items-center p-2 mb-1 bg-white border rounded">
+                        <div>
+                            <code class="text-danger">${escapeHtml(ip)}</code>
+                            ${ip.includes('/') ? '<span class="badge bg-info ms-2">CIDR</span>' : ''}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFromBlacklist(${index})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+            
+            count.textContent = blacklistArray.length;
+        }
+
+        // Update hidden field
+        function updateHiddenField(type) {
+            if (type === 'whitelist') {
+                document.getElementById('whitelistedIpsHidden').value = whitelistArray.join(', ');
+            } else if (type === 'blacklist') {
+                document.getElementById('blacklistedIpsHidden').value = blacklistArray.join(', ');
+            }
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to add entries
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('newWhitelistIp').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addToWhitelist();
+                }
+            });
+            
+            document.getElementById('newBlacklistIp').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addToBlacklist();
+                }
+            });
+        });
+
+        // Enable/disable fields based on checkboxes
+        document.getElementById('enableRateLimiting').addEventListener('change', function() {
+            const isEnabled = this.checked;
+            // Only disable the numeric rate limit inputs, NOT the admin exemption toggle
+            document.querySelectorAll('input[name="Settings.MaxRequestsPerMinute"], input[name="Settings.MaxRequestsPerSecond"], input[name="Settings.MaxRequestsPerMinuteAuth"], input[name="Settings.MaxRequestsPerSecondAuth"]').forEach(input => {
+                input.disabled = !isEnabled;
+            });
+        });
+
+        document.getElementById('enableIpBlocking').addEventListener('change', function() {
+            const isEnabled = this.checked;
+            document.querySelectorAll('input[name="Settings.MaxFailedLoginAttempts"], input[name="Settings.FailedLoginWindowMinutes"], input[name="Settings.IpBlockDurationMinutes"]').forEach(input => {
+                input.disabled = !isEnabled;
+            });
+        });
+
+        document.getElementById('enableAccountLockout').addEventListener('change', function() {
+            const isEnabled = this.checked;
+            document.querySelectorAll('input[name="Settings.AccountLockoutMaxAttempts"], input[name="Settings.AccountLockoutDurationMinutes"]').forEach(input => {
+                input.disabled = !isEnabled;
+            });
+        });
+
+        // Initialize on page load
+        document.getElementById('enableRateLimiting').dispatchEvent(new Event('change'));
+        document.getElementById('enableIpBlocking').dispatchEvent(new Event('change'));
+        document.getElementById('enableAccountLockout').dispatchEvent(new Event('change'));
+
+        // Remember active tab
+        document.addEventListener('DOMContentLoaded', function() {
+            const lastTab = localStorage.getItem('securityActiveTab');
+            if (lastTab) {
+                const tabBtn = document.querySelector(`button[data-bs-target="${lastTab}"]`);
+                if (tabBtn) {
+                    const tab = new bootstrap.Tab(tabBtn);
+                    tab.show();
+                }
+            }
+            
+            // Save active tab on change
+            document.querySelectorAll('#securityTabs button[data-bs-toggle="tab"]').forEach(button => {
+                button.addEventListener('shown.bs.tab', function (e) {
+                    localStorage.setItem('securityActiveTab', e.target.getAttribute('data-bs-target'));
+                });
+            });
+        });
+    </script>
+}

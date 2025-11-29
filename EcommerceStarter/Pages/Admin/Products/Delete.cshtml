@@ -1,0 +1,67 @@
+@page "{id:int}"
+@model DeleteModel
+@{
+    ViewData["Title"] = "Delete Product";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="mb-4 text-danger">Delete Product</h1>
+            
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <strong>Warning:</strong> Are you sure you want to delete this product? This action cannot be undone.
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h3>@Model.Product.Name</h3>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <img src="@Model.Product.ImageUrl" alt="@Model.Product.Name" class="img-fluid rounded" />
+                        </div>
+                        <div class="col-md-8">
+                            <dl class="row">
+                                <dt class="col-sm-4">Description:</dt>
+                                <dd class="col-sm-8">@Model.Product.Description</dd>
+
+                                <dt class="col-sm-4">Category:</dt>
+                                <dd class="col-sm-8">@Model.Product.Category / @Model.Product.SubCategory</dd>
+
+                                <dt class="col-sm-4">Price:</dt>
+                                <dd class="col-sm-8">$@Model.Product.Price.ToString("F2")</dd>
+
+                                <dt class="col-sm-4">Stock Quantity:</dt>
+                                <dd class="col-sm-8">@Model.Product.StockQuantity</dd>
+
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    @if (Model.Product.IsAvailable)
+                                    {
+                                        <span class="badge bg-success">Available</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Out of Stock</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" class="mt-4">
+                <input type="hidden" asp-for="Product.Id" />
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Product
+                    </button>
+                    <a asp-page="Index" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

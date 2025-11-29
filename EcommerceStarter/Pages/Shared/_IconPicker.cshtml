@@ -1,0 +1,320 @@
+<!-- Bootstrap Icon Picker Modal -->
+<div class="modal fade" id="iconPickerModal" tabindex="-1" aria-labelledby="iconPickerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="iconPickerModalLabel">
+                    <i class="bi bi-search me-2"></i>Select Bootstrap Icon
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Search Input -->
+                <div class="mb-3">
+                    <input type="text" id="iconSearchInput" class="form-control" placeholder="Search icons... (e.g., bag, person, star)" autofocus>
+                    <small class="form-text text-muted">Search across all Bootstrap Icons - updated automatically</small>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading icons...</span>
+                    </div>
+                    <p class="text-muted mt-2">Loading Bootstrap icons...</p>
+                </div>
+
+                <!-- Popular Icons Section -->
+                <div id="popularIconsSection" class="mb-4 d-none">
+                    <h6 class="text-muted mb-3">Popular Icons</h6>
+                    <div class="icon-grid" id="popularIcons">
+                        <!-- Popular icons will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div id="searchResultsSection" class="d-none">
+                    <h6 class="text-muted mb-3">Search Results <span id="resultCount" class="badge bg-secondary ms-2"></span></h6>
+                    <div class="icon-grid" id="iconSearchResults">
+                        <!-- Search results will appear here -->
+                    </div>
+                </div>
+
+                <!-- No Results Message -->
+                <div id="noResultsMessage" class="text-center text-muted py-4 d-none">
+                    <i class="bi bi-emoji-frown fs-1 d-block mb-2"></i>
+                    <p>No icons found matching your search.</p>
+                </div>
+
+                <!-- Selected Icon Preview -->
+                <div id="selectedIconPreview" class="mt-4 p-3 bg-light rounded d-none">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted d-block">Selected Icon:</small>
+                            <div class="mt-2">
+                                <i id="selectedIconDisplay" class="bi fs-2 me-3"></i>
+                                <code id="selectedIconClass" class="bg-white px-2 py-1 rounded"></code>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="applySelectedIcon()">
+                            <i class="bi bi-check-lg me-1"></i>Apply
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 10px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .icon-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px 10px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .icon-item:hover {
+        border-color: #0d6efd;
+        background: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .icon-item.selected {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+    .icon-item i {
+        font-size: 2rem;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+
+    .icon-item:hover i {
+        color: #0d6efd;
+    }
+
+    .icon-item.selected i {
+        color: #0d6efd;
+    }
+
+    .icon-item span {
+        font-size: 0.7rem;
+        color: #6c757d;
+        text-align: center;
+        word-break: break-word;
+    }
+
+    #iconSearchInput {
+        font-size: 1.1rem;
+        padding: 12px;
+    }
+</style>
+
+<script>
+    let allIcons = [];
+    let selectedIconClass = '';
+    let currentTargetInput = null;
+    let currentTargetPreview = null;
+    let iconsLoaded = false;
+
+    // Popular Bootstrap Icons - used as fallback and default display
+    const popularIcons = [
+        'bag', 'bag-fill', 'cart', 'cart-fill', 'basket', 'basket-fill',
+        'person', 'person-fill', 'people', 'people-fill',
+        'box', 'box-seam', 'boxes', 'archive',
+        'star', 'star-fill', 'heart', 'heart-fill',
+        'tag', 'tag-fill', 'tags', 'tags-fill',
+        'gift', 'gift-fill', 'trophy', 'award',
+        'house', 'house-fill', 'building', 'shop',
+        'truck', 'airplane', 'bicycle', 'car-front',
+        'phone', 'envelope', 'chat', 'messenger',
+        'camera', 'image', 'images', 'file-earmark',
+        'gear', 'tools', 'wrench', 'hammer',
+        'shield', 'shield-check', 'lock', 'unlock',
+        'sun', 'moon', 'cloud', 'flower1', 'flower2', 'tree',
+        'cup', 'cup-hot', 'droplet', 'water'
+    ];
+
+    // Load icons from Bootstrap Icons CDN
+    async function loadBootstrapIcons() {
+        try {
+            const response = await fetch('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.json');
+            if (!response.ok) throw new Error('Failed to fetch icons');
+            
+            const iconData = await response.json();
+            allIcons = Object.keys(iconData).sort();
+            iconsLoaded = true;
+            
+            return true;
+        } catch (error) {
+            // Fallback to a more complete list if CDN fails
+            allIcons = popularIcons;
+            iconsLoaded = true;
+            return false;
+        }
+    }
+
+    function openIconPicker(inputId, previewId) {
+        currentTargetInput = document.getElementById(inputId);
+        currentTargetPreview = document.getElementById(previewId);
+        selectedIconClass = currentTargetInput ? currentTargetInput.value : '';
+
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('iconPickerModal'));
+        modal.show();
+
+        // Load icons if not already loaded
+        if (!iconsLoaded) {
+            document.getElementById('loadingSpinner').classList.remove('d-none');
+            document.getElementById('popularIconsSection').classList.add('d-none');
+            
+            loadBootstrapIcons().then(() => {
+                document.getElementById('loadingSpinner').classList.add('d-none');
+                document.getElementById('popularIconsSection').classList.remove('d-none');
+                loadPopularIcons();
+            });
+        } else {
+            document.getElementById('popularIconsSection').classList.remove('d-none');
+            loadPopularIcons();
+        }
+
+        // Clear search
+        document.getElementById('iconSearchInput').value = '';
+        showPopularIcons();
+
+        // Focus search input after modal opens
+        setTimeout(() => {
+            document.getElementById('iconSearchInput').focus();
+        }, 500);
+    }
+
+    function loadPopularIcons() {
+        const container = document.getElementById('popularIcons');
+        container.innerHTML = '';
+
+        popularIcons.forEach(icon => {
+            const iconClass = `bi-${icon}`;
+            const item = createIconItem(iconClass, icon);
+            container.appendChild(item);
+        });
+    }
+
+    function createIconItem(iconClass, iconName) {
+        const div = document.createElement('div');
+        div.className = 'icon-item';
+        if (selectedIconClass === iconClass) {
+            div.classList.add('selected');
+        }
+
+        div.innerHTML = `
+            <i class="bi ${iconClass}"></i>
+            <span>${iconName}</span>
+        `;
+
+        div.onclick = () => selectIcon(iconClass, div);
+        return div;
+    }
+
+    function selectIcon(iconClass, element) {
+        // Remove previous selection
+        document.querySelectorAll('.icon-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        // Add selection to clicked item
+        element.classList.add('selected');
+        selectedIconClass = iconClass;
+
+        // Update preview
+        const preview = document.getElementById('selectedIconPreview');
+        const display = document.getElementById('selectedIconDisplay');
+        const classDisplay = document.getElementById('selectedIconClass');
+
+        preview.classList.remove('d-none');
+        display.className = `bi ${iconClass} fs-2 me-3`;
+        classDisplay.textContent = iconClass;
+    }
+
+    function applySelectedIcon() {
+        if (selectedIconClass && currentTargetInput && currentTargetPreview) {
+            currentTargetInput.value = selectedIconClass;
+            currentTargetPreview.className = selectedIconClass;
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('iconPickerModal'));
+            modal.hide();
+
+            // Trigger input event for any listeners
+            currentTargetInput.dispatchEvent(new Event('input'));
+        }
+    }
+
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('iconSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase().trim();
+
+                if (searchTerm === '') {
+                    showPopularIcons();
+                } else {
+                    searchIcons(searchTerm);
+                }
+            });
+        }
+    });
+
+    function showPopularIcons() {
+        document.getElementById('popularIconsSection').classList.remove('d-none');
+        document.getElementById('searchResultsSection').classList.add('d-none');
+        document.getElementById('noResultsMessage').classList.add('d-none');
+    }
+
+    function searchIcons(searchTerm) {
+        // Filter icons based on search term
+        const results = allIcons.filter(icon => icon.toLowerCase().includes(searchTerm));
+        const resultsContainer = document.getElementById('iconSearchResults');
+        const resultCount = document.getElementById('resultCount');
+
+        resultsContainer.innerHTML = '';
+
+        if (results.length === 0) {
+            document.getElementById('popularIconsSection').classList.add('d-none');
+            document.getElementById('searchResultsSection').classList.add('d-none');
+            document.getElementById('noResultsMessage').classList.remove('d-none');
+        } else {
+            document.getElementById('popularIconsSection').classList.add('d-none');
+            document.getElementById('searchResultsSection').classList.remove('d-none');
+            document.getElementById('noResultsMessage').classList.add('d-none');
+
+            resultCount.textContent = results.length;
+
+            // Limit display to first 100 results for performance
+            results.slice(0, 100).forEach(icon => {
+                const iconClass = `bi-${icon}`;
+                const item = createIconItem(iconClass, icon);
+                resultsContainer.appendChild(item);
+            });
+        }
+    }
+</script>

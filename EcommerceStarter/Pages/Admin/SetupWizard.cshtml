@@ -1,0 +1,251 @@
+@page "{step:int?}"
+@model EcommerceStarter.Pages.Admin.SetupWizardModel
+@{
+    ViewData["Title"] = "Setup Wizard";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-2">Welcome to Your Store!</h1>
+                <p class="lead text-muted">Let's get you set up in just a few steps</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: @((Model.CurrentStep * 25))%"
+                             aria-valuenow="@Model.CurrentStep" 
+                             aria-valuemin="0" 
+                             aria-valuemax="4">
+                            Step @Model.CurrentStep of 4
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 small text-muted">
+                        <span class="@(Model.CurrentStep >= 1 ? "text-primary fw-bold" : "")">
+                            <i class="bi bi-1-circle@(Model.CurrentStep >= 1 ? "-fill" : "")"></i> Basic Info
+                        </span>
+                        <span class="@(Model.CurrentStep >= 2 ? "text-primary fw-bold" : "")">
+                            <i class="bi bi-2-circle@(Model.CurrentStep >= 2 ? "-fill" : "")"></i> Choose Theme
+                        </span>
+                        <span class="@(Model.CurrentStep >= 3 ? "text-primary fw-bold" : "")">
+                            <i class="bi bi-3-circle@(Model.CurrentStep >= 3 ? "-fill" : "")"></i> Contact Info
+                        </span>
+                        <span class="@(Model.CurrentStep >= 4 ? "text-primary fw-bold" : "")">
+                            <i class="bi bi-4-circle@(Model.CurrentStep >= 4 ? "-fill" : "")"></i> Complete
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step Content -->
+            @if (Model.CurrentStep == 1)
+            {
+                <!-- Step 1: Basic Information -->
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="bi bi-info-circle me-2"></i>Step 1: Basic Information</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" asp-page-handler="Step1">
+                            <div class="mb-4">
+                                <label asp-for="StoreName" class="form-label fs-5">What's your store name?</label>
+                                <input asp-for="StoreName" class="form-control form-control-lg" 
+                                       placeholder="e.g., Timmy's Toy Store" autofocus />
+                                <span asp-validation-for="StoreName" class="text-danger"></span>
+                                <small class="text-muted">This appears on your website and in emails</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="StoreTagline" class="form-label fs-5">Store tagline (optional)</label>
+                                <input asp-for="StoreTagline" class="form-control" 
+                                       placeholder="e.g., Fun toys for happy kids!" />
+                                <small class="text-muted">A short description of what you sell</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="StoreIcon" class="form-label fs-5">Store icon (optional)</label>
+                                <input asp-for="StoreIcon" class="form-control" 
+                                       placeholder="e.g., teddy bear, book, laptop" 
+                                       maxlength="50" />
+                                <small class="text-muted">Emoji or text that represents your store</small>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    Continue to Theme Selection <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (Model.CurrentStep == 2)
+            {
+                <!-- Step 2: Choose Theme -->
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0"><i class="bi bi-palette me-2"></i>Step 2: Choose Your Theme</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="lead">Pick a color scheme that matches your brand</p>
+                        
+                        <form method="post" asp-page-handler="Step2">
+                            <input type="hidden" asp-for="StoreName" />
+                            <input type="hidden" asp-for="StoreTagline" />
+                            <input type="hidden" asp-for="StoreIcon" />
+
+                            <div class="row g-3">
+                                @foreach (var theme in Model.AvailableThemes)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="card theme-card h-100 @(Model.SelectedTheme == theme.Key ? "border-primary" : "")" 
+                                             onclick="selectTheme('@theme.Key')" 
+                                             style="cursor: pointer;">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" 
+                                                           asp-for="SelectedTheme" 
+                                                           value="@theme.Key" 
+                                                           id="theme_@theme.Key" />
+                                                    <label class="form-check-label w-100" for="theme_@theme.Key">
+                                                        <strong class="d-block fs-5">@theme.Key.ToUpper()</strong>
+                                                        <small class="text-muted">@theme.Value</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    Apply Theme & Continue <i class="bi bi-arrow-right"></i>
+                                </button>
+                                <a asp-page="/Admin/SetupWizard" asp-route-step="1" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Back
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (Model.CurrentStep == 3)
+            {
+                <!-- Step 3: Contact Information -->
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="bi bi-envelope me-2"></i>Step 3: Contact Information</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="lead">How can customers reach you?</p>
+                        
+                        <form method="post" asp-page-handler="Step3">
+                            <input type="hidden" asp-for="StoreName" />
+                            <input type="hidden" asp-for="StoreTagline" />
+                            <input type="hidden" asp-for="SelectedTheme" />
+
+                            <div class="mb-4">
+                                <label asp-for="ContactEmail" class="form-label fs-5">Contact Email</label>
+                                <input asp-for="ContactEmail" type="email" class="form-control form-control-lg" 
+                                       placeholder="contact@yourstore.com" required />
+                                <small class="text-muted">Used for customer inquiries and order notifications</small>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>You can add more details later!</strong>
+                                <div class="small mt-2">
+                                    Phone number, address, social media links, and more can be configured in Settings ? Branding.
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-info btn-lg text-white">
+                                    Continue to Final Step <i class="bi bi-arrow-right"></i>
+                                </button>
+                                <a asp-page="/Admin/SetupWizard" asp-route-step="2" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Back
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (Model.CurrentStep == 4)
+            {
+                <!-- Step 4: Complete -->
+                <div class="card shadow">
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="mb-0"><i class="bi bi-check-circle me-2"></i>Step 4: You're All Set!</h4>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <div class="py-4">
+                            <i class="bi bi-check-circle text-success" style="font-size: 5rem;"></i>
+                            <h2 class="mt-3">Setup Complete!</h2>
+                            <p class="lead text-muted">Your store "@Model.StoreName" is ready to go.</p>
+                        </div>
+
+                        <div class="alert alert-success text-start">
+                            <h5><i class="bi bi-list-check me-2"></i>What's Next?</h5>
+                            <ul class="mb-0">
+                                <li>Upload your logo and favicon in <strong>Settings ? Branding</strong></li>
+                                <li>Configure Stripe payment keys in <strong>Settings ? Stripe API Keys</strong></li>
+                                <li>Add your first products in <strong>Admin ? Products</strong></li>
+                                <li>Review security settings in <strong>Settings ? Security Settings</strong></li>
+                                <li>Customize colors and fonts in <strong>Settings ? Branding</strong></li>
+                            </ul>
+                        </div>
+
+                        <form method="post" asp-page-handler="Complete">
+                            <input type="hidden" asp-for="SelectedTheme" />
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-rocket"></i> Go to Dashboard
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        function selectTheme(themeName) {
+            document.querySelector(`input[value="${themeName}"]`).checked = true;
+            
+            // Update card styling
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('border-primary');
+            });
+            event.currentTarget.classList.add('border-primary');
+        }
+    </script>
+    
+    <style>
+        .theme-card {
+            transition: all 0.2s;
+        }
+        
+        .theme-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+        }
+        
+        .theme-card.border-primary {
+            border-width: 3px !important;
+        }
+    </style>
+}

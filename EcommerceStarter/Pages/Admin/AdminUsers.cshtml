@@ -1,0 +1,93 @@
+@page
+@model AdminUsersModel
+@{
+    ViewData["Title"] = "Admin Users";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-shield-lock"></i> Admin Users</h1>
+        <a asp-page="/Admin/RegisterAdmin" class="btn btn-danger">
+            <i class="bi bi-shield-plus"></i> Add Admin User
+        </a>
+    </div>
+
+    @if (Model.SuccessMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible alert-temporary fade show" role="alert">
+            @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model.AdminUsers.Any())
+    {
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Administrator Accounts (@Model.AdminUsers.Count)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Created Date</th>
+                                <th>Email Confirmed</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var admin in Model.AdminUsers)
+                            {
+                                <tr>
+                                    <td>
+                                        <i class="bi bi-shield-fill text-danger"></i>
+                                        @admin.Email
+                                    </td>
+                                    <td>@admin.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        @if (admin.EmailConfirmed)
+                                        {
+                                            <span class="badge bg-success">Confirmed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">Pending</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (admin.Email != User.Identity?.Name)
+                                        {
+                                            <form method="post" asp-page-handler="RemoveAdmin" asp-route-userId="@admin.Id" class="d-inline" 
+                                                  onsubmit="return confirm('Are you sure you want to remove @admin.Email as an admin? This action cannot be undone.');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-shield-x"></i> Remove Admin
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Current User</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle"></i>
+            <strong>Note:</strong> You cannot remove your own admin privileges. Another admin must do this.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            No admin users found.
+        </div>
+    }
+</div>

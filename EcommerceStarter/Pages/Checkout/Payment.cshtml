@@ -1,0 +1,357 @@
+@page
+@model PaymentModel
+@{
+    ViewData["Title"] = "Checkout - Payment";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Complete Your Order</h1>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle-fill"></i> @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Payment Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lock-fill"></i> Complete Your Payment</h5>
+                </div>
+                <div class="card-body">
+                    <form id="paymentForm">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div id="payment-errors" class="text-danger mb-3" role="alert"></div>
+
+                        <div id="payment-element" class="mb-4">
+                            <!-- Stripe Payment Element will be inserted here -->
+                        </div>
+
+                        <div id="payment-message" class="alert alert-info mb-4">
+                            <small><i class="bi bi-shield-lock-fill"></i> Your payment information is encrypted and secure. We never store your card details.</small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
+                            <a asp-page="/Checkout/Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <button type="button" class="btn btn-success btn-lg" id="submitBtn">
+                                <i class="bi bi-lock-fill"></i> Complete Order
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Payment Methods Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Accepted Payment Methods</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Payment Methods Carousel -->
+                    <div id="paymentMethodsCarousel" class="carousel slide" data-bs-ride="false" data-bs-interval="false">
+                        <div class="carousel-inner">
+                            <!-- Credit/Debit Cards Slide -->
+                            <div class="carousel-item active">
+                                <div class="text-center py-4">
+                                    <h5 class="mb-3"><i class="bi bi-credit-card"></i> Credit & Debit Cards</h5>
+                                    <p class="small text-muted mb-4">We accept all major cards</p>
+                                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                        <span class="badge bg-primary px-3 py-2">Visa</span>
+                                        <span class="badge bg-primary px-3 py-2">Mastercard</span>
+                                        <span class="badge bg-primary px-3 py-2">Amex</span>
+                                        <span class="badge bg-primary px-3 py-2">Discover</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Google Pay Slide -->
+                            <div class="carousel-item">
+                                <div class="text-center py-4">
+                                    <h5 class="mb-3"><i class="bi bi-google text-primary"></i> Google Pay</h5>
+                                    <p class="small text-muted mb-3">Fast, secure payment with your Google account</p>
+                                    <p class="small text-muted">Available on Chrome and Android devices</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Apple Pay Slide -->
+                            <div class="carousel-item">
+                                <div class="text-center py-4">
+                                    <h5 class="mb-3"><i class="bi bi-apple"></i> Apple Pay</h5>
+                                    <p class="small text-muted mb-3">Quick checkout with Touch ID or Face ID</p>
+                                    <p class="small text-muted">Available on Safari and iOS devices</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Cash App Pay Slide -->
+                            <div class="carousel-item">
+                                <div class="text-center py-4">
+                                    <h5 class="mb-3"><i class="bi bi-cash-coin text-success"></i> Cash App Pay</h5>
+                                    <p class="small text-muted mb-3">Pay instantly using your Cash App balance</p>
+                                    <p class="small text-muted">or linked bank account</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Link by Stripe Slide -->
+                            <div class="carousel-item">
+                                <div class="text-center py-4">
+                                    <h5 class="mb-3"><i class="bi bi-link-45deg text-info"></i> Link by Stripe</h5>
+                                    <p class="small text-muted mb-3">Save your payment details for faster checkout</p>
+                                    <p class="small text-muted">One-click checkout next time</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Carousel Controls -->
+                        <button class="carousel-control-prev" type="button" data-bs-target="#paymentMethodsCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#paymentMethodsCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                        
+                        <!-- Carousel Indicators -->
+                        <div class="carousel-indicators mt-3 mb-0">
+                            <button type="button" data-bs-target="#paymentMethodsCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Credit & Debit Cards"></button>
+                            <button type="button" data-bs-target="#paymentMethodsCarousel" data-bs-slide-to="1" aria-label="Google Pay"></button>
+                            <button type="button" data-bs-target="#paymentMethodsCarousel" data-bs-slide-to="2" aria-label="Apple Pay"></button>
+                            <button type="button" data-bs-target="#paymentMethodsCarousel" data-bs-slide-to="3" aria-label="Cash App Pay"></button>
+                            <button type="button" data-bs-target="#paymentMethodsCarousel" data-bs-slide-to="4" aria-label="Link by Stripe"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> <strong>Secure Payment:</strong> Your payment is processed securely through Stripe. We never see or store your card information.
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Order Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var item in Model.CartItems)
+                    {
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">@item.ProductName <small class="text-muted">(x@(item.Quantity))</small></span>
+                            <strong>$@item.Subtotal.ToString("F2")</strong>
+                        </div>
+                    }
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <strong>$@Model.Subtotal.ToString("F2")</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping:</span>
+                        <strong class="text-success">FREE</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <h5>Total:</h5>
+                        <h5 class="text-success"><strong>$@Model.Total.ToString("F2")</strong></h5>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Features -->
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-shield-check"></i> Secure Checkout</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <small><i class="bi bi-check-circle text-success"></i> SSL encrypted connection</small>
+                        </li>
+                        <li class="mb-2">
+                            <small><i class="bi bi-check-circle text-success"></i> PCI-DSS compliant</small>
+                        </li>
+                        <li class="mb-2">
+                            <small><i class="bi bi-check-circle text-success"></i> 3D Secure authentication</small>
+                        </li>
+                        <li>
+                            <small><i class="bi bi-check-circle text-success"></i> Powered by Stripe</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        $(document).ready(function () {
+            const stripePublishableKey = '@Model.StripePublishableKey';
+            const clientSecret = '@Model.ClientSecret';
+            
+            let stripe = null;
+            let elements = null;
+            let paymentElement = null;
+
+            // Initialize Stripe
+            if (stripePublishableKey && clientSecret) {
+                try {
+                    stripe = Stripe(stripePublishableKey);
+
+                    const appearance = {
+                        theme: 'stripe',
+                        variables: {
+                            colorPrimary: '#198754',
+                            colorBackground: '#ffffff',
+                            colorText: '#212529',
+                            colorDanger: '#dc3545',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                            borderRadius: '0.375rem'
+                        }
+                    };
+
+                    elements = stripe.elements({
+                        clientSecret: clientSecret,
+                        appearance: appearance
+                    });
+
+                    // Create payment element - shows all available methods
+                    const paymentElementOptions = {
+                        defaultValues: {
+                            billingDetails: {
+                                email: '@Model.Email',
+                                name: '@Model.Email'
+                            }
+                        },
+                        fields: {
+                            billingDetails: {
+                                address: {
+                                    country: 'never'
+                                }
+                            }
+                        }
+                    };
+
+                    paymentElement = elements.create('payment', paymentElementOptions);
+                    
+                    paymentElement.mount('#payment-element');
+
+                    paymentElement.on('ready', function () {
+                    });
+
+                    paymentElement.on('change', function (event) {
+                        if (event.error) {
+                            $('#payment-errors').html('<div class="alert alert-danger">' + event.error.message + '</div>');
+                        } else {
+                            $('#payment-errors').html('');
+                        }
+                    });
+
+                    paymentElement.on('loaderror', function(event) {
+                        console.error('Payment element loader error:', event);
+                        $('#payment-errors').html(
+                            '<div class="alert alert-danger">' +
+                            '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                            '<strong>Payment Error:</strong> ' + (event.error?.message || 'Unknown error') +
+                            '</div>'
+                        );
+                        $('#submitBtn').prop('disabled', true);
+                    });
+                    
+                } catch (err) {
+                    console.error('Error initializing Stripe:', err);
+                    $('#payment-errors').html(
+                        '<div class="alert alert-danger">' +
+                        '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                        '<strong>Stripe Error:</strong> ' + err.message +
+                        '</div>'
+                    );
+                }
+                
+                } else {
+                $('#payment-errors').html(
+                    '<div class="alert alert-danger">' +
+                    '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                    'Payment system initialization failed. Please go back and try again.' +
+                    '</div>'
+                );
+            }
+
+            // Handle button click
+            $('#submitBtn').on('click', async function (e) {
+                e.preventDefault();
+
+                if (!stripe || !elements) {
+                    $('#payment-errors').html(
+                        '<div class="alert alert-danger">Payment system not initialized. Please refresh and try again.</div>'
+                    );
+                    return false;
+                }
+
+                const submitBtn = $('#submitBtn');
+                submitBtn.prop('disabled', true);
+                submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing Payment...');
+
+                try {
+                    const { error } = await stripe.confirmPayment({
+                        elements,
+                        confirmParams: {
+                            return_url: window.location.origin + '/Checkout/Payment',
+                            payment_method_data: {
+                                billing_details: {
+                                    email: '@Model.Email',
+                                    address: {
+                                        country: 'US'
+                                    }
+                                }
+                            }
+                        },
+                        redirect: 'always'
+                    });
+
+                    if (error) {
+                        $('#payment-errors').html(
+                            '<div class="alert alert-danger">' +
+                            '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                            error.message +
+                            '</div>'
+                        );
+                        submitBtn.prop('disabled', false);
+                        submitBtn.html('<i class="bi bi-lock-fill"></i> Complete Order');
+                    } else {
+                        console.log('Payment confirmed successfully - Stripe will handle redirect');
+                    }
+                } catch (err) {
+                    console.error('Unexpected error:', err);
+                    $('#payment-errors').html(
+                        '<div class="alert alert-danger">' +
+                        '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                        'An unexpected error occurred. Please try again.' +
+                        '</div>'
+                    );
+                    submitBtn.prop('disabled', false);
+                    submitBtn.html('<i class="bi bi-lock-fill"></i> Complete Order');
+                }
+            });
+        });
+    </script>
+}
+

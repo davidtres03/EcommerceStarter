@@ -1,0 +1,323 @@
+@page
+@model DashboardModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<style>
+    /* Stats Cards */
+    .dashboard-stat-card {
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.2s;
+        border: none;
+    }
+    .dashboard-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .dashboard-stat-card .card-body {
+        padding: 1.25rem;
+    }
+    .dashboard-stat-card h5 {
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .dashboard-stat-card h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    /* Action Cards - Consistent Theming */
+    .dashboard-card {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        background: white;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .dashboard-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        border-color: #dee2e6;
+    }
+    .dashboard-card .card-body {
+        padding: 1.75rem;
+    }
+    .dashboard-card i {
+        font-size: 2.5rem !important;
+        margin-bottom: 0.75rem;
+    }
+    .dashboard-card h5 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    .dashboard-card p {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0;
+        min-height: 2.5rem;
+    }
+    .dashboard-card .btn {
+        font-size: 0.875rem;
+        padding: 0.6rem 1.25rem;
+        margin-top: 1rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    
+    /* Color Categories */
+    .category-commerce i { color: #0d6efd; }
+    .category-commerce .btn { background-color: #0d6efd; border-color: #0d6efd; }
+    
+    .category-system i { color: #198754; }
+    .category-system .btn { background-color: #198754; border-color: #198754; }
+    
+    .category-security i { color: #dc3545; }
+    .category-security .btn { background-color: #dc3545; border-color: #dc3545; }
+    
+    .category-config i { color: #fd7e14; }
+    .category-config .btn { background-color: #fd7e14; border-color: #fd7e14; }
+    
+    /* Section Headers */
+    .section-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-top: 2.5rem;
+        margin-bottom: 1.25rem;
+        color: #2c3e50;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .section-title:first-of-type {
+        margin-top: 1.5rem;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Admin Dashboard</h1>
+        <div>
+            <a asp-page="/Admin/AIControlPanel" class="btn btn-outline-info me-2">
+                <i class="bi bi-robot"></i> AI Control Panel
+            </a>
+            <a asp-page="/Admin/AdminUsers" class="btn btn-outline-danger me-2">
+                <i class="bi bi-shield-lock"></i> Manage Admins
+            </a>
+            <a asp-page="/Admin/RegisterAdmin" class="btn btn-danger">
+                <i class="bi bi-shield-plus"></i> Add Admin User
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary dashboard-stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Products</h5>
+                    <h2>@Model.TotalProducts</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success dashboard-stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Orders</h5>
+                    <h2>@Model.TotalOrders</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info dashboard-stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Customers</h5>
+                    <h2>@Model.TotalCustomers</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning dashboard-stat-card">
+                <div class="card-body">
+                    <h5 class="card-title">Revenue</h5>
+                    <h2>$@Model.TotalRevenue.ToString("N2")</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commerce Management -->
+    <h3 class="section-title">Commerce Management</h3>
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-commerce">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-box-seam"></i>
+                    <h5 class="card-title">Manage Products</h5>
+                    <p class="card-text flex-grow-1">Add, edit, or remove products</p>
+                    <a asp-page="/Admin/Products/Index" class="btn mt-auto">Go to Products</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-commerce">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-cart"></i>
+                    <h5 class="card-title">Manage Orders</h5>
+                    <p class="card-text flex-grow-1">View and process orders</p>
+                    <a asp-page="/Admin/Orders/Index" class="btn mt-auto">Go to Orders</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-commerce">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-people"></i>
+                    <h5 class="card-title">Manage Customers</h5>
+                    <p class="card-text flex-grow-1">View and manage users</p>
+                    <a asp-page="/Admin/Customers/Index" class="btn mt-auto">Go to Customers</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Monitoring -->
+    <h3 class="section-title">System Monitoring</h3>
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-system">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-graph-up"></i>
+                    <h5 class="card-title">Analytics</h5>
+                    <p class="card-text flex-grow-1">Visitor tracking & site analytics</p>
+                    <a asp-page="/Admin/Analytics" class="btn mt-auto">View Analytics</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-system">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-speedometer2"></i>
+                    <h5 class="card-title">Service Dashboard</h5>
+                    <p class="card-text flex-grow-1">Real-time system health & status</p>
+                    <a asp-page="/Admin/ServiceDashboard" class="btn mt-auto">View Dashboard</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-system">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-graph-up"></i>
+                    <h5 class="card-title">Performance Metrics</h5>
+                    <p class="card-text flex-grow-1">24h performance analytics</p>
+                    <a asp-page="/Admin/Metrics" class="btn mt-auto">View Metrics</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-system">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-arrow-up-circle"></i>
+                    <h5 class="card-title">Update History</h5>
+                    <p class="card-text flex-grow-1">View application updates & rollbacks</p>
+                    <a asp-page="/Admin/Updates" class="btn mt-auto">View Updates</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-system">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <h5 class="card-title">Error Log</h5>
+                    <p class="card-text flex-grow-1">Monitor and review system errors</p>
+                    <a asp-page="/Admin/Errors" class="btn mt-auto">View Errors</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security -->
+    <h3 class="section-title">Security</h3>
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-security">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-shield-lock"></i>
+                    <h5 class="card-title">Admin Users</h5>
+                    <p class="card-text flex-grow-1">Manage administrator accounts</p>
+                    <a asp-page="/Admin/AdminUsers" class="btn mt-auto">Manage Admins</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-security">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-shield-check"></i>
+                    <h5 class="card-title">Security Settings</h5>
+                    <p class="card-text flex-grow-1">Configure security & intrusion detection</p>
+                    <a asp-page="/Admin/Settings/Security" class="btn mt-auto">Configure Security</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-security">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-clock-history"></i>
+                    <h5 class="card-title">Security Audit Log</h5>
+                    <p class="card-text flex-grow-1">View security events & blocked IPs</p>
+                    <a asp-page="/Admin/Security/AuditLog" class="btn mt-auto">View Audit Log</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-security">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <h5 class="card-title">SSL Certificate</h5>
+                    <p class="card-text flex-grow-1">Manage SSL/TLS certificates</p>
+                    <a asp-page="/Admin/Settings/SaveSslCertificate" class="btn mt-auto">Manage Certificate</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <h3 class="section-title">Configuration</h3>
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-config">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-key-fill"></i>
+                    <h5 class="card-title">API Configurations</h5>
+                    <p class="card-text flex-grow-1">Stripe, Cloudinary, USPS, UPS, FedEx, AI Services</p>
+                    <a asp-page="/Admin/Settings/ApiConfigurations" class="btn mt-auto">Manage API Keys</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-config">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-palette-fill"></i>
+                    <h5 class="card-title">Branding & Theme</h5>
+                    <p class="card-text flex-grow-1">Customize site appearance & colors</p>
+                    <a asp-page="/Admin/Settings/Branding" class="btn mt-auto">Customize Branding</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 dashboard-card category-config">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <h5 class="card-title">Google Tag Manager / GA4</h5>
+                    <p class="card-text flex-grow-1">Configure GTM or GA4 with Cloudflare Gateway</p>
+                    <a asp-page="/Admin/Settings/GoogleAnalytics" class="btn mt-auto">Configure Tracking</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

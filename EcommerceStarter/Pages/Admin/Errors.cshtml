@@ -1,0 +1,313 @@
+@page
+@model ErrorsModel
+@{
+    ViewData["Title"] = "Error Logs";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5">Error Log Viewer</h1>
+            <p class="text-muted">Track and manage system errors</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/Admin/ServiceDashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-2">
+                            <label for="severityFilter" class="form-label">Severity</label>
+                            <select class="form-select form-select-sm" id="severityFilter" name="severityFilter">
+                                <option value="">All Severities</option>
+                                <option value="Critical" selected="@(Model.SeverityFilter == "Critical")">Critical</option>
+                                <option value="Warning" selected="@(Model.SeverityFilter == "Warning")">Warning</option>
+                                <option value="Info" selected="@(Model.SeverityFilter == "Info")">Info</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="acknowledgedFilter" class="form-label">Status</label>
+                            <select class="form-select form-select-sm" id="acknowledgedFilter" name="acknowledgedFilter">
+                                <option value="">All</option>
+                                <option value="unacknowledged" selected="@(Model.AcknowledgedFilter == "unacknowledged")">Unacknowledged</option>
+                                <option value="acknowledged" selected="@(Model.AcknowledgedFilter == "acknowledged")">Acknowledged</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="hoursFilter" class="form-label">Last (hours)</label>
+                            <input type="number" class="form-control form-control-sm" id="hoursFilter" name="hoursFilter" value="@(Model.HoursFilter ?? 24)" min="1" max="720">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="sourceFilter" class="form-label">Source</label>
+                            <input type="text" class="form-control form-control-sm" id="sourceFilter" name="sourceFilter" placeholder="e.g., API" value="@Model.SourceFilter">
+                        </div>
+                        <div class="col-md-4">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-sm btn-primary w-100">Apply Filters</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Errors Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Errors (@(Model.Errors?.Count ?? 0))
+                    </h5>
+                    @if (Model.UnacknowledgedCount > 0)
+                    {
+                        <button type="button" class="btn btn-sm btn-warning" onclick="acknowledgeAll()">
+                            Acknowledge All Unreviewed
+                        </button>
+                    }
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Time</th>
+                                <th>Severity</th>
+                                <th>Source</th>
+                                <th>Message</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Errors?.Any() == true)
+                            {
+                                @foreach (var error in Model.Errors)
+                                {
+                                    <tr class="@(error.IsAcknowledged ? "table-light" : "")" data-error-id="@error.Id" @(error.IsAcknowledged ? "data-acknowledged=\"true\"" : "")>
+                                        <td class="small">@error.Timestamp.ToString("MMM dd HH:mm:ss")</td>
+                                        <td>
+                                            @if (error.Severity == "Critical")
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-exclamation-circle-fill"></i> Critical
+                                                </span>
+                                            }
+                                            else if (error.Severity == "Warning")
+                                            {
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i> Warning
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-info-circle-fill"></i> Info
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="small fw-bold">@error.Source</td>
+                                        <td class="small">@error.Message</td>
+                                        <td>
+                                            @if (error.IsAcknowledged)
+                                            {
+                                                <span class="badge bg-success small">Acknowledged</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary small">Unreviewed</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailsModal@(error.Id)">
+                                                Details
+                                            </button>
+
+                                            <!-- Details Modal -->
+                                            <div class="modal fade" id="detailsModal@(error.Id)" tabindex="-1">
+                                                <div class="modal-dialog modal-lg">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">@error.Source - @error.Severity</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-6">
+                                                                    <strong>Timestamp:</strong>
+                                                                    <p>@error.Timestamp.ToString("F")</p>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <strong>Severity:</strong>
+                                                                    <p>@error.Severity</p>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-12">
+                                                                    <strong>Message:</strong>
+                                                                    <p class="bg-light p-2 rounded">@error.Message</p>
+                                                                </div>
+                                                            </div>
+                                                            @if (!string.IsNullOrEmpty(error.StackTrace))
+                                                            {
+                                                                <div class="row mb-3">
+                                                                    <div class="col-md-12">
+                                                                        <strong>Stack Trace:</strong>
+                                                                        <pre class="bg-light p-2 rounded small" style="max-height: 300px; overflow-y: auto;">@error.StackTrace</pre>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            @if (!error.IsAcknowledged)
+                                                            {
+                                                                <button type="button" class="btn btn-primary" onclick="acknowledgeError('@error.Id')">Mark as Reviewed</button>
+                                                            }
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted p-4">No errors found</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Token management
+        let adminToken = null;
+
+        async function getAdminToken() {
+            if (adminToken) return adminToken;
+
+            // Check sessionStorage first
+            const stored = sessionStorage.getItem('adminToken');
+            const expiry = sessionStorage.getItem('adminTokenExpiry');
+            
+            if (stored && expiry && new Date().getTime() < parseInt(expiry)) {
+                adminToken = stored;
+                return adminToken;
+            }
+
+            // Get new token from API
+            try {
+                const response = await fetch('/api/auth/admin/token', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get admin token');
+                }
+
+                const data = await response.json();
+                adminToken = data.accessToken;
+                
+                // Store token with expiry (subtract 5 minutes for safety)
+                const expiryTime = new Date().getTime() + ((data.expiresIn - 300) * 1000);
+                sessionStorage.setItem('adminToken', adminToken);
+                sessionStorage.setItem('adminTokenExpiry', expiryTime.toString());
+                
+                return adminToken;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function acknowledgeError(errorId) {
+            try {
+                const token = await getAdminToken();
+                const response = await fetch(`/api/admin/service/errors/${errorId}/acknowledge`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else if (response.status === 401) {
+                    // Token expired, clear and retry
+                    sessionStorage.removeItem('adminToken');
+                    sessionStorage.removeItem('adminTokenExpiry');
+                    adminToken = null;
+                    alert('Session expired. Please try again.');
+                } else {
+                    throw new Error('Failed to acknowledge error');
+                }
+            } catch (error) {
+                alert('Failed to acknowledge error. Please try again.');
+            }
+        }
+
+        async function acknowledgeAll() {
+            if (!confirm('Mark all unreviewed errors as acknowledged?')) return;
+
+            const errorRows = document.querySelectorAll('tr[data-error-id]:not([data-acknowledged])');
+            
+            if (errorRows.length === 0) {
+                alert('No unreviewed errors to acknowledge.');
+                return;
+            }
+
+            try {
+                const token = await getAdminToken();
+                let acknowledged = 0;
+                const totalErrors = errorRows.length;
+
+                for (const row of errorRows) {
+                    const errorId = row.getAttribute('data-error-id');
+                    const response = await fetch(`/api/admin/service/errors/${errorId}/acknowledge`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        acknowledged++;
+                    } else if (response.status === 401) {
+                        sessionStorage.removeItem('adminToken');
+                        sessionStorage.removeItem('adminTokenExpiry');
+                        adminToken = null;
+                        alert('Session expired. Please refresh and try again.');
+                        return;
+                    }
+                }
+
+                if (acknowledged === totalErrors) {
+                    location.reload();
+                } else {
+                    alert(`Acknowledged ${acknowledged} of ${totalErrors} errors.`);
+                    location.reload();
+                }
+            } catch (error) {
+                alert('Failed to acknowledge all errors. Please try again.');
+            }
+        }
+    </script>
+}
