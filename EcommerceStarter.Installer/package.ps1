@@ -161,7 +161,7 @@ Write-Host "- Migrations: $migrationsPath (" -NoNewline; if (Test-Path $migratio
 
 # Create release ZIP for distribution
 Write-Host "`nCreating release package..."
-$version = "1.0.5" # TODO: Read from .csproj
+$version = "1.0.0" # TODO: Read from .csproj
 $releaseZip = Join-Path (Split-Path $publishRoot) "EcommerceStarter-v$version.zip"
 
 # Remove existing ZIP if present
